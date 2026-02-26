@@ -5,6 +5,7 @@ import { GUIController } from '../gui';
 import { PreviewWindow } from '../preview/PreviewWindow';
 import type { MazeController } from '../maze/MazeController';
 import { computeMarkersFromLayer } from '../maze/markerUtils';
+import { subscribeLanguageChange, t } from '../sidebar/i18n';
 
 /**
  * MainApp - Application entry point & lifecycle manager
@@ -31,6 +32,7 @@ export class MainApp implements MazeController {
   private isPreviewVisible: boolean = true;
   private isPreviewClosed: boolean = false;
   private readonly mobileBreakpoint: number = 800;
+  private unsubscribeLanguageChange: (() => void) | null = null;
 
   constructor() {
     // Get canvas element
@@ -62,11 +64,21 @@ export class MainApp implements MazeController {
 
     // Initialize preview window
     this.previewWindow = new PreviewWindow({
-      title: 'Preview',
+      title: t('preview.title'),
       width: 300,
       height: 320,
       onHide: () => this.handlePreviewHidden(),
       onClose: () => this.handlePreviewClosed(),
+    });
+
+    this.unsubscribeLanguageChange = subscribeLanguageChange(() => {
+      if (this.isPreviewClosed) {
+        this.guiController.setControllerEnabled(
+          'showPreview',
+          false,
+          t('gui.previewClosedTooltip')
+        );
+      }
     });
 
     // Initialize debug overlay
@@ -317,6 +329,10 @@ export class MainApp implements MazeController {
     this.maze.destroy();
     this.guiController.destroy();
     this.previewWindow?.destroy();
+    if (this.unsubscribeLanguageChange) {
+      this.unsubscribeLanguageChange();
+      this.unsubscribeLanguageChange = null;
+    }
 
     this.stopDebugLoop();
     if (this.debugOverlay && this.debugOverlay.parentNode) {
@@ -365,7 +381,7 @@ export class MainApp implements MazeController {
     this.guiController.setControllerEnabled(
       'showPreview',
       false,
-      'Preview closed. Open a new preview window from Settings.'
+      t('gui.previewClosedTooltip')
     );
   }
 

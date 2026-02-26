@@ -1,4 +1,5 @@
 import { Toolbar } from '../toolbar';
+import { subscribeLanguageChange, t, type TranslationKey } from '../i18n';
 
 type ToolMode = 'pen' | 'eraser' | 'start' | 'end';
 
@@ -47,10 +48,11 @@ class MazePopup {
   private onMouseLeave: () => void;
   private onWheel: (e: WheelEvent) => void;
   private onContextMenu: (e: MouseEvent) => void;
+  private unsubscribeLanguageChange: (() => void) | null = null;
 
   constructor(toolbar: Toolbar) {
     this.toolbar = toolbar;
-    this.popupContainer = this.toolbar.createPopupContainer('mazePopup', 'Custom Maze');
+    this.popupContainer = this.toolbar.createPopupContainerByKey('mazePopup', 'popup.customMaze');
     this.popupContainer.classList.add('maze-popup');
 
     const canvas = this.popupContainer.querySelector('canvas') as HTMLCanvasElement | null;
@@ -109,6 +111,9 @@ class MazePopup {
     this.onContextMenu = e => e.preventDefault();
 
     this.bindEvents();
+    this.unsubscribeLanguageChange = subscribeLanguageChange(() => this.applyTranslations());
+    this.watchContainerRemoval();
+    this.applyTranslations();
     this.setTool('pen');
     this.rebuild(this.state.rows, this.state.cols);
   }
@@ -119,16 +124,16 @@ class MazePopup {
 
     const sectionTitle = document.createElement('div');
     sectionTitle.className = 'maze-popup__section-title';
-    sectionTitle.textContent = 'Single Layer Maze custom';
+    setI18nText(sectionTitle, 'maze.singleLayerCustom');
     controls.appendChild(sectionTitle);
 
     const sizeSection = document.createElement('div');
     sizeSection.className = 'maze-popup__section';
 
-    const rowsInput = createNumberInput('Rows', 5, 80, 12);
-    const colsInput = createNumberInput('Cols', 5, 80, 12);
-    const createBtn = createButton('Create', 'maze-popup__btn');
-    const loadBtn = createButton('Load Current Maze', 'maze-popup__btn');
+    const rowsInput = createNumberInput('maze.rows', 5, 80, 12);
+    const colsInput = createNumberInput('maze.cols', 5, 80, 12);
+    const createBtn = createButton('maze.create', 'maze-popup__btn');
+    const loadBtn = createButton('maze.loadCurrentMaze', 'maze-popup__btn');
 
     sizeSection.appendChild(rowsInput.wrapper);
     sizeSection.appendChild(colsInput.wrapper);
@@ -138,10 +143,10 @@ class MazePopup {
     const toolSection = document.createElement('div');
     toolSection.className = 'maze-popup__section';
 
-    const penBtn = createButton('Pen', 'maze-popup__tool');
-    const eraserBtn = createButton('Eraser', 'maze-popup__tool');
-    const startBtn = createButton('Start', 'maze-popup__tool');
-    const endBtn = createButton('End', 'maze-popup__tool');
+    const penBtn = createButton('maze.pen', 'maze-popup__tool');
+    const eraserBtn = createButton('maze.eraser', 'maze-popup__tool');
+    const startBtn = createButton('maze.start', 'maze-popup__tool');
+    const endBtn = createButton('maze.end', 'maze-popup__tool');
 
     toolSection.appendChild(penBtn);
     toolSection.appendChild(eraserBtn);
@@ -151,12 +156,12 @@ class MazePopup {
     const actionSection = document.createElement('div');
     actionSection.className = 'maze-popup__section';
 
-    const clearBtn = createButton('Clear', 'maze-popup__btn');
+    const clearBtn = createButton('maze.clear', 'maze-popup__btn');
     actionSection.appendChild(clearBtn);
 
     const applySection = document.createElement('div');
     applySection.className = 'maze-popup__section maze-popup__section--apply';
-    const applyBtn = createButton('Apply', 'maze-popup__btn maze-popup__btn--primary');
+    const applyBtn = createButton('maze.apply', 'maze-popup__btn maze-popup__btn--primary');
     applySection.appendChild(applyBtn);
 
     controls.appendChild(sizeSection);
@@ -197,6 +202,29 @@ class MazePopup {
     this.canvas.addEventListener('mouseup', this.onMouseUp);
     this.canvas.addEventListener('mouseleave', this.onMouseLeave);
     this.canvas.addEventListener('wheel', this.onWheel, { passive: false });
+  }
+
+  private applyTranslations() {
+    const i18nElements = this.popupContainer.querySelectorAll<HTMLElement>('[data-i18n-key]');
+    i18nElements.forEach(element => {
+      const key = element.getAttribute('data-i18n-key');
+      if (key) {
+        element.textContent = t(key as TranslationKey);
+      }
+    });
+  }
+
+  private watchContainerRemoval() {
+    const observer = new MutationObserver(() => {
+      if (!document.body.contains(this.popupContainer)) {
+        if (this.unsubscribeLanguageChange) {
+          this.unsubscribeLanguageChange();
+          this.unsubscribeLanguageChange = null;
+        }
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   private setTool(tool: ToolMode) {
@@ -380,7 +408,7 @@ class MazePopup {
     }
     if (data.length !== 1) {
       console.warn('Current maze is not single-layer. Load is blocked.');
-      window.alert('Only single-layer mazes can be loaded into the editor.');
+      window.alert(t('maze.singleLayerOnlyAlert'));
       return;
     }
     const layer = data[0];
@@ -536,12 +564,12 @@ export function showMazePopup(toolbar: Toolbar): void {
   }
 }
 
-function createNumberInput(label: string, min: number, max: number, value: number) {
+function createNumberInput(labelKey: TranslationKey, min: number, max: number, value: number) {
   const wrapper = document.createElement('label');
   wrapper.className = 'maze-popup__input';
 
   const span = document.createElement('span');
-  span.textContent = label;
+  setI18nText(span, labelKey);
 
   const input = document.createElement('input');
   input.type = 'number';
@@ -555,10 +583,15 @@ function createNumberInput(label: string, min: number, max: number, value: numbe
   return { wrapper, input };
 }
 
-function createButton(text: string, className: string) {
+function createButton(textKey: TranslationKey, className: string) {
   const btn = document.createElement('button');
   btn.type = 'button';
-  btn.textContent = text;
+  setI18nText(btn, textKey);
   btn.className = className;
   return btn;
+}
+
+function setI18nText(element: HTMLElement, key: TranslationKey) {
+  element.setAttribute('data-i18n-key', key);
+  element.textContent = t(key);
 }

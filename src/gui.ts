@@ -1,5 +1,6 @@
 import * as dat from 'dat.gui';
 import { MazeController } from './maze/MazeController';
+import { subscribeLanguageChange, t, type TranslationKey } from './sidebar/i18n';
 
 export interface GUISettings {
   backgroundColor: string;
@@ -34,6 +35,8 @@ export class GUIController {
 
   // Controllers - Fixed type
   private controllers: Map<string, any> = new Map();
+  private controllerLabelKeys: Partial<Record<keyof GUISettings, TranslationKey>> = {};
+  private unsubscribeLanguageChange: (() => void) | null = null;
 
   constructor(mazeController: MazeController, config: GUIConfig = {}) {
     this.mazeController = mazeController;
@@ -57,6 +60,8 @@ export class GUIController {
 
     this.gui = new dat.GUI();
     this.initializeGUI();
+    this.refreshTranslations();
+    this.unsubscribeLanguageChange = subscribeLanguageChange(() => this.refreshTranslations());
 
     if (this.autoHide) {
       this.setupResponsiveness();
@@ -97,6 +102,7 @@ export class GUIController {
   private addColorControls(): void {
     // Background color
     const bgController = this.gui.addColor(this.settings, 'backgroundColor');
+    this.setControllerLabel(bgController, 'gui.backgroundColor');
     bgController.onChange((value: string) => {
       const renderer = this.mazeController.getRenderer();
       if (renderer) {
@@ -105,20 +111,25 @@ export class GUIController {
       }
     });
     this.controllers.set('backgroundColor', bgController);
+    this.controllerLabelKeys.backgroundColor = 'gui.backgroundColor';
 
     // Wall color
     const wallColorController = this.gui.addColor(this.settings, 'wallColor');
+    this.setControllerLabel(wallColorController, 'gui.wallColor');
     wallColorController.onChange((value: string) => {
       this.mazeController.updateWallColor(value);
     });
     this.controllers.set('wallColor', wallColorController);
+    this.controllerLabelKeys.wallColor = 'gui.wallColor';
 
     // Floor color
     const floorColorController = this.gui.addColor(this.settings, 'floorColor');
+    this.setControllerLabel(floorColorController, 'gui.floorColor');
     floorColorController.onChange((value: string) => {
       this.mazeController.updateFloorColor(value);
     });
     this.controllers.set('floorColor', floorColorController);
+    this.controllerLabelKeys.floorColor = 'gui.floorColor';
   }
 
   /**
@@ -127,17 +138,21 @@ export class GUIController {
   private addOpacityControls(): void {
     // Wall opacity
     const wallOpacityController = this.gui.add(this.settings, 'wallOpacity', 0, 1, 0.01);
+    this.setControllerLabel(wallOpacityController, 'gui.wallOpacity');
     wallOpacityController.onChange((value: number) => {
       this.mazeController.updateWallOpacity(value);
     });
     this.controllers.set('wallOpacity', wallOpacityController);
+    this.controllerLabelKeys.wallOpacity = 'gui.wallOpacity';
 
     // Floor opacity
     const floorOpacityController = this.gui.add(this.settings, 'floorOpacity', 0, 1, 0.01);
+    this.setControllerLabel(floorOpacityController, 'gui.floorOpacity');
     floorOpacityController.onChange((value: number) => {
       this.mazeController.updateFloorOpacity(value);
     });
     this.controllers.set('floorOpacity', floorOpacityController);
+    this.controllerLabelKeys.floorOpacity = 'gui.floorOpacity';
   }
 
   /**
@@ -145,10 +160,12 @@ export class GUIController {
    */
   private addEdgeControl(): void {
     const edgeController = this.gui.add(this.settings, 'showEdges');
+    this.setControllerLabel(edgeController, 'gui.showEdges');
     edgeController.onChange((value: boolean) => {
       this.mazeController.toggleEdges(value);
     });
     this.controllers.set('showEdges', edgeController);
+    this.controllerLabelKeys.showEdges = 'gui.showEdges';
   }
 
   /**
@@ -156,10 +173,12 @@ export class GUIController {
    */
   private addDebugControl(): void {
     const debugController = this.gui.add(this.settings, 'showDebug');
+    this.setControllerLabel(debugController, 'gui.showDebug');
     debugController.onChange((value: boolean) => {
       this.mazeController.setDebugOverlayVisible(value);
     });
     this.controllers.set('showDebug', debugController);
+    this.controllerLabelKeys.showDebug = 'gui.showDebug';
   }
 
   /**
@@ -167,10 +186,28 @@ export class GUIController {
    */
   private addPreviewControl(): void {
     const previewController = this.gui.add(this.settings, 'showPreview');
+    this.setControllerLabel(previewController, 'gui.showPreview');
     previewController.onChange((value: boolean) => {
       this.mazeController.setPreviewVisible(value);
     });
     this.controllers.set('showPreview', previewController);
+    this.controllerLabelKeys.showPreview = 'gui.showPreview';
+  }
+
+  public refreshTranslations(): void {
+    (Object.keys(this.controllerLabelKeys) as Array<keyof GUISettings>).forEach(key => {
+      const controller = this.controllers.get(key);
+      const labelKey = this.controllerLabelKeys[key];
+      if (controller && labelKey) {
+        this.setControllerLabel(controller, labelKey);
+      }
+    });
+  }
+
+  private setControllerLabel(controller: any, labelKey: TranslationKey): void {
+    if (controller && typeof controller.name === 'function') {
+      controller.name(t(labelKey));
+    }
   }
 
   /**
@@ -261,6 +298,10 @@ export class GUIController {
       if (guiContainer && guiContainer.parentElement) {
         guiContainer.parentElement.removeChild(guiContainer);
       }
+    }
+    if (this.unsubscribeLanguageChange) {
+      this.unsubscribeLanguageChange();
+      this.unsubscribeLanguageChange = null;
     }
   }
 }
