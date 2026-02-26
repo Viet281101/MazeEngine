@@ -1,7 +1,10 @@
-import { Toolbar } from '../toolbar';
+import { Toolbar } from '../../toolbar';
+import './generate.css';
 
 export function showGeneratePopup(toolbar: Toolbar) {
   const popupContainer = toolbar.createPopupContainerByKey('generatePopup', 'popup.generateMaze');
+  popupContainer.classList.add('generate-popup');
+
   const popup = popupContainer.querySelector('canvas') as HTMLCanvasElement;
   const ctx = popup.getContext('2d');
 

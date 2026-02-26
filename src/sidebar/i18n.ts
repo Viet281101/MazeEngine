@@ -1,6 +1,4 @@
 import en from './locales/en.json';
-import fr from './locales/fr.json';
-import vi from './locales/vi.json';
 
 const LANGUAGE_STORAGE_KEY = 'maze_solver_3d_language';
 
@@ -10,13 +8,12 @@ export type TranslationKey = keyof typeof en;
 
 type TranslationMap = Record<TranslationKey, string>;
 
-const translations: Record<AppLanguage, TranslationMap> = {
-  vi: vi as TranslationMap,
-  en: en as TranslationMap,
-  fr: fr as TranslationMap,
-};
+const localeCache = new Map<AppLanguage, TranslationMap>([['en', en as TranslationMap]]);
+const pendingLoads = new Map<AppLanguage, Promise<TranslationMap>>();
+let activeTranslations: TranslationMap = en as TranslationMap;
 
 const listeners = new Set<() => void>();
+let languageSwitchVersion = 0;
 
 function isLanguage(value: string): value is AppLanguage {
   return (SUPPORTED_LANGUAGES as readonly string[]).includes(value);
@@ -45,28 +42,100 @@ function detectInitialLanguage(): AppLanguage {
 let currentLanguage: AppLanguage = detectInitialLanguage();
 
 export function t(key: TranslationKey): string {
-  const selected = translations[currentLanguage][key];
+  const selected = activeTranslations[key];
   if (selected) {
     return selected;
   }
-  return translations.en[key];
+  return (en as TranslationMap)[key];
 }
 
 export function getLanguage(): AppLanguage {
   return currentLanguage;
 }
 
-export function setLanguage(language: AppLanguage): void {
-  if (currentLanguage === language) {
+async function loadLanguagePack(language: AppLanguage): Promise<TranslationMap> {
+  const cached = localeCache.get(language);
+  if (cached) {
+    return cached;
+  }
+  const pending = pendingLoads.get(language);
+  if (pending) {
+    return pending;
+  }
+
+  const loadPromise = (async () => {
+    let loaded: TranslationMap;
+    switch (language) {
+      case 'vi': {
+        const module = await import('./locales/vi.json');
+        loaded = module.default as TranslationMap;
+        break;
+      }
+      case 'fr': {
+        const module = await import('./locales/fr.json');
+        loaded = module.default as TranslationMap;
+        break;
+      }
+      case 'en':
+      default: {
+        loaded = en as TranslationMap;
+        break;
+      }
+    }
+    localeCache.set(language, loaded);
+    return loaded;
+  })();
+
+  pendingLoads.set(language, loadPromise);
+  try {
+    return await loadPromise;
+  } finally {
+    pendingLoads.delete(language);
+  }
+}
+
+function notifyLanguageChange(): void {
+  listeners.forEach(listener => listener());
+}
+
+export async function initializeI18n(): Promise<void> {
+  if (currentLanguage === 'en') {
+    activeTranslations = en as TranslationMap;
+    return;
+  }
+
+  const version = ++languageSwitchVersion;
+  const loaded = await loadLanguagePack(currentLanguage);
+  if (version !== languageSwitchVersion) {
+    return;
+  }
+  activeTranslations = loaded;
+}
+
+export async function setLanguage(language: AppLanguage): Promise<void> {
+  if (currentLanguage === language && localeCache.has(language)) {
+    return;
+  }
+  const version = ++languageSwitchVersion;
+  const loaded = await loadLanguagePack(language);
+  if (version !== languageSwitchVersion) {
     return;
   }
   currentLanguage = language;
+  activeTranslations = loaded;
   try {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
   } catch (error) {
     console.warn('Failed to save language:', error);
   }
-  listeners.forEach(listener => listener());
+  notifyLanguageChange();
+}
+
+export async function prefetchLanguage(language: AppLanguage): Promise<void> {
+  if (language === currentLanguage && localeCache.has(language)) {
+    return;
+  }
+  await loadLanguagePack(language);
 }
 
 export function subscribeLanguageChange(listener: () => void): () => void {

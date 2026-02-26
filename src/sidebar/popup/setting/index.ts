@@ -1,5 +1,13 @@
-import { getLanguage, setLanguage, subscribeLanguageChange, t, type AppLanguage } from '../i18n';
-import { Toolbar } from '../toolbar';
+import {
+  getLanguage,
+  prefetchLanguage,
+  setLanguage,
+  subscribeLanguageChange,
+  t,
+  type AppLanguage,
+} from '../../i18n';
+import { Toolbar } from '../../toolbar';
+import './setting.css';
 
 function createLanguageOption(language: AppLanguage): HTMLOptionElement {
   const option = document.createElement('option');
@@ -47,6 +55,19 @@ export function showSettingsPopup(toolbar: Toolbar) {
 
   applyText();
 
+  let prefetched = false;
+  const prefetchOtherLanguages = () => {
+    if (prefetched) return;
+    prefetched = true;
+    const current = getLanguage();
+    (['vi', 'en', 'fr'] as AppLanguage[])
+      .filter(language => language !== current)
+      .forEach(language => {
+        void prefetchLanguage(language);
+      });
+  };
+  prefetchOtherLanguages();
+
   const unsubscribe = subscribeLanguageChange(() => {
     applyText();
   });
@@ -62,6 +83,8 @@ export function showSettingsPopup(toolbar: Toolbar) {
 
   select.addEventListener('change', () => {
     const nextLanguage = select.value as AppLanguage;
-    setLanguage(nextLanguage);
+    void setLanguage(nextLanguage);
   });
+  select.addEventListener('focus', prefetchOtherLanguages, { once: true });
+  select.addEventListener('pointerenter', prefetchOtherLanguages, { once: true });
 }

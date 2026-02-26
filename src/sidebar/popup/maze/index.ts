@@ -1,5 +1,6 @@
-import { Toolbar } from '../toolbar';
-import { subscribeLanguageChange, t, type TranslationKey } from '../i18n';
+import { Toolbar } from '../../toolbar';
+import { subscribeLanguageChange, t, type TranslationKey } from '../../i18n';
+import './maze.css';
 
 type ToolMode = 'pen' | 'eraser' | 'start' | 'end';
 

@@ -1,7 +1,10 @@
-import { Toolbar } from '../toolbar';
+import { Toolbar } from '../../toolbar';
+import './tutorial.css';
 
 export function showTutorialPopup(toolbar: Toolbar) {
   const popupContainer = toolbar.createPopupContainerByKey('tutorialPopup', 'popup.tutorial');
+  popupContainer.classList.add('tutorial-popup');
+
   const popup = popupContainer.querySelector('canvas') as HTMLCanvasElement;
   const ctx = popup.getContext('2d');
 
