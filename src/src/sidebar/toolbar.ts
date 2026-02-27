@@ -3,10 +3,12 @@ import { showSettingsPopup } from './popup/setting';
 import { showTutorialPopup } from './popup/tutorial';
 import { showMazePopup } from './popup/maze';
 import { showGeneratePopup } from './popup/generate';
+import { subscribeLanguageChange, t, type TranslationKey } from './i18n';
+import { UI_BREAKPOINTS } from '../constants/ui';
 import './toolbar.css';
 
 interface ToolButton {
-  name: string;
+  nameKey: TranslationKey;
   icon: string;
   action: () => void;
   x: number;
@@ -36,6 +38,7 @@ export class Toolbar {
 
   private imageCache: Map<string, HTMLImageElement> = new Map();
   private imagesLoaded: boolean = false;
+  private unsubscribeLanguageChange: (() => void) | null = null;
 
   constructor() {
     this.isMobile = this.checkIfMobile();
@@ -51,11 +54,15 @@ export class Toolbar {
       this.drawToolbar();
     });
 
+    this.unsubscribeLanguageChange = subscribeLanguageChange(() => {
+      this.refreshI18nText();
+    });
+
     this.addEventListeners();
   }
 
   private checkIfMobile(): boolean {
-    return window.innerWidth <= 800;
+    return window.innerWidth <= UI_BREAKPOINTS.MOBILE;
   }
 
   private setupCanvas(): void {
@@ -110,7 +117,7 @@ export class Toolbar {
 
     return [
       {
-        name: 'Custom Maze',
+        nameKey: 'toolbar.customMaze',
         icon: iconPaths[0],
         action: () => this.togglePopup('maze'),
         x: 0,
@@ -119,7 +126,7 @@ export class Toolbar {
         height: 0,
       },
       {
-        name: 'Generate Maze',
+        nameKey: 'toolbar.generateMaze',
         icon: iconPaths[1],
         action: () => this.togglePopup('generate'),
         x: 0,
@@ -128,7 +135,7 @@ export class Toolbar {
         height: 0,
       },
       {
-        name: 'Solving Maze',
+        nameKey: 'toolbar.solvingMaze',
         icon: iconPaths[2],
         action: () => this.togglePopup('solve'),
         x: 0,
@@ -137,7 +144,7 @@ export class Toolbar {
         height: 0,
       },
       {
-        name: 'Tutorial',
+        nameKey: 'toolbar.tutorial',
         icon: iconPaths[3],
         action: () => this.togglePopup('tutorial'),
         x: 0,
@@ -146,7 +153,7 @@ export class Toolbar {
         height: 0,
       },
       {
-        name: 'Settings',
+        nameKey: 'toolbar.settings',
         icon: iconPaths[4],
         action: () => this.togglePopup('settings'),
         x: 0,
@@ -276,7 +283,7 @@ export class Toolbar {
         if (this.hoveredButton !== nextHovered) {
           this.hoveredButton = nextHovered;
         }
-        this.showTooltip(nextHovered.name, e.clientX, e.clientY);
+        this.showTooltip(t(nextHovered.nameKey), e.clientX, e.clientY);
       } else {
         this.hoveredButton = null;
         this.hideTooltip();
@@ -449,6 +456,34 @@ export class Toolbar {
     return popupContainer;
   }
 
+  public createPopupContainerByKey(id: string, titleKey: TranslationKey): HTMLElement {
+    const popupContainer = this.createPopupContainer(id, t(titleKey));
+    const titleElement = popupContainer.querySelector('.toolbar-popup__title');
+    if (titleElement) {
+      titleElement.setAttribute('data-i18n-key', titleKey);
+    }
+    return popupContainer;
+  }
+
+  private refreshI18nText(): void {
+    const titleElements = document.querySelectorAll<HTMLElement>(
+      '.toolbar-popup__title[data-i18n-key]'
+    );
+    titleElements.forEach(element => {
+      const key = element.getAttribute('data-i18n-key');
+      if (key) {
+        element.textContent = t(key as TranslationKey);
+      }
+    });
+
+    if (this.currentCloseIcon) {
+      this.currentCloseIcon.title = t('toolbar.close');
+    }
+    if (this.currentHideIcon) {
+      this.currentHideIcon.title = t('toolbar.hide');
+    }
+  }
+
   private addCloseIcon(): void {
     if (this.currentCloseIcon) {
       document.body.removeChild(this.currentCloseIcon);
@@ -457,7 +492,7 @@ export class Toolbar {
     const closeIcon = new Image();
     closeIcon.src = '/MazeSolver3D/icon/close.png';
     closeIcon.className = 'toolbar-popup__close';
-    closeIcon.title = 'Close';
+    closeIcon.title = t('toolbar.close');
     closeIcon.style.setProperty('--toolbar-close-top', this.isMobile ? '56px' : '10px');
     closeIcon.style.setProperty(
       '--toolbar-close-left',
@@ -476,7 +511,7 @@ export class Toolbar {
     const hideIcon = new Image();
     hideIcon.src = '/MazeSolver3D/icon/hide.png';
     hideIcon.className = 'toolbar-popup__hide';
-    hideIcon.title = 'Hide';
+    hideIcon.title = t('toolbar.hide');
     hideIcon.style.setProperty('--toolbar-hide-top', this.isMobile ? '56px' : '10px');
     hideIcon.style.setProperty(
       '--toolbar-hide-left',
@@ -551,5 +586,9 @@ export class Toolbar {
     }
     this.imageCache.clear();
     this.buttons = [];
+    if (this.unsubscribeLanguageChange) {
+      this.unsubscribeLanguageChange();
+      this.unsubscribeLanguageChange = null;
+    }
   }
 }

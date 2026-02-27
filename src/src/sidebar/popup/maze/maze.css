@@ -1,0 +1,89 @@
+.maze-popup {
+  box-sizing: border-box;
+  padding: 28px 12px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.maze-popup__controls {
+  position: relative;
+  top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.maze-popup__section {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.maze-popup__section-title {
+  font-size: 20px;
+  color: #ffffff;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.maze-popup__section--apply {
+  justify-content: center;
+  position: relative;
+  top: 70px;
+}
+
+.maze-popup__input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffffff;
+  font-size: 20px;
+}
+
+.maze-popup__input input {
+  width: 64px;
+  height: 36px;
+  background: #111;
+  color: #fff;
+  border: 1px solid #333;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 16px;
+  user-select: text;
+}
+
+.maze-popup__btn,
+.maze-popup__tool {
+  background: #1a1a1a;
+  color: #eaeaea;
+  border: 1px solid #2b2b2b;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.maze-popup__tool.is-active {
+  background: #00a884;
+  border-color: #00866a;
+  color: #fff;
+}
+
+.maze-popup__btn--primary {
+  background: #00a884;
+  border-color: #00866a;
+  color: #fff;
+}
+
+.maze-popup__canvas {
+  position: relative;
+  top: 60px;
+  width: 330px;
+  height: 330px;
+  border: 1px solid #000;
+  background: #33566b;
+  cursor: crosshair;
+  touch-action: none;
+}

@@ -5,6 +5,10 @@ import { GUIController } from '../gui';
 import { PreviewWindow } from '../preview/PreviewWindow';
 import type { MazeController } from '../maze/MazeController';
 import { computeMarkersFromLayer } from '../maze/markerUtils';
+import { subscribeLanguageChange, t } from '../sidebar/i18n';
+import { DebugOverlay } from '../debug/DebugOverlay';
+import { MESH_REDUCTION } from '../constants/maze';
+import { PREVIEW_WINDOW, UI_BREAKPOINTS } from '../constants/ui';
 
 /**
  * MainApp - Application entry point & lifecycle manager
@@ -16,12 +20,7 @@ export class MainApp implements MazeController {
   private guiController: GUIController;
   private previewWindow: PreviewWindow | null;
   private resizeHandler: () => void;
-  private debugOverlay: HTMLDivElement | null = null;
-  private debugRafId: number | null = null;
-  private debugLastUpdate: number = 0;
-  private debugLastRenderCount: number = 0;
-  private readonly debugUpdateIntervalMs: number = 250;
-  private renderCount: number = 0;
+  private debugOverlay: DebugOverlay;
   private renderListener: () => void;
   private previewMarkers: {
     start: { row: number; col: number } | null;
@@ -30,7 +29,11 @@ export class MainApp implements MazeController {
   private isDebugOverlayVisible: boolean = true;
   private isPreviewVisible: boolean = true;
   private isPreviewClosed: boolean = false;
-  private readonly mobileBreakpoint: number = 800;
+  private readonly mobileBreakpoint: number = UI_BREAKPOINTS.MOBILE;
+  private meshReductionThreshold: number = MESH_REDUCTION.DEFAULT_THRESHOLD;
+  private meshReductionEnabled: boolean = MESH_REDUCTION.DEFAULT_ENABLED;
+  private unsubscribeLanguageChange: (() => void) | null = null;
+  private static readonly PREVIEW_STATUS_EVENT = 'maze:preview-window-status-changed';
 
   constructor() {
     // Get canvas element
@@ -44,6 +47,8 @@ export class MainApp implements MazeController {
 
     // Create initial maze
     this.maze = this.createInitialMaze();
+    this.maze.setMeshMergeThreshold(this.meshReductionThreshold);
+    this.maze.setMeshReductionEnabled(this.meshReductionEnabled);
     const initialData = this.maze.getMazeData();
     this.previewMarkers = computeMarkersFromLayer(initialData?.[0]);
 
@@ -61,20 +66,26 @@ export class MainApp implements MazeController {
     this.guiController.updateSetting('showPreview', this.isPreviewVisible);
 
     // Initialize preview window
-    this.previewWindow = new PreviewWindow({
-      title: 'Preview',
-      width: 300,
-      height: 320,
-      onHide: () => this.handlePreviewHidden(),
-      onClose: () => this.handlePreviewClosed(),
+    this.previewWindow = this.createPreviewWindow();
+
+    this.unsubscribeLanguageChange = subscribeLanguageChange(() => {
+      if (this.isPreviewClosed) {
+        this.guiController.setControllerEnabled(
+          'showPreview',
+          false,
+          t('gui.previewClosedTooltip')
+        );
+      }
     });
 
     // Initialize debug overlay
+    this.debugOverlay = new DebugOverlay({
+      getMazeData: () => this.maze.getMazeData(),
+    });
     this.renderListener = () => {
-      this.renderCount += 1;
+      this.debugOverlay.recordRender();
     };
     this.maze.addRenderListener(this.renderListener);
-    this.setupDebugOverlay();
     this.setDebugOverlayVisible(this.isDebugOverlayVisible);
     this.setPreviewVisible(this.isPreviewVisible);
 
@@ -176,6 +187,8 @@ export class MainApp implements MazeController {
 
       // Apply GUI settings to new maze
       this.applyGUISettings();
+      this.maze.setMeshMergeThreshold(this.meshReductionThreshold);
+      this.maze.setMeshReductionEnabled(this.meshReductionEnabled);
 
       // Re-attach render listener for debug overlay
       this.maze.addRenderListener(this.renderListener);
@@ -266,6 +279,27 @@ export class MainApp implements MazeController {
     this.setPreviewVisible(!this.isPreviewVisible);
   }
 
+  public setMeshReductionThreshold(threshold: number): void {
+    const normalized = Math.max(MESH_REDUCTION.MIN_THRESHOLD, Math.floor(threshold));
+    this.meshReductionThreshold = normalized;
+    this.maze.setMeshMergeThreshold(normalized);
+    this.updatePreview();
+  }
+
+  public getMeshReductionThreshold(): number {
+    return this.meshReductionThreshold;
+  }
+
+  public setMeshReductionEnabled(enabled: boolean): void {
+    this.meshReductionEnabled = enabled;
+    this.maze.setMeshReductionEnabled(enabled);
+    this.updatePreview();
+  }
+
+  public isMeshReductionEnabled(): boolean {
+    return this.meshReductionEnabled;
+  }
+
   // ========== MazeController Interface Implementation ==========
 
   public getRenderer(): any {
@@ -276,10 +310,9 @@ export class MainApp implements MazeController {
     return this.maze.getMazeData();
   }
 
-  public getMazeMarkers(): {
-    start: { row: number; col: number } | null;
-    end: { row: number; col: number } | null;
-  } | null {
+  public getMazeMarkers():
+    | { start: { row: number; col: number } | null; end: { row: number; col: number } | null }
+    | null {
     return this.previewMarkers ? { ...this.previewMarkers } : null;
   }
 
@@ -318,23 +351,17 @@ export class MainApp implements MazeController {
     this.maze.destroy();
     this.guiController.destroy();
     this.previewWindow?.destroy();
-
-    this.stopDebugLoop();
-    if (this.debugOverlay && this.debugOverlay.parentNode) {
-      this.debugOverlay.parentNode.removeChild(this.debugOverlay);
+    if (this.unsubscribeLanguageChange) {
+      this.unsubscribeLanguageChange();
+      this.unsubscribeLanguageChange = null;
     }
+
+    this.debugOverlay.destroy();
   }
 
   public setDebugOverlayVisible(visible: boolean): void {
     this.isDebugOverlayVisible = visible;
-    if (this.debugOverlay) {
-      this.debugOverlay.style.display = visible ? 'block' : 'none';
-    }
-    if (visible) {
-      this.startDebugLoop();
-    } else {
-      this.stopDebugLoop();
-    }
+    this.debugOverlay.setVisible(visible);
   }
 
   public setPreviewVisible(visible: boolean): void {
@@ -366,74 +393,52 @@ export class MainApp implements MazeController {
     this.guiController.setControllerEnabled(
       'showPreview',
       false,
-      'Preview closed. Open a new preview window from Settings.'
+      t('gui.previewClosedTooltip')
     );
+    this.emitPreviewWindowStatusChanged();
   }
 
-  private setupDebugOverlay(): void {
-    this.renderCount = 0;
-
-    const overlay = document.createElement('div');
-    overlay.id = 'debug-overlay';
-    Object.assign(overlay.style, {
-      position: 'fixed',
-      top: '8px',
-      left: '58px',
-      padding: '6px 8px',
-      background: 'rgba(0, 0, 0, 0.6)',
-      color: '#e6e6e6',
-      fontFamily: 'monospace',
-      fontSize: '12px',
-      borderRadius: '4px',
-      zIndex: '1000',
-      pointerEvents: 'none',
-      whiteSpace: 'pre',
-    });
-    document.body.appendChild(overlay);
-    this.debugOverlay = overlay;
-
-    this.startDebugLoop();
-  }
-
-  private startDebugLoop(): void {
-    if (this.debugRafId !== null) {
+  public reopenPreviewWindow(): void {
+    if (this.previewWindow) {
+      this.isPreviewClosed = false;
+      this.setPreviewVisible(true);
+      this.guiController.updateSetting('showPreview', true);
+      this.guiController.setControllerEnabled('showPreview', true);
+      this.updatePreview();
+      this.emitPreviewWindowStatusChanged();
       return;
     }
 
-    this.debugLastUpdate = performance.now();
-    this.debugLastRenderCount = this.renderCount;
-
-    const tick = (now: number) => {
-      if (!this.debugOverlay) {
-        this.debugRafId = null;
-        return;
-      }
-
-      if (now - this.debugLastUpdate >= this.debugUpdateIntervalMs) {
-        const intervalSeconds = (now - this.debugLastUpdate) / 1000;
-        const renders = this.renderCount - this.debugLastRenderCount;
-        const fps = intervalSeconds > 0 ? renders / intervalSeconds : 0;
-        const frameTimeMs =
-          renders > 0 && intervalSeconds > 0 ? (intervalSeconds * 1000) / renders : 0;
-
-        this.debugOverlay.textContent = `FPS: ${fps.toFixed(1)}\nFrame: ${frameTimeMs.toFixed(
-          2
-        )} ms`;
-
-        this.debugLastUpdate = now;
-        this.debugLastRenderCount = this.renderCount;
-      }
-
-      this.debugRafId = window.requestAnimationFrame(tick);
-    };
-
-    this.debugRafId = window.requestAnimationFrame(tick);
+    this.previewWindow = this.createPreviewWindow();
+    this.isPreviewClosed = false;
+    this.isPreviewVisible = true;
+    this.guiController.updateSetting('showPreview', true);
+    this.guiController.setControllerEnabled('showPreview', true);
+    this.updatePreview();
+    this.previewWindow.show();
+    this.emitPreviewWindowStatusChanged();
   }
 
-  private stopDebugLoop(): void {
-    if (this.debugRafId !== null) {
-      window.cancelAnimationFrame(this.debugRafId);
-      this.debugRafId = null;
-    }
+  public canOpenNewPreviewWindow(): boolean {
+    return this.previewWindow === null;
   }
+
+  private createPreviewWindow(): PreviewWindow {
+    return new PreviewWindow({
+      title: t('preview.title'),
+      width: PREVIEW_WINDOW.DEFAULT_WIDTH,
+      height: PREVIEW_WINDOW.DEFAULT_HEIGHT,
+      onHide: () => this.handlePreviewHidden(),
+      onClose: () => this.handlePreviewClosed(),
+    });
+  }
+
+  private emitPreviewWindowStatusChanged(): void {
+    window.dispatchEvent(
+      new CustomEvent(MainApp.PREVIEW_STATUS_EVENT, {
+        detail: { canOpenNewPreviewWindow: this.canOpenNewPreviewWindow() },
+      })
+    );
+  }
+
 }

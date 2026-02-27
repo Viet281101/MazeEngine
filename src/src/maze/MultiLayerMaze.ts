@@ -42,6 +42,85 @@ export class MultiLayerMaze extends Maze {
     layerHeight: number,
     mazeLayer: THREE.Object3D
   ): void {
+    const rowCount = layer.length;
+    const colCount = layer[0]?.length ?? 0;
+    const shouldMerge = this.shouldMergeWalls(rowCount, colCount);
+
+    if (!shouldMerge) {
+      this.createWallsForLayerDetailed(layer, layerHeight, mazeLayer);
+      return;
+    }
+
+    // Merge consecutive horizontal wall segments in each row.
+    for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+      let startCol = -1;
+
+      for (let colIndex = 0; colIndex < colCount; colIndex += 1) {
+        const isConnectedPair =
+          colIndex < colCount - 1 && layer[rowIndex][colIndex] === 1 && layer[rowIndex][colIndex + 1] === 1;
+
+        if (isConnectedPair) {
+          if (startCol === -1) {
+            startCol = colIndex;
+          }
+          continue;
+        }
+
+        if (startCol !== -1) {
+          const endCol = colIndex;
+          const span = endCol - startCol;
+          const wall = this.meshFactory.createWall({
+            x: ((startCol + endCol) * this.cellSize) / 2,
+            y: layerHeight + this.wallHeight / 2,
+            z: -rowIndex * this.cellSize,
+            width: span * this.cellSize,
+            height: this.wallHeight,
+            depth: this.wallThickness,
+          });
+          mazeLayer.add(wall);
+          startCol = -1;
+        }
+      }
+    }
+
+    // Merge consecutive vertical wall segments in each column.
+    for (let colIndex = 0; colIndex < colCount; colIndex += 1) {
+      let startRow = -1;
+
+      for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+        const isConnectedPair =
+          rowIndex < rowCount - 1 && layer[rowIndex][colIndex] === 1 && layer[rowIndex + 1][colIndex] === 1;
+
+        if (isConnectedPair) {
+          if (startRow === -1) {
+            startRow = rowIndex;
+          }
+          continue;
+        }
+
+        if (startRow !== -1) {
+          const endRow = rowIndex;
+          const span = endRow - startRow;
+          const wall = this.meshFactory.createWall({
+            x: colIndex * this.cellSize,
+            y: layerHeight + this.wallHeight / 2,
+            z: -((startRow + endRow) * this.cellSize) / 2,
+            width: this.wallThickness,
+            height: this.wallHeight,
+            depth: span * this.cellSize,
+          });
+          mazeLayer.add(wall);
+          startRow = -1;
+        }
+      }
+    }
+  }
+
+  private createWallsForLayerDetailed(
+    layer: number[][],
+    layerHeight: number,
+    mazeLayer: THREE.Object3D
+  ): void {
     layer.forEach((row, rowIndex) => {
       row.forEach((cell, colIndex) => {
         if (cell === 1) {
