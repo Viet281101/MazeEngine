@@ -37,6 +37,8 @@ export abstract class Maze {
   protected wallOpacity: number;
   protected floorOpacity: number;
   protected showEdges: boolean;
+  protected meshReductionEnabled: boolean;
+  protected meshMergeThreshold: number;
 
   // Resource management
   protected resourceManager: ResourceManager;
@@ -64,6 +66,8 @@ export abstract class Maze {
     this.wallOpacity = 1.0;
     this.floorOpacity = 1.0;
     this.showEdges = true;
+    this.meshReductionEnabled = true;
+    this.meshMergeThreshold = 25;
 
     // Initialize Three.js
     this.scene = new THREE.Scene();
@@ -276,6 +280,36 @@ export abstract class Maze {
     this.meshFactory.updateSettings({ showEdges });
     this.rebuildEdges();
     this.requestRender();
+  }
+
+  public setMeshReductionEnabled(enabled: boolean): void {
+    if (this.meshReductionEnabled === enabled) return;
+    this.meshReductionEnabled = enabled;
+    this.createMaze();
+    this.requestRender();
+  }
+
+  public isMeshReductionEnabled(): boolean {
+    return this.meshReductionEnabled;
+  }
+
+  public setMeshMergeThreshold(threshold: number): void {
+    const nextThreshold = Math.max(5, Math.floor(threshold));
+    if (this.meshMergeThreshold === nextThreshold) return;
+    this.meshMergeThreshold = nextThreshold;
+    this.createMaze();
+    this.requestRender();
+  }
+
+  public getMeshMergeThreshold(): number {
+    return this.meshMergeThreshold;
+  }
+
+  protected shouldMergeWalls(rows: number, cols: number): boolean {
+    if (!this.meshReductionEnabled) {
+      return false;
+    }
+    return rows >= this.meshMergeThreshold || cols >= this.meshMergeThreshold;
   }
 
   public addRenderListener(listener: () => void): void {

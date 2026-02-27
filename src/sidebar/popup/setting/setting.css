@@ -2,10 +2,14 @@
   position: relative;
   top: 60px;
   padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .settings-popup__row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px;
   align-items: center;
   width: 100%;
   gap: 10px;
@@ -18,8 +22,35 @@
   min-width: 0;
 }
 
+.settings-popup__label--with-help {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+}
+
+.settings-popup__label-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-popup__help-icon {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  opacity: 0.9;
+  margin-top: 3px;
+}
+
+.settings-popup__help-icon:hover,
+.settings-popup__help-icon:focus-visible {
+  opacity: 1;
+  outline: none;
+}
+
 .settings-popup__select {
-  margin-left: auto;
+  width: 170px;
   min-width: 170px;
   height: 34px;
   border: 1px solid #2b2b2b;
@@ -27,4 +58,64 @@
   color: #000000;
   border-radius: 4px;
   padding: 0 8px;
+}
+
+.settings-popup__checkbox {
+  justify-self: end;
+  width: 20px;
+  height: 20px;
+  accent-color: #00a884;
+}
+
+.settings-popup__input {
+  width: 170px;
+  min-width: 170px;
+  height: 34px;
+  border: 1px solid #2b2b2b;
+  background: #ffffff;
+  color: #000000;
+  border-radius: 4px;
+  padding: 0 8px;
+}
+
+.settings-popup__tooltip {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  z-index: 2;
+  background: #10222a;
+  border: 1px solid #2d5a6b;
+  border-radius: 6px;
+  padding: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+}
+
+.settings-popup__tooltip--mesh {
+  top: 92px;
+}
+
+.settings-popup__tooltip--threshold {
+  top: 144px;
+}
+
+.settings-popup__tooltip-text {
+  margin: 0 0 8px;
+  color: #d8e7ed;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.settings-popup__tooltip-btn {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #3c5662;
+  border-radius: 4px;
+  background: #182c35;
+  color: #9fb6c1;
+  font-size: 12px;
+}
+
+.settings-popup__tooltip-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.9;
 }

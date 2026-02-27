@@ -32,6 +32,8 @@ export class MainApp implements MazeController {
   private isPreviewVisible: boolean = true;
   private isPreviewClosed: boolean = false;
   private readonly mobileBreakpoint: number = 800;
+  private meshReductionThreshold: number = 25;
+  private meshReductionEnabled: boolean = true;
   private unsubscribeLanguageChange: (() => void) | null = null;
 
   constructor() {
@@ -46,6 +48,8 @@ export class MainApp implements MazeController {
 
     // Create initial maze
     this.maze = this.createInitialMaze();
+    this.maze.setMeshMergeThreshold(this.meshReductionThreshold);
+    this.maze.setMeshReductionEnabled(this.meshReductionEnabled);
     const initialData = this.maze.getMazeData();
     this.previewMarkers = computeMarkersFromLayer(initialData?.[0]);
 
@@ -188,6 +192,8 @@ export class MainApp implements MazeController {
 
       // Apply GUI settings to new maze
       this.applyGUISettings();
+      this.maze.setMeshMergeThreshold(this.meshReductionThreshold);
+      this.maze.setMeshReductionEnabled(this.meshReductionEnabled);
 
       // Re-attach render listener for debug overlay
       this.maze.addRenderListener(this.renderListener);
@@ -276,6 +282,27 @@ export class MainApp implements MazeController {
    */
   public togglePreview(): void {
     this.setPreviewVisible(!this.isPreviewVisible);
+  }
+
+  public setMeshReductionThreshold(threshold: number): void {
+    const normalized = Math.max(5, Math.floor(threshold));
+    this.meshReductionThreshold = normalized;
+    this.maze.setMeshMergeThreshold(normalized);
+    this.updatePreview();
+  }
+
+  public getMeshReductionThreshold(): number {
+    return this.meshReductionThreshold;
+  }
+
+  public setMeshReductionEnabled(enabled: boolean): void {
+    this.meshReductionEnabled = enabled;
+    this.maze.setMeshReductionEnabled(enabled);
+    this.updatePreview();
+  }
+
+  public isMeshReductionEnabled(): boolean {
+    return this.meshReductionEnabled;
   }
 
   // ========== MazeController Interface Implementation ==========
