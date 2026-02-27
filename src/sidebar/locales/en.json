@@ -10,6 +10,7 @@
   "popup.generateMaze": "Generate Maze",
   "popup.solvingMaze": "Solving Maze",
   "popup.tutorial": "Tutorial",
+  "tutorial.viewSourceCode": "View Source Code",
   "popup.settings": "Settings",
   "maze.singleLayerCustom": "Single Layer Maze custom",
   "maze.rows": "Rows",

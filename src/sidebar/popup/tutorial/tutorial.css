@@ -1,3 +1,45 @@
 .tutorial-popup {
   box-sizing: border-box;
 }
+
+.tutorial-popup__content {
+  margin-top: 60px;
+  padding: 10px 12px 12px;
+}
+
+.tutorial-popup__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px;
+  padding-right: 20px;
+  border-bottom: 2px solid #000000;
+}
+
+.tutorial-popup__label {
+  margin-top: 6px;
+  font-size: 24px;
+  color: #ffffff;
+}
+
+.tutorial-popup__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  cursor: pointer;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.tutorial-popup__icon:hover {
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+.tutorial-popup__icon {
+  width: 42px;
+  height: 42px;
+}

@@ -10,6 +10,7 @@
   "popup.generateMaze": "Tạo mê cung",
   "popup.solvingMaze": "Giải mê cung",
   "popup.tutorial": "Hướng dẫn",
+  "tutorial.viewSourceCode": "Xem mã nguồn",
   "popup.settings": "Cài đặt",
   "maze.singleLayerCustom": "Tùy chỉnh mê cung 1 tầng",
   "maze.rows": "Hàng",

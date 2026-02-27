@@ -10,6 +10,7 @@
   "popup.generateMaze": "Generer un labyrinthe",
   "popup.solvingMaze": "Resolution du labyrinthe",
   "popup.tutorial": "Tutoriel",
+  "tutorial.viewSourceCode": "Voir le code source",
   "popup.settings": "Parametres",
   "maze.singleLayerCustom": "Edition labyrinthe monocouche",
   "maze.rows": "Lignes",
