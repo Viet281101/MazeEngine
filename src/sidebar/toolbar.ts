@@ -4,6 +4,7 @@ import { showTutorialPopup } from './popup/tutorial';
 import { showMazePopup } from './popup/maze';
 import { showGeneratePopup } from './popup/generate';
 import { subscribeLanguageChange, t, type TranslationKey } from './i18n';
+import { UI_BREAKPOINTS } from '../constants/ui';
 import './toolbar.css';
 
 interface ToolButton {
@@ -61,7 +62,7 @@ export class Toolbar {
   }
 
   private checkIfMobile(): boolean {
-    return window.innerWidth <= 800;
+    return window.innerWidth <= UI_BREAKPOINTS.MOBILE;
   }
 
   private setupCanvas(): void {

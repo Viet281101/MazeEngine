@@ -39,6 +39,7 @@
   "generate.comingSoon": "Coming soon",
   "generate.rows": "Rows",
   "generate.cols": "Cols",
+  "generate.bias": "North bias (%)",
   "generate.generateButton": "Generate",
   "generate.sizeHint": "Size range: 5 - 80",
   "generate.appUnavailable": "Cannot generate maze right now. Reload page and try again.",
@@ -72,6 +73,8 @@
   "settings.language.en": "English",
   "settings.language.fr": "French",
   "settings.meshReductionTooltip": "Reduces draw calls by merging wall meshes when maze size reaches the threshold.",
+  "settings.previewWindow": "Preview window",
+  "settings.openPreviewWindow": "Open new window",
   "settings.openTutorial": "Open tutorial",
   "settings.tutorialSoon": "soon",
   "settings.meshReductionThresholdTooltip": "Set the maze size threshold where mesh reduction starts (rows or cols)."

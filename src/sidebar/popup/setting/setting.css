@@ -78,6 +78,22 @@
   padding: 0 8px;
 }
 
+.settings-popup__action-btn {
+  width: 170px;
+  min-width: 170px;
+  height: 34px;
+  border: 1px solid #2d5a6b;
+  border-radius: 4px;
+  background: #13323d;
+  color: #eaf6fb;
+  cursor: pointer;
+}
+
+.settings-popup__action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .settings-popup__tooltip {
   position: absolute;
   left: 12px;

@@ -7,6 +7,7 @@ import {
   type AppLanguage,
 } from '../../i18n';
 import { Toolbar } from '../../toolbar';
+import { MESH_REDUCTION } from '../../../constants/maze';
 import './setting.css';
 
 interface MazeAppSettingsBridge {
@@ -14,6 +15,8 @@ interface MazeAppSettingsBridge {
   getMeshReductionThreshold?: () => number;
   setMeshReductionEnabled?: (enabled: boolean) => void;
   isMeshReductionEnabled?: () => boolean;
+  reopenPreviewWindow?: () => void;
+  canOpenNewPreviewWindow?: () => boolean;
   getMazeData?: () => number[][][];
 }
 
@@ -97,19 +100,42 @@ export function showSettingsPopup(toolbar: Toolbar) {
   const thresholdInput = document.createElement('input');
   thresholdInput.type = 'number';
   thresholdInput.className = 'settings-popup__input';
-  thresholdInput.min = '5';
-  thresholdInput.max = '200';
+  thresholdInput.min = String(MESH_REDUCTION.MIN_THRESHOLD);
+  thresholdInput.max = String(MESH_REDUCTION.MAX_THRESHOLD);
   thresholdInput.step = '1';
   thresholdInput.value = String(
     mazeApp && typeof mazeApp.getMeshReductionThreshold === 'function'
       ? mazeApp.getMeshReductionThreshold()
-      : 25
+      : MESH_REDUCTION.DEFAULT_THRESHOLD
   );
   thresholdLabelWrap.appendChild(thresholdLabel);
   thresholdLabelWrap.appendChild(thresholdHelpIcon);
   thresholdRow.appendChild(thresholdLabelWrap);
   thresholdRow.appendChild(thresholdInput);
   content.appendChild(thresholdRow);
+
+  const previewRow = document.createElement('div');
+  previewRow.className = 'settings-popup__row';
+  const previewLabel = document.createElement('span');
+  previewLabel.className = 'settings-popup__label';
+  const previewButton = document.createElement('button');
+  previewButton.type = 'button';
+  previewButton.className = 'settings-popup__action-btn';
+  previewButton.disabled = true;
+  previewRow.appendChild(previewLabel);
+  previewRow.appendChild(previewButton);
+  content.appendChild(previewRow);
+
+  const updatePreviewButtonState = () => {
+    const app = getMazeAppBridge();
+    const canOpen =
+      !!app &&
+      typeof app.reopenPreviewWindow === 'function' &&
+      typeof app.canOpenNewPreviewWindow === 'function' &&
+      app.canOpenNewPreviewWindow();
+    previewButton.disabled = !canOpen;
+  };
+  updatePreviewButtonState();
 
   const meshReductionTooltip = document.createElement('div');
   meshReductionTooltip.className = 'settings-popup__tooltip settings-popup__tooltip--mesh';
@@ -159,6 +185,8 @@ export function showSettingsPopup(toolbar: Toolbar) {
     languageLabel.textContent = t('settings.language');
     meshReductionLabel.textContent = t('settings.meshVisible');
     thresholdLabel.textContent = t('settings.meshReductionThreshold');
+    previewLabel.textContent = t('settings.previewWindow');
+    previewButton.textContent = t('settings.openPreviewWindow');
     meshReductionTooltipText.textContent = t('settings.meshReductionTooltip');
     thresholdTooltipText.textContent = t('settings.meshReductionThresholdTooltip');
     meshReductionTooltipButton.textContent = `${t('settings.openTutorial')} (${t('settings.tutorialSoon')})`;
@@ -195,6 +223,7 @@ export function showSettingsPopup(toolbar: Toolbar) {
       document.removeEventListener('mousedown', handleDocumentPointerDown, true);
       document.removeEventListener('touchstart', handleDocumentPointerDown, true);
       document.removeEventListener('keydown', handleDocumentKeyDown, true);
+      window.removeEventListener('maze:preview-window-status-changed', handlePreviewStatusChanged);
       observer.disconnect();
     }
   });
@@ -226,6 +255,8 @@ export function showSettingsPopup(toolbar: Toolbar) {
   document.addEventListener('mousedown', handleDocumentPointerDown, true);
   document.addEventListener('touchstart', handleDocumentPointerDown, true);
   document.addEventListener('keydown', handleDocumentKeyDown, true);
+  const handlePreviewStatusChanged = () => updatePreviewButtonState();
+  window.addEventListener('maze:preview-window-status-changed', handlePreviewStatusChanged);
 
   select.addEventListener('change', () => {
     const nextLanguage = select.value as AppLanguage;
@@ -243,7 +274,13 @@ export function showSettingsPopup(toolbar: Toolbar) {
 
   const applyThreshold = () => {
     const raw = Number(thresholdInput.value);
-    const clamped = Math.max(5, Math.min(200, Number.isFinite(raw) ? Math.floor(raw) : 25));
+    const clamped = Math.max(
+      MESH_REDUCTION.MIN_THRESHOLD,
+      Math.min(
+        MESH_REDUCTION.MAX_THRESHOLD,
+        Number.isFinite(raw) ? Math.floor(raw) : MESH_REDUCTION.DEFAULT_THRESHOLD
+      )
+    );
     thresholdInput.value = String(clamped);
     const app = getMazeAppBridge();
     if (app && typeof app.setMeshReductionThreshold === 'function') {
@@ -253,6 +290,14 @@ export function showSettingsPopup(toolbar: Toolbar) {
 
   thresholdInput.addEventListener('change', applyThreshold);
   thresholdInput.addEventListener('blur', applyThreshold);
+
+  previewButton.addEventListener('click', () => {
+    const app = getMazeAppBridge();
+    if (app && typeof app.reopenPreviewWindow === 'function') {
+      app.reopenPreviewWindow();
+      updatePreviewButtonState();
+    }
+  });
 
   meshReductionHelpIcon.addEventListener('mouseenter', () => {
     if (!pinnedTooltip) {

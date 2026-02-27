@@ -1,3 +1,5 @@
+import { MAZE_SIZE } from '../constants/maze';
+
 export interface MazeMarker {
   row: number;
   col: number;
@@ -22,9 +24,26 @@ function createWallGrid(rows: number, cols: number): number[][] {
 /**
  * Generate a single-layer perfect maze using Binary Tree algorithm.
  */
-export function generateBinaryTreeMaze(inputRows: number, inputCols: number): GeneratedMazeResult {
-  const rows = clamp(Math.floor(inputRows), 5, 80);
-  const cols = clamp(Math.floor(inputCols), 5, 80);
+export interface BinaryTreeOptions {
+  /**
+   * Probability to carve toward North when both directions are possible.
+   * 0 means always carve East, 1 means always carve North.
+   */
+  northBias?: number;
+}
+
+export function generateBinaryTreeMaze(
+  inputRows: number,
+  inputCols: number,
+  options: BinaryTreeOptions = {}
+): GeneratedMazeResult {
+  const rows = clamp(Math.floor(inputRows), MAZE_SIZE.MIN, MAZE_SIZE.MAX);
+  const cols = clamp(Math.floor(inputCols), MAZE_SIZE.MIN, MAZE_SIZE.MAX);
+  const northBias = clamp(
+    Number.isFinite(options.northBias) ? (options.northBias as number) : 0.5,
+    0,
+    1
+  );
   const layer = createWallGrid(rows, cols);
 
   for (let row = 1; row < rows - 1; row += 1) {
@@ -49,7 +68,7 @@ export function generateBinaryTreeMaze(inputRows: number, inputCols: number): Ge
         continue;
       }
 
-      if (Math.random() < 0.5) {
+      if (Math.random() < northBias) {
         layer[row - 1][col] = 0;
       } else {
         layer[row][col + 1] = 0;
@@ -57,8 +76,8 @@ export function generateBinaryTreeMaze(inputRows: number, inputCols: number): Ge
     }
   }
 
-  const start: MazeMarker = { row: rows - 2, col: 1 };
-  const end: MazeMarker = { row: 1, col: cols - 2 };
+  const start: MazeMarker = { row: rows - 1, col: 1 };
+  const end: MazeMarker = { row: 0, col: cols - 2 };
   layer[rows - 1][1] = 0;
   layer[rows - 2][1] = 0;
   layer[0][cols - 2] = 0;

@@ -1,6 +1,7 @@
 import * as dat from 'dat.gui';
 import { MazeController } from './maze/MazeController';
 import { subscribeLanguageChange, t, type TranslationKey } from './sidebar/i18n';
+import { UI_BREAKPOINTS } from './constants/ui';
 
 export interface GUISettings {
   backgroundColor: string;
@@ -42,7 +43,7 @@ export class GUIController {
     this.mazeController = mazeController;
 
     // Apply config with defaults
-    this.mobileBreakpoint = config.mobileBreakpoint ?? 800;
+    this.mobileBreakpoint = config.mobileBreakpoint ?? UI_BREAKPOINTS.MOBILE;
     this.guiScale = config.scale ?? 1.4;
     this.autoHide = config.autoHide ?? true;
 

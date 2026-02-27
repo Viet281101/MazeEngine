@@ -39,6 +39,7 @@
   "generate.comingSoon": "Sắp có",
   "generate.rows": "Hàng",
   "generate.cols": "Cột",
+  "generate.bias": "Ưu tiên Bắc (%)",
   "generate.generateButton": "Generate",
   "generate.sizeHint": "Kích cỡ: 5 - 80",
   "generate.appUnavailable": "Không thể tạo mê cung lúc này. Hãy tải lại trang rồi thử lại.",
@@ -72,6 +73,8 @@
   "settings.language.en": "Tiếng Anh",
   "settings.language.fr": "Tiếng Pháp",
   "settings.meshReductionTooltip": "Giảm draw call bằng cách gộp mesh tường khi kích thước mê cung đạt ngưỡng.",
+  "settings.previewWindow": "Cửa sổ preview",
+  "settings.openPreviewWindow": "Mở cửa sổ mới",
   "settings.openTutorial": "Mở hướng dẫn",
   "settings.tutorialSoon": "sắp có",
   "settings.meshReductionThresholdTooltip": "Đặt ngưỡng kích thước mê cung để bắt đầu giảm mesh (hàng hoặc cột)."

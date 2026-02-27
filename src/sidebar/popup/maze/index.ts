@@ -1,5 +1,6 @@
 import { Toolbar } from '../../toolbar';
 import { subscribeLanguageChange, t, type TranslationKey } from '../../i18n';
+import { MAZE_SIZE } from '../../../constants/maze';
 import './maze.css';
 
 type ToolMode = 'pen' | 'eraser' | 'start' | 'end';
@@ -131,8 +132,18 @@ class MazePopup {
     const sizeSection = document.createElement('div');
     sizeSection.className = 'maze-popup__section';
 
-    const rowsInput = createNumberInput('maze.rows', 5, 80, 12);
-    const colsInput = createNumberInput('maze.cols', 5, 80, 12);
+    const rowsInput = createNumberInput(
+      'maze.rows',
+      MAZE_SIZE.MIN,
+      MAZE_SIZE.MAX,
+      MAZE_SIZE.DEFAULT_CUSTOM_EDITOR
+    );
+    const colsInput = createNumberInput(
+      'maze.cols',
+      MAZE_SIZE.MIN,
+      MAZE_SIZE.MAX,
+      MAZE_SIZE.DEFAULT_CUSTOM_EDITOR
+    );
     const createBtn = createButton('maze.create', 'maze-popup__btn');
     const loadBtn = createButton('maze.loadCurrentMaze', 'maze-popup__btn');
 
@@ -380,8 +391,8 @@ class MazePopup {
   }
 
   private handleCreate() {
-    const rows = this.clamp(this.rowsInput.valueAsNumber || 0, 5, 80);
-    const cols = this.clamp(this.colsInput.valueAsNumber || 0, 5, 80);
+    const rows = this.clamp(this.rowsInput.valueAsNumber || 0, MAZE_SIZE.MIN, MAZE_SIZE.MAX);
+    const cols = this.clamp(this.colsInput.valueAsNumber || 0, MAZE_SIZE.MIN, MAZE_SIZE.MAX);
     this.rowsInput.valueAsNumber = rows;
     this.colsInput.valueAsNumber = cols;
     this.rebuild(rows, cols);
@@ -420,8 +431,8 @@ class MazePopup {
 
     const rows = layer.length;
     const cols = layer[0].length;
-    const nextRows = this.clamp(rows, 5, 80);
-    const nextCols = this.clamp(cols, 5, 80);
+    const nextRows = this.clamp(rows, MAZE_SIZE.MIN, MAZE_SIZE.MAX);
+    const nextCols = this.clamp(cols, MAZE_SIZE.MIN, MAZE_SIZE.MAX);
     if (rows !== nextRows || cols !== nextCols) {
       console.warn('Maze size exceeds popup limits, data will be clamped');
     }

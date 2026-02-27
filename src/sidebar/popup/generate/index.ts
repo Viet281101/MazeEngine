@@ -1,6 +1,7 @@
 import { Toolbar } from '../../toolbar';
 import { generateBinaryTreeMaze } from '../../../generator';
 import { subscribeLanguageChange, t, type TranslationKey } from '../../i18n';
+import { MAZE_SIZE } from '../../../constants/maze';
 import './generate.css';
 
 type GeneratorId =
@@ -127,10 +128,25 @@ class GeneratePopup {
     const sizeRow = document.createElement('div');
     sizeRow.className = 'generate-popup__size-row';
 
-    const rowsInput = createNumberInput('generate.rows', 5, 80, 21);
-    const colsInput = createNumberInput('generate.cols', 5, 80, 21);
+    const rowsInput = createNumberInput(
+      'generate.rows',
+      MAZE_SIZE.MIN,
+      MAZE_SIZE.MAX,
+      MAZE_SIZE.DEFAULT_GENERATE
+    );
+    const colsInput = createNumberInput(
+      'generate.cols',
+      MAZE_SIZE.MIN,
+      MAZE_SIZE.MAX,
+      MAZE_SIZE.DEFAULT_GENERATE
+    );
     sizeRow.appendChild(rowsInput.wrapper);
     sizeRow.appendChild(colsInput.wrapper);
+    const biasInput =
+      generator.id === 'binaryTree' ? createNumberInput('generate.bias', 0, 100, 50) : null;
+    if (biasInput) {
+      sizeRow.appendChild(biasInput.wrapper);
+    }
     panel.appendChild(sizeRow);
 
     const actionRow = document.createElement('div');
@@ -152,22 +168,29 @@ class GeneratePopup {
 
     if (generator.available) {
       generateBtn.addEventListener('click', () => {
-        const rows = clamp(rowsInput.input.valueAsNumber || 0, 5, 80);
-        const cols = clamp(colsInput.input.valueAsNumber || 0, 5, 80);
+        const rows = clamp(rowsInput.input.valueAsNumber || 0, MAZE_SIZE.MIN, MAZE_SIZE.MAX);
+        const cols = clamp(colsInput.input.valueAsNumber || 0, MAZE_SIZE.MIN, MAZE_SIZE.MAX);
+        const biasPercent = clamp(biasInput?.input.valueAsNumber ?? 50, 0, 100);
         rowsInput.input.valueAsNumber = rows;
         colsInput.input.valueAsNumber = cols;
-        this.generateBinaryTree(rows, cols);
+        if (biasInput) {
+          biasInput.input.valueAsNumber = biasPercent;
+        }
+        this.generateBinaryTree(rows, cols, biasPercent / 100);
       });
     } else {
       rowsInput.input.disabled = true;
       colsInput.input.disabled = true;
+      if (biasInput) {
+        biasInput.input.disabled = true;
+      }
       generateBtn.disabled = true;
     }
 
     return details;
   }
 
-  private generateBinaryTree(rows: number, cols: number) {
+  private generateBinaryTree(rows: number, cols: number, northBias: number) {
     const mazeApp = (window as any).mazeApp;
     if (!mazeApp || typeof mazeApp.updateMaze !== 'function') {
       console.warn('mazeApp.updateMaze not available');
@@ -175,7 +198,7 @@ class GeneratePopup {
       return;
     }
 
-    const generated = generateBinaryTreeMaze(rows, cols);
+    const generated = generateBinaryTreeMaze(rows, cols, { northBias });
     mazeApp.updateMaze(generated.maze, false, {
       start: generated.markers.start,
       end: generated.markers.end,

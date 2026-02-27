@@ -39,6 +39,7 @@
   "generate.comingSoon": "Bientot",
   "generate.rows": "Lignes",
   "generate.cols": "Colonnes",
+  "generate.bias": "Biais nord (%)",
   "generate.generateButton": "Generer",
   "generate.sizeHint": "Taille: 5 - 80",
   "generate.appUnavailable": "Impossible de generer maintenant. Rechargez la page puis reessayez.",
@@ -72,6 +73,8 @@
   "settings.language.en": "Anglais",
   "settings.language.fr": "Francais",
   "settings.meshReductionTooltip": "Reduit les draw calls en fusionnant les meshes de murs quand la taille atteint le seuil.",
+  "settings.previewWindow": "Fenetre preview",
+  "settings.openPreviewWindow": "Ouvrir une nouvelle fenetre",
   "settings.openTutorial": "Ouvrir tutoriel",
   "settings.tutorialSoon": "bientot",
   "settings.meshReductionThresholdTooltip": "Definit le seuil de taille du labyrinthe pour activer la reduction du mesh (lignes ou colonnes)."

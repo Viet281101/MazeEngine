@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { ResourceManager } from '../resources/ResourceManager';
 import { DisposalHelper } from '../resources/DisposalHelper';
 import { MeshFactory } from '../resources/MeshFactory';
+import { MESH_REDUCTION } from '../constants/maze';
 
 export interface MazeConfig {
   wallHeight?: number;
@@ -66,8 +67,8 @@ export abstract class Maze {
     this.wallOpacity = 1.0;
     this.floorOpacity = 1.0;
     this.showEdges = true;
-    this.meshReductionEnabled = true;
-    this.meshMergeThreshold = 25;
+    this.meshReductionEnabled = MESH_REDUCTION.DEFAULT_ENABLED;
+    this.meshMergeThreshold = MESH_REDUCTION.DEFAULT_THRESHOLD;
 
     // Initialize Three.js
     this.scene = new THREE.Scene();
@@ -294,7 +295,7 @@ export abstract class Maze {
   }
 
   public setMeshMergeThreshold(threshold: number): void {
-    const nextThreshold = Math.max(5, Math.floor(threshold));
+    const nextThreshold = Math.max(MESH_REDUCTION.MIN_THRESHOLD, Math.floor(threshold));
     if (this.meshMergeThreshold === nextThreshold) return;
     this.meshMergeThreshold = nextThreshold;
     this.createMaze();
