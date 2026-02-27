@@ -45,6 +45,10 @@
   height: 20px;
 }
 
+.preview-title-text {
+  flex: 1;
+}
+
 .preview-title-actions {
   display: inline-flex;
   align-items: center;

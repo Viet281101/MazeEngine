@@ -1,0 +1,123 @@
+.generate-popup {
+  box-sizing: border-box;
+  padding: 64px 10px 14px;
+}
+
+.generate-popup__content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.generate-popup__row {
+  border: 1px solid #243746;
+  border-radius: 8px;
+  background: #1f2e38;
+  color: #eaf4f8;
+  overflow: hidden;
+}
+
+.generate-popup__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.generate-popup__summary::-webkit-details-marker {
+  display: none;
+}
+
+.generate-popup__title {
+  font-size: 18px;
+  font-weight: 600;
+  max-width: 160px;
+}
+
+.generate-popup__badge {
+  border-radius: 999px;
+  font-size: 18px;
+  padding: 4px 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.generate-popup__badge--available {
+  background: #0b5e49;
+  color: #d2fff2;
+}
+
+.generate-popup__badge--coming {
+  background: #4d2b2b;
+  color: #ffd8d8;
+}
+
+.generate-popup__panel {
+  border-top: 1px solid #2f4453;
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.generate-popup__description {
+  margin: 0;
+  color: #d0e0e8;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.generate-popup__size-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.generate-popup__input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #f0f6fa;
+  font-size: 14px;
+}
+
+.generate-popup__input input {
+  width: 68px;
+  height: 32px;
+  border: 1px solid #3a5566;
+  border-radius: 4px;
+  background: #0f1b22;
+  color: #fff;
+  padding: 4px 6px;
+}
+
+.generate-popup__action-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.generate-popup__btn {
+  border: 1px solid #2f8e74;
+  border-radius: 5px;
+  background: #0f7f61;
+  color: #f7fffb;
+  padding: 8px 14px;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.generate-popup__btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.generate-popup__hint {
+  font-size: 16px;
+  color: #c9d8df;
+}

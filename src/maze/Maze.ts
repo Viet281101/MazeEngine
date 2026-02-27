@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { ResourceManager } from '../resources/ResourceManager';
 import { DisposalHelper } from '../resources/DisposalHelper';
 import { MeshFactory } from '../resources/MeshFactory';
+import { MESH_REDUCTION } from '../constants/maze';
 
 export interface MazeConfig {
   wallHeight?: number;
@@ -37,6 +38,8 @@ export abstract class Maze {
   protected wallOpacity: number;
   protected floorOpacity: number;
   protected showEdges: boolean;
+  protected meshReductionEnabled: boolean;
+  protected meshMergeThreshold: number;
 
   // Resource management
   protected resourceManager: ResourceManager;
@@ -64,6 +67,8 @@ export abstract class Maze {
     this.wallOpacity = 1.0;
     this.floorOpacity = 1.0;
     this.showEdges = true;
+    this.meshReductionEnabled = MESH_REDUCTION.DEFAULT_ENABLED;
+    this.meshMergeThreshold = MESH_REDUCTION.DEFAULT_THRESHOLD;
 
     // Initialize Three.js
     this.scene = new THREE.Scene();
@@ -276,6 +281,36 @@ export abstract class Maze {
     this.meshFactory.updateSettings({ showEdges });
     this.rebuildEdges();
     this.requestRender();
+  }
+
+  public setMeshReductionEnabled(enabled: boolean): void {
+    if (this.meshReductionEnabled === enabled) return;
+    this.meshReductionEnabled = enabled;
+    this.createMaze();
+    this.requestRender();
+  }
+
+  public isMeshReductionEnabled(): boolean {
+    return this.meshReductionEnabled;
+  }
+
+  public setMeshMergeThreshold(threshold: number): void {
+    const nextThreshold = Math.max(MESH_REDUCTION.MIN_THRESHOLD, Math.floor(threshold));
+    if (this.meshMergeThreshold === nextThreshold) return;
+    this.meshMergeThreshold = nextThreshold;
+    this.createMaze();
+    this.requestRender();
+  }
+
+  public getMeshMergeThreshold(): number {
+    return this.meshMergeThreshold;
+  }
+
+  protected shouldMergeWalls(rows: number, cols: number): boolean {
+    if (!this.meshReductionEnabled) {
+      return false;
+    }
+    return rows >= this.meshMergeThreshold || cols >= this.meshMergeThreshold;
   }
 
   public addRenderListener(listener: () => void): void {

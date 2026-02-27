@@ -1,0 +1,13 @@
+export const MAZE_SIZE = {
+  MIN: 5,
+  MAX: 80,
+  DEFAULT_GENERATE: 21,
+  DEFAULT_CUSTOM_EDITOR: 12,
+} as const;
+
+export const MESH_REDUCTION = {
+  MIN_THRESHOLD: 5,
+  MAX_THRESHOLD: 200,
+  DEFAULT_THRESHOLD: 25,
+  DEFAULT_ENABLED: true,
+} as const;

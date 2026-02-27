@@ -1,6 +1,7 @@
 import './PreviewWindow.css';
 import { PREVIEW_COLORS } from './previewConstants';
 import { computeMarkersFromLayer } from '../maze/markerUtils';
+import { subscribeLanguageChange, t } from '../sidebar/i18n';
 
 export interface PreviewWindowConfig {
   initialX?: number;
@@ -18,6 +19,7 @@ export interface PreviewWindowConfig {
 export class PreviewWindow {
   private container: HTMLDivElement;
   private titleBar: HTMLDivElement;
+  private titleText: HTMLSpanElement;
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private closeButton: HTMLButtonElement;
@@ -25,6 +27,10 @@ export class PreviewWindow {
   private gridToggleButton: HTMLButtonElement;
   private footer!: HTMLDivElement;
   private legend: HTMLDivElement;
+  private legendWallLabel: HTMLSpanElement;
+  private legendPathLabel: HTMLSpanElement;
+  private legendStartLabel: HTMLSpanElement;
+  private legendEndLabel: HTMLSpanElement;
   private startCell: { row: number; col: number } | null = null;
   private endCell: { row: number; col: number } | null = null;
   private showGrid: boolean = false;
@@ -59,6 +65,7 @@ export class PreviewWindow {
   private onMouseMoveHandler: (e: MouseEvent) => void;
   private onMouseUpHandler: () => void;
   private onMouseDownHandler: (e: MouseEvent) => void;
+  private unsubscribeLanguageChange: (() => void) | null = null;
 
   constructor(config: PreviewWindowConfig = {}) {
     this.onHide = config.onHide;
@@ -109,7 +116,9 @@ export class PreviewWindow {
     // Create title bar
     this.titleBar = document.createElement('div');
     this.titleBar.className = 'preview-titlebar';
-    this.titleBar.textContent = config.title ?? 'Preview';
+    this.titleText = document.createElement('span');
+    this.titleText.className = 'preview-title-text';
+    this.titleText.textContent = config.title ?? t('preview.title');
 
     // Create close button
     this.closeButton = document.createElement('button');
@@ -120,7 +129,7 @@ export class PreviewWindow {
     this.hideButton = document.createElement('button');
     this.hideButton.className = 'preview-hide-btn';
     this.hideButton.type = 'button';
-    this.hideButton.setAttribute('title', 'Hide preview');
+    this.hideButton.setAttribute('title', t('preview.hide'));
     this.hideButton.textContent = '-';
 
     // Create grid toggle button
@@ -128,18 +137,17 @@ export class PreviewWindow {
     this.gridToggleButton.className = 'preview-grid-btn';
     this.gridToggleButton.type = 'button';
     this.gridToggleButton.setAttribute('aria-pressed', String(this.showGrid));
-    this.gridToggleButton.setAttribute('title', 'Toggle grid');
-    this.gridToggleButton.textContent = 'Grid';
+    this.gridToggleButton.setAttribute('title', t('preview.toggleGrid'));
+    this.gridToggleButton.textContent = t('preview.grid');
     this.gridToggleButton.classList.toggle('active', this.showGrid);
 
     // Create legend
     this.legend = document.createElement('div');
     this.legend.className = 'preview-legend';
-    this.legend.innerHTML =
-      '<span class="preview-legend-item"><i class="preview-swatch wall"></i>Wall</span>' +
-      '<span class="preview-legend-item"><i class="preview-swatch path"></i>Path</span>' +
-      '<span class="preview-legend-item"><i class="preview-swatch start"></i>Start</span>' +
-      '<span class="preview-legend-item"><i class="preview-swatch end"></i>End</span>';
+    this.legendWallLabel = this.createLegendItem('wall', t('preview.wall'));
+    this.legendPathLabel = this.createLegendItem('path', t('preview.path'));
+    this.legendStartLabel = this.createLegendItem('start', t('preview.start'));
+    this.legendEndLabel = this.createLegendItem('end', t('preview.end'));
 
     // Create footer
     this.footer = document.createElement('div');
@@ -165,6 +173,7 @@ export class PreviewWindow {
     titleButtons.appendChild(this.hideButton);
     titleButtons.appendChild(this.closeButton);
 
+    this.titleBar.appendChild(this.titleText);
     this.titleBar.appendChild(titleButtons);
     this.container.appendChild(this.titleBar);
     this.container.appendChild(this.legend);
@@ -177,6 +186,8 @@ export class PreviewWindow {
     this.onMouseUpHandler = () => this.onMouseUp();
     this.onMouseDownHandler = e => this.onMouseDown(e);
     this.setupEventListeners();
+    this.unsubscribeLanguageChange = subscribeLanguageChange(() => this.applyTranslations());
+    this.applyTranslations();
 
     // Initial render
     this.render();
@@ -213,6 +224,34 @@ export class PreviewWindow {
 
     // Prevent text selection while dragging
     this.titleBar.addEventListener('selectstart', e => e.preventDefault());
+  }
+
+  private createLegendItem(typeClass: 'wall' | 'path' | 'start' | 'end', text: string): HTMLSpanElement {
+    const item = document.createElement('span');
+    item.className = 'preview-legend-item';
+
+    const swatch = document.createElement('i');
+    swatch.className = `preview-swatch ${typeClass}`;
+
+    const label = document.createElement('span');
+    label.textContent = text;
+
+    item.appendChild(swatch);
+    item.appendChild(label);
+    this.legend.appendChild(item);
+    return label;
+  }
+
+  private applyTranslations(): void {
+    this.titleText.textContent = t('preview.title');
+    this.hideButton.setAttribute('title', t('preview.hide'));
+    this.closeButton.setAttribute('title', t('preview.close'));
+    this.gridToggleButton.setAttribute('title', t('preview.toggleGrid'));
+    this.gridToggleButton.textContent = t('preview.grid');
+    this.legendWallLabel.textContent = t('preview.wall');
+    this.legendPathLabel.textContent = t('preview.path');
+    this.legendStartLabel.textContent = t('preview.start');
+    this.legendEndLabel.textContent = t('preview.end');
   }
 
   /**
@@ -490,6 +529,10 @@ export class PreviewWindow {
     if (this.hideTimeoutId !== null) {
       window.clearTimeout(this.hideTimeoutId);
       this.hideTimeoutId = null;
+    }
+    if (this.unsubscribeLanguageChange) {
+      this.unsubscribeLanguageChange();
+      this.unsubscribeLanguageChange = null;
     }
     this.container.remove();
   }
