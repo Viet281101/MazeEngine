@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ResourceManager } from './ResourceManager';
+import { ResourceManager } from './resource-manager';
 
 export interface WallParams {
   x: number;

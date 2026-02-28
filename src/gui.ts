@@ -1,5 +1,5 @@
 import * as dat from 'dat.gui';
-import { MazeController } from './maze/MazeController';
+import { MazeController } from './maze/maze-controller';
 import { subscribeLanguageChange, t, type TranslationKey } from './sidebar/i18n';
 import { UI_BREAKPOINTS } from './constants/ui';
 

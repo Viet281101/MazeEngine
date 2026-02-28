@@ -1,13 +1,13 @@
-import { SingleLayerMaze } from '../maze/SingleLayerMaze';
-import { MultiLayerMaze } from '../maze/MultiLayerMaze';
+import { SingleLayerMaze } from '../maze/single-layer-maze';
+import { MultiLayerMaze } from '../maze/multi-layer-maze';
 import { Toolbar } from '../sidebar/toolbar';
 import { GUIController } from '../gui';
-import { PreviewWindow } from '../preview/PreviewWindow';
-import { PreviewWindowManager } from './PreviewWindowManager';
-import type { MazeController } from '../maze/MazeController';
-import { computeMarkersFromLayer } from '../maze/markerUtils';
+import { PreviewWindow } from '../preview/preview-window';
+import { PreviewWindowManager } from './preview-manager';
+import type { MazeController } from '../maze/maze-controller';
+import { computeMarkersFromLayer } from '../maze/marker-utils';
 import { subscribeLanguageChange, t } from '../sidebar/i18n';
-import { DebugOverlay } from '../debug/DebugOverlay';
+import { DebugOverlay } from '../debug/debug-overlay';
 import { MESH_REDUCTION } from '../constants/maze';
 import { PREVIEW_WINDOW, UI_BREAKPOINTS } from '../constants/ui';
 import type { WebGLRenderer } from 'three';
@@ -15,10 +15,8 @@ import {
   createInitialMazeData,
   createSampleMultiLayerMazeData,
   createSampleSingleLayerMazeData,
-} from './defaultMazes';
-import {
-  MeshReductionSettingsStorage,
-} from './MeshReductionSettingsStorage';
+} from './default-mazes';
+import { MeshReductionSettingsStorage } from './mesh-settings-store';
 import type { MarkerPoint, MazeAppBridge, MazeMarkers, UpdateMazeOptions } from '../types/maze';
 
 type MazeInstance = SingleLayerMaze | MultiLayerMaze;
@@ -133,7 +131,11 @@ export class MainApp implements MazeController, MazeAppBridge {
   private subscribeToLanguageChanges(): void {
     this.unsubscribeLanguageChange = subscribeLanguageChange(() => {
       if (this.previewWindowManager.isWindowClosed()) {
-        this.guiController.setControllerEnabled('showPreview', false, t('gui.previewClosedTooltip'));
+        this.guiController.setControllerEnabled(
+          'showPreview',
+          false,
+          t('gui.previewClosedTooltip')
+        );
       }
     });
   }
@@ -164,7 +166,8 @@ export class MainApp implements MazeController, MazeAppBridge {
     const isMobile = window.innerWidth <= this.mobileBreakpoint;
     const nextDebugVisible = !isMobile;
     const nextPreviewVisible = !isMobile;
-    const effectivePreviewVisible = nextPreviewVisible && !this.previewWindowManager.isWindowClosed();
+    const effectivePreviewVisible =
+      nextPreviewVisible && !this.previewWindowManager.isWindowClosed();
 
     if (this.isDebugOverlayVisible !== nextDebugVisible) {
       this.setDebugOverlayVisible(nextDebugVisible);
@@ -212,7 +215,9 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.maze.removeRenderListener(this.renderListener);
     this.maze.destroy();
 
-    this.maze = multiLayer ? new MultiLayerMaze(this.canvas, newMaze) : new SingleLayerMaze(this.canvas, newMaze);
+    this.maze = multiLayer
+      ? new MultiLayerMaze(this.canvas, newMaze)
+      : new SingleLayerMaze(this.canvas, newMaze);
     this.applyGUISettings();
     this.applyMeshReductionSettingsToMaze();
     this.maze.addRenderListener(this.renderListener);
@@ -244,7 +249,10 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.maze.setCameraState(snapshot.state);
   }
 
-  private syncPreviewMarkers(markers?: { start?: MarkerPoint | null; end?: MarkerPoint | null }): void {
+  private syncPreviewMarkers(markers?: {
+    start?: MarkerPoint | null;
+    end?: MarkerPoint | null;
+  }): void {
     if (markers) {
       this.previewMarkers = { start: markers.start ?? null, end: markers.end ?? null };
       return;

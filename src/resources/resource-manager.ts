@@ -55,10 +55,8 @@ export class ResourceManager {
     }
 
     this.geometries.set(key, new THREE.BoxGeometry(width, height, depth));
-    this.evictOldestEntries(
-      this.geometries,
-      ResourceManager.MAX_GEOMETRY_CACHE_ENTRIES,
-      geometry => geometry.dispose()
+    this.evictOldestEntries(this.geometries, ResourceManager.MAX_GEOMETRY_CACHE_ENTRIES, geometry =>
+      geometry.dispose()
     );
 
     return this.geometries.get(key) as THREE.BoxGeometry;
@@ -76,10 +74,8 @@ export class ResourceManager {
     }
 
     this.geometries.set(key, new THREE.PlaneGeometry(width, height));
-    this.evictOldestEntries(
-      this.geometries,
-      ResourceManager.MAX_GEOMETRY_CACHE_ENTRIES,
-      geometry => geometry.dispose()
+    this.evictOldestEntries(this.geometries, ResourceManager.MAX_GEOMETRY_CACHE_ENTRIES, geometry =>
+      geometry.dispose()
     );
 
     return this.geometries.get(key) as THREE.PlaneGeometry;
@@ -116,10 +112,8 @@ export class ResourceManager {
     }
 
     this.edgeGeometries.set(key, new THREE.EdgesGeometry(baseGeometry));
-    this.evictOldestEntries(
-      this.edgeGeometries,
-      ResourceManager.MAX_EDGE_CACHE_ENTRIES,
-      edges => edges.dispose()
+    this.evictOldestEntries(this.edgeGeometries, ResourceManager.MAX_EDGE_CACHE_ENTRIES, edges =>
+      edges.dispose()
     );
 
     return this.edgeGeometries.get(key) as THREE.EdgesGeometry;

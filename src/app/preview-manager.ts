@@ -1,4 +1,4 @@
-import { PreviewWindow } from '../preview/PreviewWindow';
+import { PreviewWindow } from '../preview/preview-window';
 import type { MarkerPoint } from '../types/maze';
 
 interface PreviewWindowFactoryArgs {
@@ -17,7 +17,10 @@ export class PreviewWindowManager {
   private isVisible: boolean;
   private isClosed: boolean;
 
-  constructor(private readonly config: PreviewWindowManagerConfig, initialVisible: boolean) {
+  constructor(
+    private readonly config: PreviewWindowManagerConfig,
+    initialVisible: boolean
+  ) {
     this.previewWindow = this.createWindow();
     this.isVisible = initialVisible;
     this.isClosed = false;
@@ -42,7 +45,10 @@ export class PreviewWindowManager {
     }
   }
 
-  public updateMaze(mazeData: number[][], markers?: { start?: MarkerPoint | null; end?: MarkerPoint | null }): void {
+  public updateMaze(
+    mazeData: number[][],
+    markers?: { start?: MarkerPoint | null; end?: MarkerPoint | null }
+  ): void {
     this.previewWindow?.updateMaze(mazeData, markers);
   }
 

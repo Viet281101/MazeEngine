@@ -1,5 +1,5 @@
 import './style.css';
-import { MainApp } from './app/MainApp';
+import { MainApp } from './app/main-app';
 import { initializeI18n } from './sidebar/i18n';
 
 // ========== Application Entry Point ==========

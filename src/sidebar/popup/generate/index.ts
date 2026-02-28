@@ -212,12 +212,17 @@ class GeneratePopup {
     }
 
     const generated = generateBinaryTreeMaze(rows, cols, { northBias });
-    mazeApp.updateMaze(generated.maze, false, {
-      start: generated.markers.start,
-      end: generated.markers.end,
-    }, {
-      preserveCamera: true,
-    });
+    mazeApp.updateMaze(
+      generated.maze,
+      false,
+      {
+        start: generated.markers.start,
+        end: generated.markers.end,
+      },
+      {
+        preserveCamera: true,
+      }
+    );
   }
 
   private applyTranslations() {

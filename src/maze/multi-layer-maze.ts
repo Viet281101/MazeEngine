@@ -1,10 +1,10 @@
-import { Maze, MazeConfig } from './Maze';
+import { Maze, MazeConfig } from './maze';
 import * as THREE from 'three';
 
 /**
- * SingleLayerMaze - Maze with a single layer
+ * MultiLayerMaze - Maze with multiple stacked layers
  */
-export class SingleLayerMaze extends Maze {
+export class MultiLayerMaze extends Maze {
   constructor(canvas: HTMLCanvasElement, maze: number[][][], config?: MazeConfig) {
     super(canvas, maze, config);
   }
@@ -12,33 +12,42 @@ export class SingleLayerMaze extends Maze {
   protected createMaze(): void {
     this.deleteMaze();
 
-    const mazeLayer = new THREE.Object3D();
-    const layer = this.maze[0];
+    this.maze.forEach((layer, layerIndex) => {
+      const mazeLayer = new THREE.Object3D();
+      const layerHeight = layerIndex * this.wallHeight;
 
-    // Create walls
-    this.createWalls(layer, mazeLayer);
+      // Create walls for this layer
+      this.createWallsForLayer(layer, layerHeight, mazeLayer);
 
-    // Create main floor
-    this.createMainFloor(layer, mazeLayer);
+      // Create floors (except for first layer which has main floor)
+      if (layerIndex > 0) {
+        this.createLayerFloors(layer, layerHeight, mazeLayer);
+      } else {
+        this.createMainFloor(layer, mazeLayer);
+      }
 
-    // Add to scene
-    this.mazeLayers.push(mazeLayer);
-    this.scene.add(mazeLayer);
+      this.mazeLayers.push(mazeLayer);
+      this.scene.add(mazeLayer);
+    });
 
     // Position camera
-    this.positionCameraForMaze(layer);
+    this.positionCameraForMultiLayer();
   }
 
   /**
-   * Create walls for layer
+   * Create walls for a layer
    */
-  private createWalls(layer: number[][], mazeLayer: THREE.Object3D): void {
+  private createWallsForLayer(
+    layer: number[][],
+    layerHeight: number,
+    mazeLayer: THREE.Object3D
+  ): void {
     const rowCount = layer.length;
     const colCount = layer[0]?.length ?? 0;
     const shouldMerge = this.shouldMergeWalls(rowCount, colCount);
 
     if (!shouldMerge) {
-      this.createWallsDetailed(layer, mazeLayer);
+      this.createWallsForLayerDetailed(layer, layerHeight, mazeLayer);
       return;
     }
 
@@ -48,7 +57,9 @@ export class SingleLayerMaze extends Maze {
 
       for (let colIndex = 0; colIndex < colCount; colIndex += 1) {
         const isConnectedPair =
-          colIndex < colCount - 1 && layer[rowIndex][colIndex] === 1 && layer[rowIndex][colIndex + 1] === 1;
+          colIndex < colCount - 1 &&
+          layer[rowIndex][colIndex] === 1 &&
+          layer[rowIndex][colIndex + 1] === 1;
 
         if (isConnectedPair) {
           if (startCol === -1) {
@@ -62,7 +73,7 @@ export class SingleLayerMaze extends Maze {
           const span = endCol - startCol;
           const wall = this.meshFactory.createWall({
             x: ((startCol + endCol) * this.cellSize) / 2,
-            y: this.wallHeight / 2,
+            y: layerHeight + this.wallHeight / 2,
             z: -rowIndex * this.cellSize,
             width: span * this.cellSize,
             height: this.wallHeight,
@@ -80,7 +91,9 @@ export class SingleLayerMaze extends Maze {
 
       for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
         const isConnectedPair =
-          rowIndex < rowCount - 1 && layer[rowIndex][colIndex] === 1 && layer[rowIndex + 1][colIndex] === 1;
+          rowIndex < rowCount - 1 &&
+          layer[rowIndex][colIndex] === 1 &&
+          layer[rowIndex + 1][colIndex] === 1;
 
         if (isConnectedPair) {
           if (startRow === -1) {
@@ -94,7 +107,7 @@ export class SingleLayerMaze extends Maze {
           const span = endRow - startRow;
           const wall = this.meshFactory.createWall({
             x: colIndex * this.cellSize,
-            y: this.wallHeight / 2,
+            y: layerHeight + this.wallHeight / 2,
             z: -((startRow + endRow) * this.cellSize) / 2,
             width: this.wallThickness,
             height: this.wallHeight,
@@ -107,15 +120,19 @@ export class SingleLayerMaze extends Maze {
     }
   }
 
-  private createWallsDetailed(layer: number[][], mazeLayer: THREE.Object3D): void {
+  private createWallsForLayerDetailed(
+    layer: number[][],
+    layerHeight: number,
+    mazeLayer: THREE.Object3D
+  ): void {
     layer.forEach((row, rowIndex) => {
       row.forEach((cell, colIndex) => {
         if (cell === 1) {
-          // Horizontal wall (connects to right cell)
+          // Horizontal wall
           if (colIndex < row.length - 1 && row[colIndex + 1] === 1) {
             const wall = this.meshFactory.createWall({
               x: colIndex * this.cellSize + this.cellSize / 2,
-              y: this.wallHeight / 2,
+              y: layerHeight + this.wallHeight / 2,
               z: -rowIndex * this.cellSize,
               width: this.cellSize,
               height: this.wallHeight,
@@ -124,11 +141,11 @@ export class SingleLayerMaze extends Maze {
             mazeLayer.add(wall);
           }
 
-          // Vertical wall (connects to bottom cell)
+          // Vertical wall
           if (rowIndex < layer.length - 1 && layer[rowIndex + 1][colIndex] === 1) {
             const wall = this.meshFactory.createWall({
               x: colIndex * this.cellSize,
-              y: this.wallHeight / 2,
+              y: layerHeight + this.wallHeight / 2,
               z: -(rowIndex * this.cellSize + this.cellSize / 2),
               width: this.wallThickness,
               height: this.wallHeight,
@@ -142,7 +159,31 @@ export class SingleLayerMaze extends Maze {
   }
 
   /**
-   * Create main floor
+   * Create small floors for cells in layer (except cells with value 2)
+   */
+  private createLayerFloors(
+    layer: number[][],
+    layerHeight: number,
+    mazeLayer: THREE.Object3D
+  ): void {
+    layer.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        // Cell value 2 = no floor (hole/opening)
+        if (cell !== 2) {
+          const smallFloor = this.meshFactory.createSmallFloor(
+            colIndex * this.cellSize,
+            layerHeight,
+            -rowIndex * this.cellSize,
+            this.cellSize
+          );
+          mazeLayer.add(smallFloor);
+        }
+      });
+    });
+  }
+
+  /**
+   * Create main floor (ground floor)
    */
   private createMainFloor(layer: number[][], mazeLayer: THREE.Object3D): void {
     const floorWidth = layer[0].length * this.cellSize;
@@ -160,12 +201,13 @@ export class SingleLayerMaze extends Maze {
   }
 
   /**
-   * Position camera to view entire maze
+   * Position camera for multi-layer maze
    */
-  private positionCameraForMaze(layer: number[][]): void {
-    const mazeCenterX = (layer[0].length * this.cellSize) / 2 - this.cellSize / 2;
-    const mazeCenterZ = -(layer.length * this.cellSize) / 2 + this.cellSize / 2;
-    const distance = layer.length * this.cellSize;
+  private positionCameraForMultiLayer(): void {
+    const firstLayer = this.maze[0];
+    const mazeCenterX = (firstLayer[0].length * this.cellSize) / 2 - this.cellSize / 2;
+    const mazeCenterZ = -(firstLayer.length * this.cellSize) / 2 + this.cellSize / 2;
+    const distance = this.maze.length * this.cellSize;
 
     this.positionCamera(mazeCenterX, mazeCenterZ, distance);
   }

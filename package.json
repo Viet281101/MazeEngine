@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "deploy": "gh-pages -d dist",
     "format": "prettier --write .",
-    "lint": "eslint ."
+    "lint:file-names": "node scripts/check-file-names.mjs",
+    "lint:eslint": "eslint .",
+    "lint": "npm run lint:file-names && npm run lint:eslint"
   },
   "devDependencies": {
     "@types/dat.gui": "^0.7.13",

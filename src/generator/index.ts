@@ -1,1 +1,5 @@
-export { generateBinaryTreeMaze, type GeneratedMazeResult, type MazeMarker } from './BinaryTreeAlgo';
+export {
+  generateBinaryTreeMaze,
+  type GeneratedMazeResult,
+  type MazeMarker,
+} from './binary-tree-algo';

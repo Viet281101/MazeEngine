@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { ResourceManager } from '../resources/ResourceManager';
-import { DisposalHelper } from '../resources/DisposalHelper';
-import { MeshFactory } from '../resources/MeshFactory';
+import { ResourceManager } from '../resources/resource-manager';
+import { DisposalHelper } from '../resources/disposal-helper';
+import { MeshFactory } from '../resources/mesh-factory';
 import { MESH_REDUCTION } from '../constants/maze';
 
 export interface MazeConfig {

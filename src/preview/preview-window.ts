@@ -1,6 +1,6 @@
-import './PreviewWindow.css';
-import { PREVIEW_COLORS } from './previewConstants';
-import { computeMarkersFromLayer } from '../maze/markerUtils';
+import './preview-window.css';
+import { PREVIEW_COLORS } from './preview-constants';
+import { computeMarkersFromLayer } from '../maze/marker-utils';
 import { subscribeLanguageChange, t } from '../sidebar/i18n';
 
 export interface PreviewWindowConfig {
@@ -226,7 +226,10 @@ export class PreviewWindow {
     this.titleBar.addEventListener('selectstart', e => e.preventDefault());
   }
 
-  private createLegendItem(typeClass: 'wall' | 'path' | 'start' | 'end', text: string): HTMLSpanElement {
+  private createLegendItem(
+    typeClass: 'wall' | 'path' | 'start' | 'end',
+    text: string
+  ): HTMLSpanElement {
     const item = document.createElement('span');
     item.className = 'preview-legend-item';
 
