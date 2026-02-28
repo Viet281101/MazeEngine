@@ -1,4 +1,5 @@
 import type { TranslationKey } from './i18n';
+import { getIconPath } from '../constants/assets';
 
 export type PopupType = 'maze' | 'generate' | 'solve' | 'tutorial' | 'settings';
 
@@ -25,30 +26,41 @@ export const BUTTON_SPACING = 60;
 export const BUTTON_BORDER_PADDING = 5;
 export const BUTTON_ICON_OFFSET = 2;
 export const POPUP_CANVAS_WIDTH = 370;
+// Keep a tall canvas to preserve existing popup rendering behavior.
 export const POPUP_CANVAS_HEIGHT = 4000;
+export const POPUP_TOP_MOBILE = '50px';
+export const POPUP_TOP_DESKTOP = '0';
+export const POPUP_LEFT_MOBILE = '50%';
+export const POPUP_LEFT_DESKTOP = '238px';
+export const POPUP_CONTROL_TOP_MOBILE = '56px';
+export const POPUP_CONTROL_TOP_DESKTOP = '10px';
+export const POPUP_CONTROL_CLOSE_LEFT_MOBILE = 'calc(50% + 160px)';
+export const POPUP_CONTROL_CLOSE_LEFT_DESKTOP = '400px';
+export const POPUP_CONTROL_HIDE_LEFT_MOBILE = 'calc(50% + 120px)';
+export const POPUP_CONTROL_HIDE_LEFT_DESKTOP = '360px';
 
 export const POPUP_ORDER: PopupType[] = ['maze', 'generate', 'solve', 'tutorial', 'settings'];
 
 const POPUP_DESCRIPTORS: Record<PopupType, PopupDescriptor> = {
   maze: {
     nameKey: 'toolbar.customMaze',
-    icon: '/MazeSolver3D/icon/maze.png',
+    icon: getIconPath('maze.png'),
   },
   generate: {
     nameKey: 'toolbar.generateMaze',
-    icon: '/MazeSolver3D/icon/generate_maze.png',
+    icon: getIconPath('generate_maze.png'),
   },
   solve: {
     nameKey: 'toolbar.solvingMaze',
-    icon: '/MazeSolver3D/icon/solving_maze.png',
+    icon: getIconPath('solving_maze.png'),
   },
   tutorial: {
     nameKey: 'toolbar.tutorial',
-    icon: '/MazeSolver3D/icon/question.png',
+    icon: getIconPath('question.png'),
   },
   settings: {
     nameKey: 'toolbar.settings',
-    icon: '/MazeSolver3D/icon/setting.png',
+    icon: getIconPath('setting.png'),
   },
 };
 

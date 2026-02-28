@@ -8,7 +8,11 @@ import {
 } from '../../i18n';
 import { Toolbar } from '../../toolbar';
 import { MESH_REDUCTION } from '../../../constants/maze';
+import { getIconPath } from '../../../constants/assets';
+import { PREVIEW_WINDOW_STATUS_CHANGED_EVENT } from '../../../constants/events';
 import type { MazeAppBridge } from '../../../types/maze';
+import { watchContainerRemoval } from '../popup-lifecycle';
+import { createNumberStepperField } from '../popup-inputs';
 import './setting.css';
 
 function getMazeAppBridge(): MazeAppBridge | null {
@@ -23,7 +27,7 @@ function createLanguageOption(language: AppLanguage): HTMLOptionElement {
   return option;
 }
 
-export function showSettingsPopup(toolbar: Toolbar) {
+export function showSettingsPopup(toolbar: Toolbar): void {
   const popupContainer = toolbar.createPopupContainerByKey('settingsPopup', 'popup.settings');
   popupContainer.classList.add('settings-popup');
 
@@ -57,7 +61,7 @@ export function showSettingsPopup(toolbar: Toolbar) {
   meshReductionLabel.className = 'settings-popup__label-text';
   const meshReductionHelpIcon = document.createElement('img');
   meshReductionHelpIcon.className = 'settings-popup__help-icon';
-  meshReductionHelpIcon.src = '/MazeSolver3D/icon/question.png';
+  meshReductionHelpIcon.src = getIconPath('question.png');
   meshReductionHelpIcon.alt = 'Help';
   meshReductionHelpIcon.tabIndex = 0;
   meshReductionHelpIcon.setAttribute('role', 'button');
@@ -83,7 +87,7 @@ export function showSettingsPopup(toolbar: Toolbar) {
   thresholdLabel.className = 'settings-popup__label-text';
   const thresholdHelpIcon = document.createElement('img');
   thresholdHelpIcon.className = 'settings-popup__help-icon';
-  thresholdHelpIcon.src = '/MazeSolver3D/icon/question.png';
+  thresholdHelpIcon.src = getIconPath('question.png');
   thresholdHelpIcon.alt = 'Help';
   thresholdHelpIcon.tabIndex = 0;
   thresholdHelpIcon.setAttribute('role', 'button');
@@ -100,8 +104,13 @@ export function showSettingsPopup(toolbar: Toolbar) {
   );
   thresholdLabelWrap.appendChild(thresholdLabel);
   thresholdLabelWrap.appendChild(thresholdHelpIcon);
+  const thresholdField = createNumberStepperField(thresholdInput, {
+    increaseLabel: 'Increase threshold',
+    decreaseLabel: 'Decrease threshold',
+  });
+  thresholdField.classList.add('settings-popup__number-field');
   thresholdRow.appendChild(thresholdLabelWrap);
-  thresholdRow.appendChild(thresholdInput);
+  thresholdRow.appendChild(thresholdField);
   content.appendChild(thresholdRow);
 
   const previewRow = document.createElement('div');
@@ -171,7 +180,7 @@ export function showSettingsPopup(toolbar: Toolbar) {
     }
   };
 
-  const applyText = () => {
+  const applyTranslations = () => {
     languageLabel.textContent = t('settings.language');
     meshReductionLabel.textContent = t('settings.meshVisible');
     thresholdLabel.textContent = t('settings.meshReductionThreshold');
@@ -188,7 +197,7 @@ export function showSettingsPopup(toolbar: Toolbar) {
     select.value = getLanguage();
   };
 
-  applyText();
+  applyTranslations();
 
   let prefetched = false;
   const prefetchOtherLanguages = () => {
@@ -203,22 +212,17 @@ export function showSettingsPopup(toolbar: Toolbar) {
   };
   prefetchOtherLanguages();
 
-  const unsubscribe = subscribeLanguageChange(() => {
-    applyText();
+  const unsubscribeLanguageChange = subscribeLanguageChange(() => {
+    applyTranslations();
   });
 
-  const observer = new MutationObserver(() => {
-    if (!document.body.contains(popupContainer)) {
-      unsubscribe();
-      document.removeEventListener('mousedown', handleDocumentPointerDown, true);
-      document.removeEventListener('touchstart', handleDocumentPointerDown, true);
-      document.removeEventListener('keydown', handleDocumentKeyDown, true);
-      window.removeEventListener('maze:preview-window-status-changed', handlePreviewStatusChanged);
-      observer.disconnect();
-    }
+  watchContainerRemoval(popupContainer, () => {
+    unsubscribeLanguageChange();
+    document.removeEventListener('mousedown', handleDocumentPointerDown, true);
+    document.removeEventListener('touchstart', handleDocumentPointerDown, true);
+    document.removeEventListener('keydown', handleDocumentKeyDown, true);
+    window.removeEventListener(PREVIEW_WINDOW_STATUS_CHANGED_EVENT, handlePreviewStatusChanged);
   });
-
-  observer.observe(document.body, { childList: true, subtree: true });
 
   const handleDocumentPointerDown = (event: MouseEvent | TouchEvent) => {
     if (!pinnedTooltip) return;
@@ -246,7 +250,7 @@ export function showSettingsPopup(toolbar: Toolbar) {
   document.addEventListener('touchstart', handleDocumentPointerDown, true);
   document.addEventListener('keydown', handleDocumentKeyDown, true);
   const handlePreviewStatusChanged = () => updatePreviewButtonState();
-  window.addEventListener('maze:preview-window-status-changed', handlePreviewStatusChanged);
+  window.addEventListener(PREVIEW_WINDOW_STATUS_CHANGED_EVENT, handlePreviewStatusChanged);
 
   select.addEventListener('change', () => {
     const nextLanguage = select.value as AppLanguage;

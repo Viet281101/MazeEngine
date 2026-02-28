@@ -1,6 +1,10 @@
 import { Toolbar } from '../../toolbar';
-import { subscribeLanguageChange, t, type TranslationKey } from '../../i18n';
+import { subscribeLanguageChange, t } from '../../i18n';
 import { MAZE_SIZE } from '../../../constants/maze';
+import { watchContainerRemoval } from '../popup-lifecycle';
+import { applyI18nTexts, setI18nText } from '../popup-i18n';
+import { createLabeledNumberInput } from '../popup-inputs';
+import { createI18nButton } from '../popup-elements';
 import './maze.css';
 
 type ToolMode = 'pen' | 'eraser' | 'start' | 'end';
@@ -132,20 +136,25 @@ class MazePopup {
     const sizeSection = document.createElement('div');
     sizeSection.className = 'maze-popup__section';
 
-    const rowsInput = createNumberInput(
-      'maze.rows',
-      MAZE_SIZE.MIN,
-      MAZE_SIZE.MAX,
-      MAZE_SIZE.DEFAULT_CUSTOM_EDITOR
-    );
-    const colsInput = createNumberInput(
-      'maze.cols',
-      MAZE_SIZE.MIN,
-      MAZE_SIZE.MAX,
-      MAZE_SIZE.DEFAULT_CUSTOM_EDITOR
-    );
-    const createBtn = createButton('maze.create', 'maze-popup__btn');
-    const loadBtn = createButton('maze.loadCurrentMaze', 'maze-popup__btn');
+    const rowsInput = createLabeledNumberInput({
+      labelKey: 'maze.rows',
+      min: MAZE_SIZE.MIN,
+      max: MAZE_SIZE.MAX,
+      value: MAZE_SIZE.DEFAULT_CUSTOM_EDITOR,
+      wrapperClassName: 'maze-popup__input',
+    });
+    const colsInput = createLabeledNumberInput({
+      labelKey: 'maze.cols',
+      min: MAZE_SIZE.MIN,
+      max: MAZE_SIZE.MAX,
+      value: MAZE_SIZE.DEFAULT_CUSTOM_EDITOR,
+      wrapperClassName: 'maze-popup__input',
+    });
+    const createBtn = createI18nButton({ textKey: 'maze.create', className: 'maze-popup__btn' });
+    const loadBtn = createI18nButton({
+      textKey: 'maze.loadCurrentMaze',
+      className: 'maze-popup__btn',
+    });
 
     sizeSection.appendChild(rowsInput.wrapper);
     sizeSection.appendChild(colsInput.wrapper);
@@ -155,10 +164,10 @@ class MazePopup {
     const toolSection = document.createElement('div');
     toolSection.className = 'maze-popup__section';
 
-    const penBtn = createButton('maze.pen', 'maze-popup__tool');
-    const eraserBtn = createButton('maze.eraser', 'maze-popup__tool');
-    const startBtn = createButton('maze.start', 'maze-popup__tool');
-    const endBtn = createButton('maze.end', 'maze-popup__tool');
+    const penBtn = createI18nButton({ textKey: 'maze.pen', className: 'maze-popup__tool' });
+    const eraserBtn = createI18nButton({ textKey: 'maze.eraser', className: 'maze-popup__tool' });
+    const startBtn = createI18nButton({ textKey: 'maze.start', className: 'maze-popup__tool' });
+    const endBtn = createI18nButton({ textKey: 'maze.end', className: 'maze-popup__tool' });
 
     toolSection.appendChild(penBtn);
     toolSection.appendChild(eraserBtn);
@@ -168,12 +177,15 @@ class MazePopup {
     const actionSection = document.createElement('div');
     actionSection.className = 'maze-popup__section';
 
-    const clearBtn = createButton('maze.clear', 'maze-popup__btn');
+    const clearBtn = createI18nButton({ textKey: 'maze.clear', className: 'maze-popup__btn' });
     actionSection.appendChild(clearBtn);
 
     const applySection = document.createElement('div');
     applySection.className = 'maze-popup__section maze-popup__section--apply';
-    const applyBtn = createButton('maze.apply', 'maze-popup__btn maze-popup__btn--primary');
+    const applyBtn = createI18nButton({
+      textKey: 'maze.apply',
+      className: 'maze-popup__btn maze-popup__btn--primary',
+    });
     applySection.appendChild(applyBtn);
 
     controls.appendChild(sizeSection);
@@ -217,26 +229,16 @@ class MazePopup {
   }
 
   private applyTranslations() {
-    const i18nElements = this.popupContainer.querySelectorAll<HTMLElement>('[data-i18n-key]');
-    i18nElements.forEach(element => {
-      const key = element.getAttribute('data-i18n-key');
-      if (key) {
-        element.textContent = t(key as TranslationKey);
-      }
-    });
+    applyI18nTexts(this.popupContainer);
   }
 
   private watchContainerRemoval() {
-    const observer = new MutationObserver(() => {
-      if (!document.body.contains(this.popupContainer)) {
-        if (this.unsubscribeLanguageChange) {
-          this.unsubscribeLanguageChange();
-          this.unsubscribeLanguageChange = null;
-        }
-        observer.disconnect();
+    watchContainerRemoval(this.popupContainer, () => {
+      if (this.unsubscribeLanguageChange) {
+        this.unsubscribeLanguageChange();
+        this.unsubscribeLanguageChange = null;
       }
     });
-    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   private setTool(tool: ToolMode) {
@@ -574,36 +576,4 @@ export function showMazePopup(toolbar: Toolbar): void {
   } catch (error) {
     console.error('Failed to initialize maze popup:', error);
   }
-}
-
-function createNumberInput(labelKey: TranslationKey, min: number, max: number, value: number) {
-  const wrapper = document.createElement('label');
-  wrapper.className = 'maze-popup__input';
-
-  const span = document.createElement('span');
-  setI18nText(span, labelKey);
-
-  const input = document.createElement('input');
-  input.type = 'number';
-  input.min = String(min);
-  input.max = String(max);
-  input.value = String(value);
-
-  wrapper.appendChild(span);
-  wrapper.appendChild(input);
-
-  return { wrapper, input };
-}
-
-function createButton(textKey: TranslationKey, className: string) {
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  setI18nText(btn, textKey);
-  btn.className = className;
-  return btn;
-}
-
-function setI18nText(element: HTMLElement, key: TranslationKey) {
-  element.setAttribute('data-i18n-key', key);
-  element.textContent = t(key);
 }

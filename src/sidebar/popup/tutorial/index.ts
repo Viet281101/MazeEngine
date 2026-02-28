@@ -1,8 +1,11 @@
 import { Toolbar } from '../../toolbar';
-import { subscribeLanguageChange, t, type TranslationKey } from '../../i18n';
+import { subscribeLanguageChange, t } from '../../i18n';
+import { getIconPath } from '../../../constants/assets';
+import { watchContainerRemoval } from '../popup-lifecycle';
+import { applyI18nTexts, setI18nText } from '../popup-i18n';
 import './tutorial.css';
 
-export function showTutorialPopup(toolbar: Toolbar) {
+export function showTutorialPopup(toolbar: Toolbar): void {
   try {
     new TutorialPopup(toolbar);
   } catch (error) {
@@ -17,20 +20,20 @@ class TutorialPopup {
   constructor(toolbar: Toolbar) {
     this.popupContainer = toolbar.createPopupContainerByKey('tutorialPopup', 'popup.tutorial');
     this.popupContainer.classList.add('tutorial-popup');
-    this.hideDefaultCanvas();
+    this.removeDefaultCanvas();
     this.buildContent();
     this.unsubscribeLanguageChange = subscribeLanguageChange(() => this.applyTranslations());
     this.watchContainerRemoval();
   }
 
-  private hideDefaultCanvas() {
+  private removeDefaultCanvas(): void {
     const canvas = this.popupContainer.querySelector('canvas');
     if (canvas) {
       canvas.remove();
     }
   }
 
-  private buildContent() {
+  private buildContent(): void {
     const content = document.createElement('div');
     content.className = 'tutorial-popup__content';
 
@@ -52,7 +55,7 @@ class TutorialPopup {
 
     const icon = document.createElement('img');
     icon.className = 'tutorial-popup__icon';
-    icon.src = '/MazeSolver3D/icon/github.png';
+    icon.src = getIconPath('github.png');
     icon.alt = t('tutorial.viewSourceCode');
     iconButton.appendChild(icon);
 
@@ -62,14 +65,8 @@ class TutorialPopup {
     this.applyTranslations();
   }
 
-  private applyTranslations() {
-    const i18nElements = this.popupContainer.querySelectorAll<HTMLElement>('[data-i18n-key]');
-    i18nElements.forEach(element => {
-      const key = element.getAttribute('data-i18n-key');
-      if (key) {
-        element.textContent = t(key as TranslationKey);
-      }
-    });
+  private applyTranslations(): void {
+    applyI18nTexts(this.popupContainer);
 
     const iconButton = this.popupContainer.querySelector<HTMLButtonElement>(
       '.tutorial-popup__icon-button'
@@ -84,22 +81,12 @@ class TutorialPopup {
     }
   }
 
-  private watchContainerRemoval() {
-    const observer = new MutationObserver(() => {
-      if (!document.body.contains(this.popupContainer)) {
-        if (this.unsubscribeLanguageChange) {
-          this.unsubscribeLanguageChange();
-          this.unsubscribeLanguageChange = null;
-        }
-        observer.disconnect();
+  private watchContainerRemoval(): void {
+    watchContainerRemoval(this.popupContainer, () => {
+      if (this.unsubscribeLanguageChange) {
+        this.unsubscribeLanguageChange();
+        this.unsubscribeLanguageChange = null;
       }
     });
-
-    observer.observe(document.body, { childList: true, subtree: true });
   }
-}
-
-function setI18nText(element: HTMLElement, key: TranslationKey) {
-  element.setAttribute('data-i18n-key', key);
-  element.textContent = t(key);
 }

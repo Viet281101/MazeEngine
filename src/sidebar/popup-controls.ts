@@ -1,4 +1,13 @@
 import { t } from './i18n';
+import { getIconPath } from '../constants/assets';
+import {
+  POPUP_CONTROL_CLOSE_LEFT_DESKTOP,
+  POPUP_CONTROL_CLOSE_LEFT_MOBILE,
+  POPUP_CONTROL_HIDE_LEFT_DESKTOP,
+  POPUP_CONTROL_HIDE_LEFT_MOBILE,
+  POPUP_CONTROL_TOP_DESKTOP,
+  POPUP_CONTROL_TOP_MOBILE,
+} from './toolbar-config';
 
 interface PopupControlConfig {
   src: string;
@@ -6,6 +15,8 @@ interface PopupControlConfig {
   title: string;
   topVarName: string;
   leftVarName: string;
+  mobileTop: string;
+  desktopTop: string;
   mobileLeft: string;
   desktopLeft: string;
   onClick: () => void;
@@ -29,24 +40,28 @@ export class ToolbarPopupControls {
     this.remove();
 
     this.closeIcon = this.createIcon({
-      src: '/MazeSolver3D/icon/close.png',
+      src: getIconPath('close.png'),
       className: 'toolbar-popup__close',
       title: t('toolbar.close'),
       topVarName: '--toolbar-close-top',
       leftVarName: '--toolbar-close-left',
-      mobileLeft: 'calc(50% + 160px)',
-      desktopLeft: '400px',
+      mobileTop: POPUP_CONTROL_TOP_MOBILE,
+      desktopTop: POPUP_CONTROL_TOP_DESKTOP,
+      mobileLeft: POPUP_CONTROL_CLOSE_LEFT_MOBILE,
+      desktopLeft: POPUP_CONTROL_CLOSE_LEFT_DESKTOP,
       onClick: this.handlers.onClose,
     });
 
     this.hideIcon = this.createIcon({
-      src: '/MazeSolver3D/icon/hide.png',
+      src: getIconPath('hide.png'),
       className: 'toolbar-popup__hide',
       title: t('toolbar.hide'),
       topVarName: '--toolbar-hide-top',
       leftVarName: '--toolbar-hide-left',
-      mobileLeft: 'calc(50% + 120px)',
-      desktopLeft: '360px',
+      mobileTop: POPUP_CONTROL_TOP_MOBILE,
+      desktopTop: POPUP_CONTROL_TOP_DESKTOP,
+      mobileLeft: POPUP_CONTROL_HIDE_LEFT_MOBILE,
+      desktopLeft: POPUP_CONTROL_HIDE_LEFT_DESKTOP,
       onClick: this.handlers.onHide,
     });
   }
@@ -80,7 +95,7 @@ export class ToolbarPopupControls {
     icon.src = config.src;
     icon.className = config.className;
     icon.title = config.title;
-    icon.style.setProperty(config.topVarName, this.isMobile() ? '56px' : '10px');
+    icon.style.setProperty(config.topVarName, this.isMobile() ? config.mobileTop : config.desktopTop);
     icon.style.setProperty(
       config.leftVarName,
       this.isMobile() ? config.mobileLeft : config.desktopLeft

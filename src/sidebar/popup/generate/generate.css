@@ -86,14 +86,18 @@
   font-size: 14px;
 }
 
-.generate-popup__input input {
-  width: 68px;
-  height: 32px;
-  border: 1px solid #3a5566;
-  border-radius: 4px;
-  background: #0f1b22;
-  color: #fff;
-  padding: 4px 6px;
+.generate-popup__input .popup-number-field {
+  --popup-number-field-width: 82px;
+  --popup-number-field-height: 38px;
+  --popup-number-input-border: #3a5566;
+  --popup-number-input-bg: #0f1b22;
+  --popup-number-input-color: #fff;
+  --popup-number-input-padding: 4px 6px;
+  --popup-number-input-font-size: 16px;
+  --popup-number-step-border: #3a5566;
+  --popup-number-step-bg: #172731;
+  --popup-number-step-color: #f0f6fa;
+  --popup-number-step-hover-bg: #233845;
 }
 
 .generate-popup__action-row {

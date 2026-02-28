@@ -72,7 +72,7 @@ export abstract class Maze {
     this.canvas = canvas;
     this.maze = maze;
 
-    // Configuration với defaults
+    // Configuration defaults
     this.wallHeight = config.wallHeight ?? 1;
     this.wallThickness = config.wallThickness ?? 0.1;
     this.cellSize = config.cellSize ?? 1;
@@ -220,7 +220,7 @@ export abstract class Maze {
   }
 
   /**
-   * Delete maze layers (giữ scene)
+   * Delete maze layers while keeping the scene
    */
   public deleteMaze(): void {
     this.mazeLayers.forEach(layer => {

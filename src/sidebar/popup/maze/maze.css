@@ -42,16 +42,18 @@
   font-size: 20px;
 }
 
-.maze-popup__input input {
-  width: 64px;
-  height: 36px;
-  background: #111;
-  color: #fff;
-  border: 1px solid #333;
-  padding: 4px 6px;
-  border-radius: 4px;
-  font-size: 16px;
-  user-select: text;
+.maze-popup__input .popup-number-field {
+  --popup-number-field-width: 58px;
+  --popup-number-field-height: 40px;
+  --popup-number-input-border: #333;
+  --popup-number-input-bg: #111;
+  --popup-number-input-color: #fff;
+  --popup-number-input-padding: 4px 6px;
+  --popup-number-input-font-size: 16px;
+  --popup-number-step-border: #333;
+  --popup-number-step-bg: #1a1a1a;
+  --popup-number-step-color: #eaeaea;
+  --popup-number-step-hover-bg: #262626;
 }
 
 .maze-popup__btn,

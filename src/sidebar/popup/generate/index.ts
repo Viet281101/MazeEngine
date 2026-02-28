@@ -2,6 +2,10 @@ import { Toolbar } from '../../toolbar';
 import { generateBinaryTreeMaze } from '../../../generator';
 import { subscribeLanguageChange, t, type TranslationKey } from '../../i18n';
 import { MAZE_SIZE } from '../../../constants/maze';
+import { watchContainerRemoval } from '../popup-lifecycle';
+import { applyI18nTexts, setI18nText } from '../popup-i18n';
+import { createLabeledNumberInput } from '../popup-inputs';
+import { createI18nButton } from '../popup-elements';
 import './generate.css';
 
 type GeneratorId =
@@ -69,20 +73,20 @@ class GeneratePopup {
   constructor(toolbar: Toolbar) {
     this.popupContainer = toolbar.createPopupContainerByKey('generatePopup', 'popup.generateMaze');
     this.popupContainer.classList.add('generate-popup');
-    this.hideDefaultCanvas();
+    this.removeDefaultCanvas();
     this.buildContent();
     this.unsubscribeLanguageChange = subscribeLanguageChange(() => this.applyTranslations());
     this.watchContainerRemoval();
   }
 
-  private hideDefaultCanvas() {
+  private removeDefaultCanvas(): void {
     const canvas = this.popupContainer.querySelector('canvas');
     if (canvas) {
       canvas.remove();
     }
   }
 
-  private buildContent() {
+  private buildContent(): void {
     const content = document.createElement('div');
     content.className = 'generate-popup__content';
 
@@ -128,22 +132,32 @@ class GeneratePopup {
     const sizeRow = document.createElement('div');
     sizeRow.className = 'generate-popup__size-row';
 
-    const rowsInput = createNumberInput(
-      'generate.rows',
-      MAZE_SIZE.MIN,
-      MAZE_SIZE.MAX,
-      MAZE_SIZE.DEFAULT_GENERATE
-    );
-    const colsInput = createNumberInput(
-      'generate.cols',
-      MAZE_SIZE.MIN,
-      MAZE_SIZE.MAX,
-      MAZE_SIZE.DEFAULT_GENERATE
-    );
+    const rowsInput = createLabeledNumberInput({
+      labelKey: 'generate.rows',
+      min: MAZE_SIZE.MIN,
+      max: MAZE_SIZE.MAX,
+      value: MAZE_SIZE.DEFAULT_GENERATE,
+      wrapperClassName: 'generate-popup__input',
+    });
+    const colsInput = createLabeledNumberInput({
+      labelKey: 'generate.cols',
+      min: MAZE_SIZE.MIN,
+      max: MAZE_SIZE.MAX,
+      value: MAZE_SIZE.DEFAULT_GENERATE,
+      wrapperClassName: 'generate-popup__input',
+    });
     sizeRow.appendChild(rowsInput.wrapper);
     sizeRow.appendChild(colsInput.wrapper);
     const biasInput =
-      generator.id === 'binaryTree' ? createNumberInput('generate.bias', 0, 100, 50) : null;
+      generator.id === 'binaryTree'
+        ? createLabeledNumberInput({
+            labelKey: 'generate.bias',
+            min: 0,
+            max: 100,
+            value: 50,
+            wrapperClassName: 'generate-popup__input',
+          })
+        : null;
     if (biasInput) {
       sizeRow.appendChild(biasInput.wrapper);
     }
@@ -152,10 +166,10 @@ class GeneratePopup {
     const actionRow = document.createElement('div');
     actionRow.className = 'generate-popup__action-row';
 
-    const generateBtn = document.createElement('button');
-    generateBtn.type = 'button';
-    generateBtn.className = 'generate-popup__btn';
-    setI18nText(generateBtn, 'generate.generateButton');
+    const generateBtn = createI18nButton({
+      textKey: 'generate.generateButton',
+      className: 'generate-popup__btn',
+    });
     actionRow.appendChild(generateBtn);
 
     const hint = document.createElement('span');
@@ -226,57 +240,23 @@ class GeneratePopup {
   }
 
   private applyTranslations() {
-    const i18nElements = this.popupContainer.querySelectorAll<HTMLElement>('[data-i18n-key]');
-    i18nElements.forEach(element => {
-      const key = element.getAttribute('data-i18n-key');
-      if (key) {
-        element.textContent = t(key as TranslationKey);
-      }
-    });
+    applyI18nTexts(this.popupContainer);
   }
 
-  private watchContainerRemoval() {
-    const observer = new MutationObserver(() => {
-      if (!document.body.contains(this.popupContainer)) {
-        if (this.unsubscribeLanguageChange) {
-          this.unsubscribeLanguageChange();
-          this.unsubscribeLanguageChange = null;
-        }
-        observer.disconnect();
+  private watchContainerRemoval(): void {
+    watchContainerRemoval(this.popupContainer, () => {
+      if (this.unsubscribeLanguageChange) {
+        this.unsubscribeLanguageChange();
+        this.unsubscribeLanguageChange = null;
       }
     });
-
-    observer.observe(document.body, { childList: true, subtree: true });
   }
 }
 
-export function showGeneratePopup(toolbar: Toolbar) {
+export function showGeneratePopup(toolbar: Toolbar): void {
   try {
     new GeneratePopup(toolbar);
   } catch (error) {
     console.error('Failed to initialize generate popup:', error);
   }
-}
-
-function createNumberInput(labelKey: TranslationKey, min: number, max: number, value: number) {
-  const wrapper = document.createElement('label');
-  wrapper.className = 'generate-popup__input';
-
-  const span = document.createElement('span');
-  setI18nText(span, labelKey);
-
-  const input = document.createElement('input');
-  input.type = 'number';
-  input.min = String(min);
-  input.max = String(max);
-  input.value = String(value);
-
-  wrapper.appendChild(span);
-  wrapper.appendChild(input);
-  return { wrapper, input };
-}
-
-function setI18nText(element: HTMLElement, key: TranslationKey) {
-  element.setAttribute('data-i18n-key', key);
-  element.textContent = t(key);
 }

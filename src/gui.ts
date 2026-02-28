@@ -38,6 +38,7 @@ export class GUIController {
   private controllers: Map<string, any> = new Map();
   private controllerLabelKeys: Partial<Record<keyof GUISettings, TranslationKey>> = {};
   private unsubscribeLanguageChange: (() => void) | null = null;
+  private resizeHandler: (() => void) | null = null;
 
   constructor(mazeController: MazeController, config: GUIConfig = {}) {
     this.mazeController = mazeController;
@@ -216,7 +217,10 @@ export class GUIController {
    */
   private setupResponsiveness(): void {
     this.updateGUIVisibility();
-    window.addEventListener('resize', () => this.updateGUIVisibility());
+    if (!this.resizeHandler) {
+      this.resizeHandler = () => this.updateGUIVisibility();
+      window.addEventListener('resize', this.resizeHandler);
+    }
   }
 
   /**
@@ -303,6 +307,10 @@ export class GUIController {
     if (this.unsubscribeLanguageChange) {
       this.unsubscribeLanguageChange();
       this.unsubscribeLanguageChange = null;
+    }
+    if (this.resizeHandler) {
+      window.removeEventListener('resize', this.resizeHandler);
+      this.resizeHandler = null;
     }
   }
 }

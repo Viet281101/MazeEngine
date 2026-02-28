@@ -10,6 +10,7 @@ import { subscribeLanguageChange, t } from '../sidebar/i18n';
 import { DebugOverlay } from '../debug/debug-overlay';
 import { MESH_REDUCTION } from '../constants/maze';
 import { PREVIEW_WINDOW, UI_BREAKPOINTS } from '../constants/ui';
+import { PREVIEW_WINDOW_STATUS_CHANGED_EVENT } from '../constants/events';
 import type { WebGLRenderer } from 'three';
 import {
   createInitialMazeData,
@@ -30,8 +31,6 @@ interface CameraSnapshot {
  * MainApp - Application entry point & lifecycle manager
  */
 export class MainApp implements MazeController, MazeAppBridge {
-  private static readonly PREVIEW_STATUS_EVENT = 'maze:preview-window-status-changed';
-
   private readonly canvas: HTMLCanvasElement;
   private readonly toolbar: Toolbar;
   private maze: MazeInstance;
@@ -382,6 +381,7 @@ export class MainApp implements MazeController, MazeAppBridge {
   public destroy(): void {
     this.unregisterGlobalListeners();
 
+    this.toolbar.destroy();
     this.maze.destroy();
     this.guiController.destroy();
     this.previewWindowManager.destroy();
@@ -447,7 +447,7 @@ export class MainApp implements MazeController, MazeAppBridge {
 
   private emitPreviewWindowStatusChanged(): void {
     window.dispatchEvent(
-      new CustomEvent(MainApp.PREVIEW_STATUS_EVENT, {
+      new CustomEvent(PREVIEW_WINDOW_STATUS_CHANGED_EVENT, {
         detail: { canOpenNewPreviewWindow: this.canOpenNewPreviewWindow() },
       })
     );

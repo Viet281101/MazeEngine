@@ -6,7 +6,7 @@ import { initializeI18n } from './sidebar/i18n';
 
 let app: MainApp | null = null;
 
-window.onload = async () => {
+const handleLoad = async () => {
   try {
     await initializeI18n();
     app = new MainApp();
@@ -18,9 +18,12 @@ window.onload = async () => {
 };
 
 // Cleanup while closing page
-window.onbeforeunload = () => {
+const handleBeforeUnload = () => {
   if (app) {
     app.destroy();
     app = null;
   }
 };
+
+window.addEventListener('load', handleLoad);
+window.addEventListener('beforeunload', handleBeforeUnload);

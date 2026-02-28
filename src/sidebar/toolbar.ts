@@ -13,6 +13,10 @@ import {
   BUTTON_SPACING,
   POPUP_CANVAS_HEIGHT,
   POPUP_CANVAS_WIDTH,
+  POPUP_LEFT_DESKTOP,
+  POPUP_LEFT_MOBILE,
+  POPUP_TOP_DESKTOP,
+  POPUP_TOP_MOBILE,
   TOOLBAR_HEIGHT_MOBILE,
   TOOLBAR_WIDTH_DESKTOP,
   createToolbarButtons,
@@ -391,8 +395,11 @@ export class Toolbar {
   }
 
   private applyPopupAnchorStyles(popup: HTMLElement): void {
-    popup.style.setProperty('--toolbar-popup-top', this.isMobile ? '50px' : '0');
-    popup.style.setProperty('--toolbar-popup-left', this.isMobile ? '50%' : '238px');
+    popup.style.setProperty('--toolbar-popup-top', this.isMobile ? POPUP_TOP_MOBILE : POPUP_TOP_DESKTOP);
+    popup.style.setProperty(
+      '--toolbar-popup-left',
+      this.isMobile ? POPUP_LEFT_MOBILE : POPUP_LEFT_DESKTOP
+    );
   }
 
   public createPopupContainerByKey(id: string, titleKey: TranslationKey): HTMLElement {
@@ -429,9 +436,6 @@ export class Toolbar {
       this.popupOpen = false;
       this.popupControls.remove();
     }
-
-    const inputs = document.querySelectorAll('.popup-input');
-    inputs.forEach(input => input.parentElement?.removeChild(input));
   }
 
   private closeCurrentPopup(): void {
