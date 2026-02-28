@@ -1,0 +1,15 @@
+export const SHORTEST_PATH_SOLVE_ALGORITHM_KEYS = [
+  'bellman-ford',
+  'bfs',
+  'bidirectional-bfs',
+  'bidirectional-dijkstra',
+  'dfs',
+  'dijkstra',
+  'eppstein-k-shortest',
+  'floyd-warshall',
+  'iddfs',
+  'johnson',
+  'spfa',
+  'uniform-cost-search',
+  'yen-k-shortest',
+] as const;

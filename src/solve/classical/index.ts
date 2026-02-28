@@ -1,0 +1,15 @@
+export const CLASSICAL_SOLVE_ALGORITHM_KEYS = [
+  'chain-algorithm',
+  'dead-end-fill',
+  'dfs-wall-tracer',
+  'flood-fill',
+  'lee',
+  'left-hand-rule',
+  'pledge',
+  'random-mouse',
+  'recursive-backtracking-solver',
+  'right-hand-rule',
+  'tremaux',
+  'wall-follower',
+  'wavefront',
+] as const;
