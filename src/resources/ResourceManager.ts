@@ -5,6 +5,8 @@ import * as THREE from 'three';
  * Reuse resources to avoid continuous creation
  */
 export class ResourceManager {
+  private static readonly MAX_GEOMETRY_CACHE_ENTRIES = 512;
+  private static readonly MAX_EDGE_CACHE_ENTRIES = 512;
   private materials: Map<string, THREE.Material> = new Map();
   private geometries: Map<string, THREE.BufferGeometry> = new Map();
   private edgeGeometries: Map<string, THREE.EdgesGeometry> = new Map();
@@ -47,9 +49,17 @@ export class ResourceManager {
   getBoxGeometry(width: number, height: number, depth: number): THREE.BoxGeometry {
     const key = `box-${width}-${height}-${depth}`;
 
-    if (!this.geometries.has(key)) {
-      this.geometries.set(key, new THREE.BoxGeometry(width, height, depth));
+    const cached = this.touchCacheEntry(this.geometries, key);
+    if (cached) {
+      return cached as THREE.BoxGeometry;
     }
+
+    this.geometries.set(key, new THREE.BoxGeometry(width, height, depth));
+    this.evictOldestEntries(
+      this.geometries,
+      ResourceManager.MAX_GEOMETRY_CACHE_ENTRIES,
+      geometry => geometry.dispose()
+    );
 
     return this.geometries.get(key) as THREE.BoxGeometry;
   }
@@ -60,9 +70,17 @@ export class ResourceManager {
   getPlaneGeometry(width: number, height: number): THREE.PlaneGeometry {
     const key = `plane-${width}-${height}`;
 
-    if (!this.geometries.has(key)) {
-      this.geometries.set(key, new THREE.PlaneGeometry(width, height));
+    const cached = this.touchCacheEntry(this.geometries, key);
+    if (cached) {
+      return cached as THREE.PlaneGeometry;
     }
+
+    this.geometries.set(key, new THREE.PlaneGeometry(width, height));
+    this.evictOldestEntries(
+      this.geometries,
+      ResourceManager.MAX_GEOMETRY_CACHE_ENTRIES,
+      geometry => geometry.dispose()
+    );
 
     return this.geometries.get(key) as THREE.PlaneGeometry;
   }
@@ -92,11 +110,45 @@ export class ResourceManager {
   getEdgesGeometry(baseGeometry: THREE.BufferGeometry): THREE.EdgesGeometry {
     const key = `edges-${baseGeometry.uuid}`;
 
-    if (!this.edgeGeometries.has(key)) {
-      this.edgeGeometries.set(key, new THREE.EdgesGeometry(baseGeometry));
+    const cached = this.touchCacheEntry(this.edgeGeometries, key);
+    if (cached) {
+      return cached;
     }
 
+    this.edgeGeometries.set(key, new THREE.EdgesGeometry(baseGeometry));
+    this.evictOldestEntries(
+      this.edgeGeometries,
+      ResourceManager.MAX_EDGE_CACHE_ENTRIES,
+      edges => edges.dispose()
+    );
+
     return this.edgeGeometries.get(key) as THREE.EdgesGeometry;
+  }
+
+  private touchCacheEntry<T>(cache: Map<string, T>, key: string): T | null {
+    const value = cache.get(key);
+    if (!value) {
+      return null;
+    }
+    cache.delete(key);
+    cache.set(key, value);
+    return value;
+  }
+
+  private evictOldestEntries<T>(
+    cache: Map<string, T>,
+    maxEntries: number,
+    dispose: (value: T) => void
+  ): void {
+    while (cache.size > maxEntries) {
+      const oldest = cache.entries().next().value as [string, T] | undefined;
+      if (!oldest) {
+        break;
+      }
+      const [oldestKey, oldestValue] = oldest;
+      cache.delete(oldestKey);
+      dispose(oldestValue);
+    }
   }
 
   /**

@@ -167,7 +167,13 @@ class GeneratePopup {
     details.appendChild(panel);
 
     if (generator.available) {
+      let isGenerating = false;
       generateBtn.addEventListener('click', () => {
+        if (isGenerating) {
+          return;
+        }
+        isGenerating = true;
+        generateBtn.disabled = true;
         const rows = clamp(rowsInput.input.valueAsNumber || 0, MAZE_SIZE.MIN, MAZE_SIZE.MAX);
         const cols = clamp(colsInput.input.valueAsNumber || 0, MAZE_SIZE.MIN, MAZE_SIZE.MAX);
         const biasPercent = clamp(biasInput?.input.valueAsNumber ?? 50, 0, 100);
@@ -176,7 +182,14 @@ class GeneratePopup {
         if (biasInput) {
           biasInput.input.valueAsNumber = biasPercent;
         }
-        this.generateBinaryTree(rows, cols, biasPercent / 100);
+        requestAnimationFrame(() => {
+          try {
+            this.generateBinaryTree(rows, cols, biasPercent / 100);
+          } finally {
+            isGenerating = false;
+            generateBtn.disabled = false;
+          }
+        });
       });
     } else {
       rowsInput.input.disabled = true;
@@ -191,7 +204,7 @@ class GeneratePopup {
   }
 
   private generateBinaryTree(rows: number, cols: number, northBias: number) {
-    const mazeApp = (window as any).mazeApp;
+    const mazeApp = window.mazeApp;
     if (!mazeApp || typeof mazeApp.updateMaze !== 'function') {
       console.warn('mazeApp.updateMaze not available');
       window.alert(t('generate.appUnavailable'));
@@ -202,6 +215,8 @@ class GeneratePopup {
     mazeApp.updateMaze(generated.maze, false, {
       start: generated.markers.start,
       end: generated.markers.end,
+    }, {
+      preserveCamera: true,
     });
   }
 

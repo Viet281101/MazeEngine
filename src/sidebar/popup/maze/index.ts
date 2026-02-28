@@ -406,7 +406,7 @@ class MazePopup {
   }
 
   private handleLoadCurrent() {
-    const mazeApp = (window as any).mazeApp;
+    const mazeApp = window.mazeApp;
     if (!mazeApp || typeof mazeApp.getMazeData !== 'function') {
       console.warn('mazeApp.getMazeData not available');
       return;
@@ -486,7 +486,7 @@ class MazePopup {
 
   private handleApply() {
     const mazeData = [this.state.grid.map(row => row.slice()).reverse()];
-    const mazeApp = (window as any).mazeApp;
+    const mazeApp = window.mazeApp;
     if (!mazeApp || typeof mazeApp.updateMaze !== 'function') {
       console.warn('mazeApp.updateMaze not available');
       return;

@@ -11,11 +11,24 @@ export interface MazeConfig {
   cellSize?: number;
 }
 
+interface CameraState {
+  position: THREE.Vector3;
+  target: THREE.Vector3;
+}
+
+interface MazeCenter {
+  x: number;
+  z: number;
+}
+
 /**
  * Base Maze Class - Manages Three.js scene and rendering
  * Refactored with proper memory management
  */
 export abstract class Maze {
+  private static readonly INTERACTION_PIXEL_RATIO_CAP = 1.0;
+  private static readonly INTERACTION_END_DELAY_MS = 120;
+
   // Three.js core
   protected canvas: HTMLCanvasElement;
   protected scene: THREE.Scene;
@@ -50,6 +63,9 @@ export abstract class Maze {
   private needsRender: boolean = true;
   private isRendering: boolean = false;
   private isDisposed: boolean = false;
+  private preserveCameraOnRebuild: boolean = false;
+  private interactionRestoreTimer: number | null = null;
+  private currentInteractionMode: boolean = false;
   private renderListeners: Set<() => void> = new Set();
 
   constructor(canvas: HTMLCanvasElement, maze: number[][][], config: MazeConfig = {}) {
@@ -104,14 +120,14 @@ export abstract class Maze {
    * Initialize renderer and start animation loop
    */
   protected init(): void {
-    const { width, height, pixelRatio } = this.getRendererSize();
-    this.renderer.setPixelRatio(pixelRatio);
-    this.renderer.setSize(width, height);
+    this.applyRendererSizeForMode(false);
 
     // Configure controls
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
     this.controls.addEventListener('change', () => this.requestRender());
+    this.controls.addEventListener('start', () => this.handleInteractionStart());
+    this.controls.addEventListener('end', () => this.handleInteractionEnd());
 
     this.createMaze();
     this.requestRender();
@@ -125,9 +141,13 @@ export abstract class Maze {
   /**
    * Update maze data and rebuild geometry without recreating renderer/controls
    */
-  public updateMazeData(maze: number[][][]): void {
+  public updateMazeData(maze: number[][][], options: { preserveCamera?: boolean } = {}): void {
     if (this.isDisposed) return;
     this.maze = maze;
+    if (options.preserveCamera) {
+      this.rebuildMazePreservingCamera();
+      return;
+    }
     this.createMaze();
     this.requestRender();
   }
@@ -136,6 +156,9 @@ export abstract class Maze {
    * Position camera to view entire maze
    */
   protected positionCamera(centerX: number, centerZ: number, distance: number): void {
+    if (this.preserveCameraOnRebuild) {
+      return;
+    }
     this.camera.position.set(centerX, 10, distance);
     this.controls.target.set(centerX, 0, centerZ);
     this.controls.update();
@@ -192,9 +215,7 @@ export abstract class Maze {
 
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
-    const { width, height, pixelRatio } = this.getRendererSize();
-    this.renderer.setPixelRatio(pixelRatio);
-    this.renderer.setSize(width, height);
+    this.applyRendererSizeForMode(this.currentInteractionMode);
     this.requestRender();
   }
 
@@ -219,6 +240,7 @@ export abstract class Maze {
 
     // Stop animation
     this.stopAnimation();
+    this.clearInteractionRestoreTimer();
 
     // Delete maze
     this.deleteMaze();
@@ -244,6 +266,30 @@ export abstract class Maze {
 
   public getMazeData(): number[][][] {
     return this.maze.map(layer => layer.map(row => row.slice()));
+  }
+
+  public getCameraState(): CameraState {
+    return {
+      position: this.camera.position.clone(),
+      target: this.controls.target.clone(),
+    };
+  }
+
+  public getMazeCenter(): MazeCenter {
+    const firstLayer = this.maze[0];
+    const rows = firstLayer?.length ?? 0;
+    const cols = firstLayer?.[0]?.length ?? 0;
+    const centerX = (cols * this.cellSize) / 2 - this.cellSize / 2;
+    const centerZ = -(rows * this.cellSize) / 2 + this.cellSize / 2;
+    return { x: centerX, z: centerZ };
+  }
+
+  public setCameraState(state: CameraState): void {
+    this.camera.position.copy(state.position);
+    this.controls.target.copy(state.target);
+    this.controls.update();
+    this.controls.saveState();
+    this.requestRender();
   }
 
   public updateWallColor(color: string): void {
@@ -285,8 +331,12 @@ export abstract class Maze {
 
   public setMeshReductionEnabled(enabled: boolean): void {
     if (this.meshReductionEnabled === enabled) return;
+    const shouldRebuild = this.shouldRebuildForMeshConfig(enabled, this.meshMergeThreshold);
     this.meshReductionEnabled = enabled;
-    this.createMaze();
+    if (shouldRebuild) {
+      this.rebuildMazePreservingCamera();
+      return;
+    }
     this.requestRender();
   }
 
@@ -297,8 +347,12 @@ export abstract class Maze {
   public setMeshMergeThreshold(threshold: number): void {
     const nextThreshold = Math.max(MESH_REDUCTION.MIN_THRESHOLD, Math.floor(threshold));
     if (this.meshMergeThreshold === nextThreshold) return;
+    const shouldRebuild = this.shouldRebuildForMeshConfig(this.meshReductionEnabled, nextThreshold);
     this.meshMergeThreshold = nextThreshold;
-    this.createMaze();
+    if (shouldRebuild) {
+      this.rebuildMazePreservingCamera();
+      return;
+    }
     this.requestRender();
   }
 
@@ -319,6 +373,69 @@ export abstract class Maze {
 
   public removeRenderListener(listener: () => void): void {
     this.renderListeners.delete(listener);
+  }
+
+  private shouldMergeWallsForConfig(
+    rows: number,
+    cols: number,
+    enabled: boolean,
+    threshold: number
+  ): boolean {
+    if (!enabled) {
+      return false;
+    }
+    return rows >= threshold || cols >= threshold;
+  }
+
+  private shouldRebuildForMeshConfig(nextEnabled: boolean, nextThreshold: number): boolean {
+    const currentEnabled = this.meshReductionEnabled;
+    const currentThreshold = this.meshMergeThreshold;
+
+    return this.maze.some(layer => {
+      const rows = layer.length;
+      const cols = layer[0]?.length ?? 0;
+      const currentMerge = this.shouldMergeWallsForConfig(
+        rows,
+        cols,
+        currentEnabled,
+        currentThreshold
+      );
+      const nextMerge = this.shouldMergeWallsForConfig(rows, cols, nextEnabled, nextThreshold);
+      return currentMerge !== nextMerge;
+    });
+  }
+
+  private rebuildMazePreservingCamera(): void {
+    this.preserveCameraOnRebuild = true;
+    try {
+      this.createMaze();
+    } finally {
+      this.preserveCameraOnRebuild = false;
+    }
+    this.requestRender();
+  }
+
+  private handleInteractionStart(): void {
+    this.clearInteractionRestoreTimer();
+    this.applyRendererSizeForMode(true);
+    this.requestRender();
+  }
+
+  private handleInteractionEnd(): void {
+    this.clearInteractionRestoreTimer();
+    this.interactionRestoreTimer = window.setTimeout(() => {
+      this.interactionRestoreTimer = null;
+      this.applyRendererSizeForMode(false);
+      this.requestRender();
+    }, Maze.INTERACTION_END_DELAY_MS);
+  }
+
+  private clearInteractionRestoreTimer(): void {
+    if (this.interactionRestoreTimer === null) {
+      return;
+    }
+    window.clearTimeout(this.interactionRestoreTimer);
+    this.interactionRestoreTimer = null;
   }
 
   /**
@@ -353,8 +470,21 @@ export abstract class Maze {
     this.requestRender();
   }
 
-  private getRendererSize(): { width: number; height: number; pixelRatio: number } {
-    const pixelRatio = Math.min(window.devicePixelRatio, 1.5);
+  private applyRendererSizeForMode(isInteraction: boolean): void {
+    this.currentInteractionMode = isInteraction;
+    const { width, height, pixelRatio } = this.getRendererSize(isInteraction);
+    this.renderer.setPixelRatio(pixelRatio);
+    this.renderer.setSize(width, height, false);
+  }
+
+  private getRendererSize(isInteraction: boolean = false): {
+    width: number;
+    height: number;
+    pixelRatio: number;
+  } {
+    const stableCap = 1.5;
+    const dynamicCap = isInteraction ? Maze.INTERACTION_PIXEL_RATIO_CAP : stableCap;
+    const pixelRatio = Math.min(window.devicePixelRatio, dynamicCap);
     const maxSize = this.renderer.capabilities.maxTextureSize;
     const maxDimension = Math.floor(maxSize / pixelRatio);
     const width = Math.min(window.innerWidth, maxDimension);

@@ -8,21 +8,11 @@ import {
 } from '../../i18n';
 import { Toolbar } from '../../toolbar';
 import { MESH_REDUCTION } from '../../../constants/maze';
+import type { MazeAppBridge } from '../../../types/maze';
 import './setting.css';
 
-interface MazeAppSettingsBridge {
-  setMeshReductionThreshold?: (threshold: number) => void;
-  getMeshReductionThreshold?: () => number;
-  setMeshReductionEnabled?: (enabled: boolean) => void;
-  isMeshReductionEnabled?: () => boolean;
-  reopenPreviewWindow?: () => void;
-  canOpenNewPreviewWindow?: () => boolean;
-  getMazeData?: () => number[][][];
-}
-
-function getMazeAppBridge(): MazeAppSettingsBridge | null {
-  const mazeApp = (window as any).mazeApp as MazeAppSettingsBridge | undefined;
-  return mazeApp ?? null;
+function getMazeAppBridge(): MazeAppBridge | null {
+  return window.mazeApp ?? null;
 }
 
 function createLanguageOption(language: AppLanguage): HTMLOptionElement {

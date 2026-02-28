@@ -11,7 +11,7 @@ window.onload = async () => {
     await initializeI18n();
     app = new MainApp();
     // app.createMultiLayerMaze();
-    (window as any).mazeApp = app;
+    window.mazeApp = app;
   } catch (error) {
     console.error('Failed to initialize application:', error);
   }
