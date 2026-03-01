@@ -1,5 +1,12 @@
 import { Toolbar } from '../../toolbar';
-import { generateBinaryTreeMaze } from '../../../generator';
+import {
+  executeGenerator,
+  getGeneratorsForTopology,
+  type GeneratorDefinition,
+  type GeneratorId,
+  type MazeTopologyId,
+  type ShaftDensity,
+} from '../../../generator';
 import { subscribeLanguageChange, t, type TranslationKey } from '../../i18n';
 import { MAZE_SIZE } from '../../../constants/maze';
 import { watchContainerRemoval } from '../popup-lifecycle';
@@ -8,66 +15,77 @@ import { createLabeledNumberInput } from '../popup-inputs';
 import { createI18nButton } from '../popup-elements';
 import './generate.css';
 
-type GeneratorId =
-  | 'binaryTree'
-  | 'recursiveBacktrack'
-  | 'recursiveDivision'
-  | 'prim'
-  | 'kruskal'
-  | 'wilson';
-
-interface GeneratorDefinition {
-  id: GeneratorId;
+interface GeneratorUiDefinition extends GeneratorDefinition {
   titleKey: TranslationKey;
   descriptionKey: TranslationKey;
-  available: boolean;
 }
 
-const GENERATORS: GeneratorDefinition[] = [
-  {
-    id: 'binaryTree',
+const TOPOLOGIES: readonly MazeTopologyId[] = [
+  'singleLayerRect',
+  'multiLayerRect',
+  'hexagonal',
+  'triangular',
+  'circular',
+];
+
+const GENERATOR_I18N: Record<
+  GeneratorId,
+  { titleKey: TranslationKey; descriptionKey: TranslationKey }
+> = {
+  binaryTree: {
     titleKey: 'generate.binaryTree',
     descriptionKey: 'generate.binaryTreeDescription',
-    available: true,
   },
-  {
-    id: 'recursiveBacktrack',
+  recursiveBacktrack: {
     titleKey: 'generate.recursiveBacktrack',
     descriptionKey: 'generate.recursiveBacktrackDescription',
-    available: false,
   },
-  {
-    id: 'recursiveDivision',
+  recursiveDivision: {
     titleKey: 'generate.recursiveDivision',
     descriptionKey: 'generate.recursiveDivisionDescription',
-    available: false,
   },
-  {
-    id: 'prim',
+  prim: {
     titleKey: 'generate.prim',
     descriptionKey: 'generate.primDescription',
-    available: false,
   },
-  {
-    id: 'kruskal',
+  kruskal: {
     titleKey: 'generate.kruskal',
     descriptionKey: 'generate.kruskalDescription',
-    available: false,
   },
-  {
-    id: 'wilson',
+  wilson: {
     titleKey: 'generate.wilson',
     descriptionKey: 'generate.wilsonDescription',
-    available: false,
   },
-];
+};
+
+function getGeneratorUiDefinitions(topology: MazeTopologyId): readonly GeneratorUiDefinition[] {
+  return getGeneratorsForTopology(topology).map(generator => ({
+    ...generator,
+    titleKey: GENERATOR_I18N[generator.id].titleKey,
+    descriptionKey: GENERATOR_I18N[generator.id].descriptionKey,
+  }));
+}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
 class GeneratePopup {
+  private static readonly TOPOLOGY_LAYERS_MIN = 2;
+  private static readonly TOPOLOGY_LAYERS_MAX = 30;
+  private static readonly TOPOLOGY_LAYERS_DEFAULT = 3;
+
   private popupContainer: HTMLElement;
+  private listContainer: HTMLDivElement | null = null;
+  private topologyParamsContainer: HTMLDivElement | null = null;
+  private activeTopology: MazeTopologyId = 'singleLayerRect';
+  private topologyParams: {
+    layers: number;
+    shaftDensity: ShaftDensity;
+  } = {
+    layers: GeneratePopup.TOPOLOGY_LAYERS_DEFAULT,
+    shaftDensity: 'normal',
+  };
   private unsubscribeLanguageChange: (() => void) | null = null;
 
   constructor(toolbar: Toolbar) {
@@ -90,16 +108,128 @@ class GeneratePopup {
     const content = document.createElement('div');
     content.className = 'generate-popup__content';
 
-    GENERATORS.forEach((generator, index) => {
-      const row = this.createGeneratorRow(generator, index === 0);
-      content.appendChild(row);
+    const topologyRow = document.createElement('div');
+    topologyRow.className = 'generate-popup__topology-row';
+
+    const topologyLabel = document.createElement('span');
+    topologyLabel.className = 'generate-popup__topology-label';
+    setI18nText(topologyLabel, 'generate.topology');
+    topologyRow.appendChild(topologyLabel);
+
+    const topologySelect = document.createElement('select');
+    topologySelect.className = 'generate-popup__topology-select';
+    TOPOLOGIES.forEach(topology => {
+      const option = document.createElement('option');
+      option.value = topology;
+      setI18nText(option, `generate.topology.${topology}`);
+      topologySelect.appendChild(option);
     });
+    topologySelect.value = this.activeTopology;
+    topologySelect.addEventListener('change', () => {
+      this.activeTopology = topologySelect.value as MazeTopologyId;
+      this.renderTopologyParams();
+      this.renderGeneratorRows();
+    });
+    topologyRow.appendChild(topologySelect);
+    content.appendChild(topologyRow);
+
+    const topologyParamsContainer = document.createElement('div');
+    topologyParamsContainer.className = 'generate-popup__topology-params';
+    this.topologyParamsContainer = topologyParamsContainer;
+    content.appendChild(topologyParamsContainer);
+
+    const list = document.createElement('div');
+    list.className = 'generate-popup__generator-list';
+    this.listContainer = list;
+    content.appendChild(list);
 
     this.popupContainer.appendChild(content);
+    this.renderTopologyParams();
+    this.renderGeneratorRows();
     this.applyTranslations();
   }
 
-  private createGeneratorRow(generator: GeneratorDefinition, expanded: boolean): HTMLElement {
+  private renderTopologyParams(): void {
+    if (!this.topologyParamsContainer) {
+      return;
+    }
+    this.topologyParamsContainer.textContent = '';
+
+    if (this.activeTopology !== 'multiLayerRect') {
+      return;
+    }
+
+    const label = document.createElement('div');
+    label.className = 'generate-popup__topology-params-label';
+    setI18nText(label, 'generate.topologyParams');
+    this.topologyParamsContainer.appendChild(label);
+
+    const row = document.createElement('div');
+    row.className = 'generate-popup__size-row';
+
+    const layersInput = createLabeledNumberInput({
+      labelKey: 'generate.layers',
+      min: GeneratePopup.TOPOLOGY_LAYERS_MIN,
+      max: GeneratePopup.TOPOLOGY_LAYERS_MAX,
+      value: this.topologyParams.layers,
+      wrapperClassName: 'generate-popup__input',
+    });
+    layersInput.input.addEventListener('change', () => {
+      this.topologyParams.layers = clamp(
+        layersInput.input.valueAsNumber || GeneratePopup.TOPOLOGY_LAYERS_DEFAULT,
+        GeneratePopup.TOPOLOGY_LAYERS_MIN,
+        GeneratePopup.TOPOLOGY_LAYERS_MAX
+      );
+      layersInput.input.valueAsNumber = this.topologyParams.layers;
+    });
+
+    row.appendChild(layersInput.wrapper);
+
+    const shaftDensityWrap = document.createElement('label');
+    shaftDensityWrap.className = 'generate-popup__input';
+    const shaftDensityLabel = document.createElement('span');
+    setI18nText(shaftDensityLabel, 'generate.shaftDensity');
+    const shaftDensitySelect = document.createElement('select');
+    shaftDensitySelect.className = 'generate-popup__topology-select';
+    (['sparse', 'normal', 'dense'] as const).forEach(density => {
+      const option = document.createElement('option');
+      option.value = density;
+      setI18nText(option, `generate.shaftDensity.${density}`);
+      shaftDensitySelect.appendChild(option);
+    });
+    shaftDensitySelect.value = this.topologyParams.shaftDensity;
+    shaftDensitySelect.addEventListener('change', () => {
+      this.topologyParams.shaftDensity = shaftDensitySelect.value as ShaftDensity;
+    });
+    shaftDensityWrap.appendChild(shaftDensityLabel);
+    shaftDensityWrap.appendChild(shaftDensitySelect);
+    row.appendChild(shaftDensityWrap);
+
+    this.topologyParamsContainer.appendChild(row);
+  }
+
+  private renderGeneratorRows(): void {
+    if (!this.listContainer) {
+      return;
+    }
+    this.listContainer.textContent = '';
+
+    const generators = getGeneratorUiDefinitions(this.activeTopology);
+    if (generators.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'generate-popup__empty';
+      setI18nText(empty, 'generate.noGeneratorsForTopology');
+      this.listContainer.appendChild(empty);
+      return;
+    }
+
+    generators.forEach((generator, index) => {
+      const row = this.createGeneratorRow(generator, index === 0);
+      this.listContainer?.appendChild(row);
+    });
+  }
+
+  private createGeneratorRow(generator: GeneratorUiDefinition, expanded: boolean): HTMLElement {
     const details = document.createElement('details');
     details.className = 'generate-popup__row';
     details.open = expanded;
@@ -198,7 +328,7 @@ class GeneratePopup {
         }
         requestAnimationFrame(() => {
           try {
-            this.generateBinaryTree(rows, cols, biasPercent / 100);
+            this.generateById(generator.id, rows, cols, biasPercent / 100);
           } finally {
             isGenerating = false;
             generateBtn.disabled = false;
@@ -217,7 +347,7 @@ class GeneratePopup {
     return details;
   }
 
-  private generateBinaryTree(rows: number, cols: number, northBias: number) {
+  private generateById(generatorId: GeneratorId, rows: number, cols: number, northBias: number) {
     const mazeApp = window.mazeApp;
     if (!mazeApp || typeof mazeApp.updateMaze !== 'function') {
       console.warn('mazeApp.updateMaze not available');
@@ -225,10 +355,31 @@ class GeneratePopup {
       return;
     }
 
-    const generated = generateBinaryTreeMaze(rows, cols, { northBias });
+    const generated = executeGenerator(generatorId, this.activeTopology, {
+      rows,
+      cols,
+      params: { northBias },
+      topologyParams:
+        this.activeTopology === 'multiLayerRect'
+            ? {
+                layers: clamp(
+                  this.topologyParams.layers,
+                  GeneratePopup.TOPOLOGY_LAYERS_MIN,
+                  GeneratePopup.TOPOLOGY_LAYERS_MAX
+                ),
+                shaftDensity: this.topologyParams.shaftDensity,
+              }
+          : undefined,
+    });
+    if (!generated) {
+      console.warn(
+        `Generator "${generatorId}" is unavailable for topology "${this.activeTopology}"`
+      );
+      return;
+    }
     mazeApp.updateMaze(
       generated.maze,
-      false,
+      this.activeTopology === 'multiLayerRect',
       {
         start: generated.markers.start,
         end: generated.markers.end,

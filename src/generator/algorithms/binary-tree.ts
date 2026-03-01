@@ -1,4 +1,4 @@
-import { MAZE_SIZE } from '../constants/maze';
+import { MAZE_SIZE } from '../../constants/maze';
 
 export interface MazeMarker {
   row: number;

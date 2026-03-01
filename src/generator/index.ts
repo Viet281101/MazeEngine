@@ -2,4 +2,18 @@ export {
   generateBinaryTreeMaze,
   type GeneratedMazeResult,
   type MazeMarker,
-} from './binary-tree-algo';
+} from './algorithms/binary-tree';
+export {
+  GENERATOR_CATALOG,
+  executeGenerator,
+  getGeneratorById,
+  getGeneratorsForTopology,
+} from './core/registry';
+export { getTopologyAdapter, type TopologyAdapter } from './core/topology-adapters';
+export type {
+  GeneratorDefinition,
+  GeneratorId,
+  GeneratorRunInput,
+  MazeTopologyId,
+  ShaftDensity,
+} from './core/types';

@@ -9,6 +9,57 @@
   gap: 8px;
 }
 
+.generate-popup__topology-row {
+  border: 1px solid #2f4453;
+  border-radius: 8px;
+  background: #1a2831;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.generate-popup__topology-label {
+  font-size: 16px;
+  color: #d8e6ee;
+}
+
+.generate-popup__topology-select {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #3a5566;
+  border-radius: 5px;
+  background: #0f1b22;
+  color: #f4fbff;
+  font-size: 15px;
+  padding: 7px 10px;
+}
+
+.generate-popup__generator-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.generate-popup__topology-params {
+  border: 1px solid #2f4453;
+  border-radius: 8px;
+  background: #1a2831;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.generate-popup__topology-params:empty {
+  display: none;
+}
+
+.generate-popup__topology-params-label {
+  font-size: 16px;
+  color: #d8e6ee;
+}
+
 .generate-popup__row {
   border: 1px solid #243746;
   border-radius: 8px;
@@ -124,4 +175,14 @@
 .generate-popup__hint {
   font-size: 16px;
   color: #c9d8df;
+}
+
+.generate-popup__empty {
+  margin: 0;
+  border: 1px dashed #3b4e5b;
+  border-radius: 8px;
+  background: #1a2831;
+  color: #d8e6ee;
+  font-size: 16px;
+  padding: 12px;
 }
