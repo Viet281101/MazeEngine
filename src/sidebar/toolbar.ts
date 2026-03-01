@@ -395,7 +395,10 @@ export class Toolbar {
   }
 
   private applyPopupAnchorStyles(popup: HTMLElement): void {
-    popup.style.setProperty('--toolbar-popup-top', this.isMobile ? POPUP_TOP_MOBILE : POPUP_TOP_DESKTOP);
+    popup.style.setProperty(
+      '--toolbar-popup-top',
+      this.isMobile ? POPUP_TOP_MOBILE : POPUP_TOP_DESKTOP
+    );
     popup.style.setProperty(
       '--toolbar-popup-left',
       this.isMobile ? POPUP_LEFT_MOBILE : POPUP_LEFT_DESKTOP

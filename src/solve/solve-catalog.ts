@@ -13,8 +13,7 @@ const CATEGORY_FILE_KEYS = {
 } as const;
 
 export type SolveAlgorithmCategory = keyof typeof CATEGORY_FILE_KEYS;
-export type SolveAlgorithmFileKey =
-  (typeof CATEGORY_FILE_KEYS)[SolveAlgorithmCategory][number];
+export type SolveAlgorithmFileKey = (typeof CATEGORY_FILE_KEYS)[SolveAlgorithmCategory][number];
 
 export interface SolveAlgorithmDefinition {
   id: SolveAlgorithmFileKey;
@@ -68,8 +67,9 @@ export const SOLVE_ALGORITHMS_BY_CATEGORY: Readonly<
   {} as Record<SolveAlgorithmCategory, readonly SolveAlgorithmDefinition[]>
 );
 
-export const SOLVE_ALGORITHM_CATALOG: readonly SolveAlgorithmDefinition[] =
-  categoryEntries.flatMap(([category]) => SOLVE_ALGORITHMS_BY_CATEGORY[category]);
+export const SOLVE_ALGORITHM_CATALOG: readonly SolveAlgorithmDefinition[] = categoryEntries.flatMap(
+  ([category]) => SOLVE_ALGORITHMS_BY_CATEGORY[category]
+);
 
 export function getSolveAlgorithmById(
   id: SolveAlgorithmFileKey

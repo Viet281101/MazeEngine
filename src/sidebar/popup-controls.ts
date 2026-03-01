@@ -95,7 +95,10 @@ export class ToolbarPopupControls {
     icon.src = config.src;
     icon.className = config.className;
     icon.title = config.title;
-    icon.style.setProperty(config.topVarName, this.isMobile() ? config.mobileTop : config.desktopTop);
+    icon.style.setProperty(
+      config.topVarName,
+      this.isMobile() ? config.mobileTop : config.desktopTop
+    );
     icon.style.setProperty(
       config.leftVarName,
       this.isMobile() ? config.mobileLeft : config.desktopLeft
