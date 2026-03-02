@@ -5,18 +5,34 @@ import { showMazePopup } from './popup/maze';
 import { showGeneratePopup } from './popup/generate';
 import { subscribeLanguageChange, t, type TranslationKey } from './i18n';
 import { UI_BREAKPOINTS } from '../constants/ui';
+import { ToolbarPopupControls } from './popup-controls';
+import {
+  BUTTON_BORDER_PADDING,
+  BUTTON_ICON_OFFSET,
+  BUTTON_SIZE,
+  BUTTON_SPACING,
+  POPUP_CANVAS_HEIGHT,
+  POPUP_CANVAS_WIDTH,
+  POPUP_LEFT_DESKTOP,
+  POPUP_LEFT_MOBILE,
+  POPUP_TOP_DESKTOP,
+  POPUP_TOP_MOBILE,
+  TOOLBAR_HEIGHT_MOBILE,
+  TOOLBAR_WIDTH_DESKTOP,
+  createToolbarButtons,
+  type PopupType,
+  type ToolButton,
+} from './toolbar-config';
+import { getPointerPosition, isInsideRect } from './pointer-utils';
 import './toolbar.css';
 
-interface ToolButton {
-  nameKey: TranslationKey;
-  icon: string;
-  action: () => void;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  image?: HTMLImageElement;
-}
+const POPUP_SHOW_HANDLERS: Record<PopupType, (toolbar: Toolbar) => void> = {
+  maze: toolbar => showMazePopup(toolbar),
+  generate: toolbar => showGeneratePopup(toolbar),
+  solve: toolbar => showSolvePopup(toolbar),
+  tutorial: toolbar => showTutorialPopup(toolbar),
+  settings: toolbar => showSettingsPopup(toolbar),
+};
 
 export class Toolbar {
   private canvas!: HTMLCanvasElement;
@@ -25,10 +41,10 @@ export class Toolbar {
   private buttons: ToolButton[];
   private popupOpen: boolean;
   private currentPopup: HTMLElement | null;
-  private currentCloseIcon: HTMLImageElement | null;
-  private currentHideIcon: HTMLImageElement | null;
   private tooltip: HTMLDivElement | null = null;
-  private hoveredButton: ToolButton | null = null;
+  private hoverFrameId: number | null = null;
+  private pendingPointerX: number = 0;
+  private pendingPointerY: number = 0;
 
   private mouseMoveHandler!: (e: MouseEvent) => void;
   private mouseLeaveHandler!: () => void;
@@ -39,15 +55,18 @@ export class Toolbar {
   private imageCache: Map<string, HTMLImageElement> = new Map();
   private imagesLoaded: boolean = false;
   private unsubscribeLanguageChange: (() => void) | null = null;
+  private readonly popupControls: ToolbarPopupControls;
 
   constructor() {
     this.isMobile = this.checkIfMobile();
     this.setupCanvas();
-    this.buttons = this.createButtons();
+    this.buttons = createToolbarButtons();
     this.popupOpen = false;
     this.currentPopup = null;
-    this.currentCloseIcon = null;
-    this.currentHideIcon = null;
+    this.popupControls = new ToolbarPopupControls(() => this.isMobile, {
+      onClose: () => this.closeCurrentPopup(),
+      onHide: () => this.hideCurrentPopup(),
+    });
 
     this.preloadImages().then(() => {
       this.imagesLoaded = true;
@@ -68,9 +87,11 @@ export class Toolbar {
   private setupCanvas(): void {
     if (!this.canvas) {
       this.canvas = document.createElement('canvas');
-      this.ctx = this.canvas.getContext('2d', {
-        alpha: false,
-      }) as CanvasRenderingContext2D;
+      const context = this.canvas.getContext('2d', { alpha: false });
+      if (!context) {
+        throw new Error('Failed to initialize toolbar canvas context');
+      }
+      this.ctx = context;
       this.canvas.className = 'toolbar-canvas';
     }
 
@@ -78,8 +99,12 @@ export class Toolbar {
       document.body.appendChild(this.canvas);
     }
 
-    this.canvas.width = this.isMobile ? window.innerWidth : 50;
-    this.canvas.height = this.isMobile ? 50 : window.innerHeight;
+    this.setCanvasSize();
+  }
+
+  private setCanvasSize(): void {
+    this.canvas.width = this.isMobile ? window.innerWidth : TOOLBAR_WIDTH_DESKTOP;
+    this.canvas.height = this.isMobile ? TOOLBAR_HEIGHT_MOBILE : window.innerHeight;
   }
 
   private ensureTooltip(): void {
@@ -106,199 +131,94 @@ export class Toolbar {
     this.tooltip.style.display = 'none';
   }
 
-  private createButtons(): ToolButton[] {
-    const iconPaths = [
-      '/MazeSolver3D/icon/maze.png',
-      '/MazeSolver3D/icon/generate_maze.png',
-      '/MazeSolver3D/icon/solving_maze.png',
-      '/MazeSolver3D/icon/question.png',
-      '/MazeSolver3D/icon/setting.png',
-    ];
-
-    return [
-      {
-        nameKey: 'toolbar.customMaze',
-        icon: iconPaths[0],
-        action: () => this.togglePopup('maze'),
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0,
-      },
-      {
-        nameKey: 'toolbar.generateMaze',
-        icon: iconPaths[1],
-        action: () => this.togglePopup('generate'),
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0,
-      },
-      {
-        nameKey: 'toolbar.solvingMaze',
-        icon: iconPaths[2],
-        action: () => this.togglePopup('solve'),
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0,
-      },
-      {
-        nameKey: 'toolbar.tutorial',
-        icon: iconPaths[3],
-        action: () => this.togglePopup('tutorial'),
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0,
-      },
-      {
-        nameKey: 'toolbar.settings',
-        icon: iconPaths[4],
-        action: () => this.togglePopup('settings'),
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0,
-      },
-    ];
-  }
-
   private async preloadImages(): Promise<void> {
-    const loadPromises = this.buttons.map(button => {
-      return new Promise<void>((resolve, reject) => {
-        if (this.imageCache.has(button.icon)) {
-          button.image = this.imageCache.get(button.icon);
-          resolve();
-          return;
-        }
+    const loadPromises = this.buttons.map(
+      button =>
+        new Promise<void>((resolve, reject) => {
+          const cached = this.imageCache.get(button.icon);
+          if (cached) {
+            button.image = cached;
+            resolve();
+            return;
+          }
 
-        const img = new Image();
-        img.onload = () => {
-          this.imageCache.set(button.icon, img);
-          button.image = img;
-          resolve();
-        };
-        img.onerror = () => {
-          console.error(`Failed to load icon: ${button.icon}`);
-          reject(new Error(`Failed to load ${button.icon}`));
-        };
-        img.src = button.icon;
-      });
+          const img = new Image();
+          img.onload = () => {
+            this.imageCache.set(button.icon, img);
+            button.image = img;
+            resolve();
+          };
+          img.onerror = () => {
+            reject(new Error(`Failed to load ${button.icon}`));
+          };
+          img.src = button.icon;
+        })
+    );
+
+    const results = await Promise.allSettled(loadPromises);
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`Failed to load icon: ${this.buttons[index].icon}`, result.reason);
+      }
     });
-
-    try {
-      await Promise.all(loadPromises);
-    } catch (error) {
-      console.error('Error loading toolbar icons:', error);
-    }
   }
 
   private drawToolbar(): void {
     if (!this.imagesLoaded) return;
 
-    // Clear canvas
     this.ctx.fillStyle = '#333';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Draw buttons
-    if (this.isMobile) {
-      this.drawToolbarVertical();
-    } else {
-      this.drawToolbarHorizontal();
+    this.drawButtons();
+  }
+
+  private drawButtons(): void {
+    this.ctx.strokeStyle = '#fff';
+    this.ctx.lineWidth = 1;
+
+    const totalSpan = this.buttons.length * BUTTON_SPACING;
+    let cursor = this.isMobile
+      ? (this.canvas.width - totalSpan) / 2
+      : (this.canvas.height - totalSpan) / 2;
+
+    for (const button of this.buttons) {
+      if (button.image) {
+        const iconX = this.isMobile ? cursor - BUTTON_ICON_OFFSET : 8;
+        const iconY = this.isMobile ? 8 : cursor - BUTTON_ICON_OFFSET;
+        const borderX = this.isMobile ? cursor - BUTTON_BORDER_PADDING : BUTTON_BORDER_PADDING;
+        const borderY = this.isMobile ? BUTTON_BORDER_PADDING : cursor - BUTTON_BORDER_PADDING;
+        const borderSize = BUTTON_SIZE + 4;
+
+        this.ctx.drawImage(button.image, iconX, iconY, BUTTON_SIZE, BUTTON_SIZE);
+        this.ctx.strokeRect(borderX, borderY, borderSize, borderSize);
+
+        button.x = borderX;
+        button.y = borderY;
+        button.width = borderSize;
+        button.height = borderSize;
+      }
+
+      cursor += BUTTON_SPACING;
     }
-  }
-
-  private drawToolbarVertical(): void {
-    const buttonSize = 36;
-    const padding = 5;
-    const spacing = 60;
-    const totalWidth = this.buttons.length * spacing;
-    let startX = (this.canvas.width - totalWidth) / 2;
-
-    this.buttons.forEach(button => {
-      if (button.image) {
-        // Draw image
-        this.ctx.drawImage(button.image, startX - 2, 8, buttonSize, buttonSize);
-
-        // Draw border
-        this.ctx.strokeStyle = '#fff';
-        this.ctx.lineWidth = 1;
-        this.ctx.strokeRect(startX - padding, padding, buttonSize + 4, buttonSize + 4);
-
-        // Update button bounds
-        button.x = startX - padding;
-        button.y = padding;
-        button.width = buttonSize + 4;
-        button.height = buttonSize + 4;
-      }
-
-      startX += spacing;
-    });
-  }
-
-  private drawToolbarHorizontal(): void {
-    const buttonSize = 36;
-    const padding = 5;
-    const spacing = 60;
-    const totalHeight = this.buttons.length * spacing;
-    let startY = (this.canvas.height - totalHeight) / 2;
-
-    this.buttons.forEach(button => {
-      if (button.image) {
-        // Draw image
-        this.ctx.drawImage(button.image, 8, startY - 2, buttonSize, buttonSize);
-
-        // Draw border
-        this.ctx.strokeStyle = '#fff';
-        this.ctx.lineWidth = 1;
-        this.ctx.strokeRect(padding, startY - padding, buttonSize + 4, buttonSize + 4);
-
-        // Update button bounds
-        button.x = padding;
-        button.y = startY - padding;
-        button.width = buttonSize + 4;
-        button.height = buttonSize + 4;
-      }
-
-      startY += spacing;
-    });
   }
 
   private addEventListeners(): void {
     this.removeEventListeners();
 
     this.mouseMoveHandler = (e: MouseEvent) => {
-      let cursor = 'default';
-      let nextHovered: ToolButton | null = null;
-      for (const button of this.buttons) {
-        if (this.isInside(e.clientX, e.clientY, button)) {
-          cursor = 'pointer';
-          nextHovered = button;
-          break;
-        }
-      }
-      this.canvas.style.cursor = cursor;
-      if (nextHovered) {
-        if (this.hoveredButton !== nextHovered) {
-          this.hoveredButton = nextHovered;
-        }
-        this.showTooltip(t(nextHovered.nameKey), e.clientX, e.clientY);
-      } else {
-        this.hoveredButton = null;
-        this.hideTooltip();
-      }
+      this.pendingPointerX = e.clientX;
+      this.pendingPointerY = e.clientY;
+      this.scheduleHoverUpdate();
     };
     this.canvas.addEventListener('mousemove', this.mouseMoveHandler, { passive: true });
+
     this.mouseLeaveHandler = () => {
-      this.hoveredButton = null;
       this.hideTooltip();
     };
     this.canvas.addEventListener('mouseleave', this.mouseLeaveHandler, { passive: true });
 
     this.mouseDownHandler = (e: MouseEvent | TouchEvent) => this.handleCanvasClick(e);
     this.touchStartHandler = (e: TouchEvent) => this.handleCanvasClick(e);
-
     this.canvas.addEventListener('mousedown', this.mouseDownHandler);
     this.canvas.addEventListener('touchstart', this.touchStartHandler, { passive: true });
 
@@ -308,6 +228,10 @@ export class Toolbar {
   }
 
   private removeEventListeners(): void {
+    if (this.hoverFrameId !== null) {
+      cancelAnimationFrame(this.hoverFrameId);
+      this.hoverFrameId = null;
+    }
     if (this.mouseMoveHandler) {
       this.canvas.removeEventListener('mousemove', this.mouseMoveHandler);
     }
@@ -326,16 +250,37 @@ export class Toolbar {
     }
   }
 
-  private handleCanvasClick(e: MouseEvent | TouchEvent): void {
-    const mouseX = 'clientX' in e ? e.clientX : e.touches[0].clientX;
-    const mouseY = 'clientY' in e ? e.clientY : e.touches[0].clientY;
-
-    for (const button of this.buttons) {
-      if (this.isInside(mouseX, mouseY, button)) {
-        button.action();
-        break;
-      }
+  private scheduleHoverUpdate(): void {
+    if (this.hoverFrameId !== null) {
+      return;
     }
+
+    this.hoverFrameId = requestAnimationFrame(() => {
+      this.hoverFrameId = null;
+      this.processHover(this.pendingPointerX, this.pendingPointerY);
+    });
+  }
+
+  private processHover(x: number, y: number): void {
+    const hovered = this.findButtonAt(x, y);
+    this.canvas.style.cursor = hovered ? 'pointer' : 'default';
+
+    if (!hovered) {
+      this.hideTooltip();
+      return;
+    }
+
+    this.showTooltip(t(hovered.nameKey), x, y);
+  }
+
+  private handleCanvasClick(e: MouseEvent | TouchEvent): void {
+    const point = getPointerPosition(e);
+    if (!point) return;
+
+    const button = this.findButtonAt(point.x, point.y);
+    if (!button) return;
+
+    this.togglePopup(button.type);
   }
 
   private handleDocumentClick(e: MouseEvent | TouchEvent): void {
@@ -343,11 +288,19 @@ export class Toolbar {
 
     const target = e.target as Node;
     if (this.canvas.contains(target)) return;
-    if (this.currentCloseIcon && this.currentCloseIcon.contains(target)) return;
-    if (this.currentHideIcon && this.currentHideIcon.contains(target)) return;
-    if (this.currentPopup && this.currentPopup.contains(target)) return;
+    if (this.popupControls.contains(target)) return;
+    if (this.currentPopup?.contains(target)) return;
 
     this.hideCurrentPopup();
+  }
+
+  private findButtonAt(x: number, y: number): ToolButton | null {
+    for (const button of this.buttons) {
+      if (isInsideRect(x, y, button)) {
+        return button;
+      }
+    }
+    return null;
   }
 
   public resizeToolbar(): void {
@@ -360,28 +313,29 @@ export class Toolbar {
       this.setupCanvas();
       this.addEventListeners();
     } else {
-      this.canvas.width = this.isMobile ? window.innerWidth : 50;
-      this.canvas.height = this.isMobile ? 50 : window.innerHeight;
+      this.setCanvasSize();
     }
 
+    this.reanchorPopups();
     this.drawToolbar();
   }
 
+  private reanchorPopups(): void {
+    const popups = document.querySelectorAll<HTMLElement>('.toolbar-popup');
+    popups.forEach(popup => this.applyPopupAnchorStyles(popup));
+
+    if (this.popupOpen && this.currentPopup && this.isPopupVisible(this.currentPopup)) {
+      this.popupControls.render();
+    }
+  }
+
   private removeCanvas(): void {
-    if (this.canvas && this.canvas.parentNode) {
+    if (this.canvas.parentNode) {
       this.canvas.parentNode.removeChild(this.canvas);
     }
   }
 
-  private isInside(
-    x: number,
-    y: number,
-    rect: { x: number; y: number; width: number; height: number }
-  ): boolean {
-    return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height;
-  }
-
-  private togglePopup(type: string): void {
+  private togglePopup(type: PopupType): void {
     const popupId = `${type}Popup`;
     if (
       this.currentPopup &&
@@ -401,48 +355,32 @@ export class Toolbar {
     this.showPopup(type);
   }
 
-  private showPopup(type: string): void {
+  private showPopup(type: PopupType): void {
     const popupId = `${type}Popup`;
     const existingPopup = document.getElementById(popupId);
+
     if (existingPopup) {
       existingPopup.style.display = 'block';
       this.popupOpen = true;
       this.currentPopup = existingPopup;
-      this.addCloseIcon();
-      this.addHideIcon();
+      this.popupControls.render();
       return;
     }
+
     this.popupOpen = true;
-    switch (type) {
-      case 'solve':
-        showSolvePopup(this);
-        break;
-      case 'generate':
-        showGeneratePopup(this);
-        break;
-      case 'tutorial':
-        showTutorialPopup(this);
-        break;
-      case 'settings':
-        showSettingsPopup(this);
-        break;
-      case 'maze':
-        showMazePopup(this);
-        break;
-    }
+    POPUP_SHOW_HANDLERS[type](this);
   }
 
   public createPopupContainer(id: string, title: string): HTMLElement {
     const popupContainer = document.createElement('div');
     popupContainer.id = id;
     popupContainer.className = 'toolbar-popup';
-    popupContainer.style.setProperty('--toolbar-popup-top', this.isMobile ? '50px' : '0');
-    popupContainer.style.setProperty('--toolbar-popup-left', this.isMobile ? '50%' : '238px');
+    this.applyPopupAnchorStyles(popupContainer);
     document.body.appendChild(popupContainer);
 
     const popup = document.createElement('canvas');
-    popup.width = 370;
-    popup.height = 4000;
+    popup.width = POPUP_CANVAS_WIDTH;
+    popup.height = POPUP_CANVAS_HEIGHT;
     popupContainer.appendChild(popup);
 
     const titleElement = document.createElement('h3');
@@ -450,10 +388,21 @@ export class Toolbar {
     titleElement.textContent = title;
     popupContainer.appendChild(titleElement);
 
-    this.addCloseIcon();
-    this.addHideIcon();
     this.currentPopup = popupContainer;
+    this.popupOpen = true;
+    this.popupControls.render();
     return popupContainer;
+  }
+
+  private applyPopupAnchorStyles(popup: HTMLElement): void {
+    popup.style.setProperty(
+      '--toolbar-popup-top',
+      this.isMobile ? POPUP_TOP_MOBILE : POPUP_TOP_DESKTOP
+    );
+    popup.style.setProperty(
+      '--toolbar-popup-left',
+      this.isMobile ? POPUP_LEFT_MOBILE : POPUP_LEFT_DESKTOP
+    );
   }
 
   public createPopupContainerByKey(id: string, titleKey: TranslationKey): HTMLElement {
@@ -476,100 +425,37 @@ export class Toolbar {
       }
     });
 
-    if (this.currentCloseIcon) {
-      this.currentCloseIcon.title = t('toolbar.close');
-    }
-    if (this.currentHideIcon) {
-      this.currentHideIcon.title = t('toolbar.hide');
-    }
-  }
-
-  private addCloseIcon(): void {
-    if (this.currentCloseIcon) {
-      document.body.removeChild(this.currentCloseIcon);
-    }
-
-    const closeIcon = new Image();
-    closeIcon.src = '/MazeSolver3D/icon/close.png';
-    closeIcon.className = 'toolbar-popup__close';
-    closeIcon.title = t('toolbar.close');
-    closeIcon.style.setProperty('--toolbar-close-top', this.isMobile ? '56px' : '10px');
-    closeIcon.style.setProperty(
-      '--toolbar-close-left',
-      this.isMobile ? 'calc(50% + 160px)' : '400px'
-    );
-    closeIcon.addEventListener('click', () => this.closeCurrentPopup());
-    document.body.appendChild(closeIcon);
-    this.currentCloseIcon = closeIcon;
-  }
-
-  private addHideIcon(): void {
-    if (this.currentHideIcon) {
-      document.body.removeChild(this.currentHideIcon);
-    }
-
-    const hideIcon = new Image();
-    hideIcon.src = '/MazeSolver3D/icon/hide.png';
-    hideIcon.className = 'toolbar-popup__hide';
-    hideIcon.title = t('toolbar.hide');
-    hideIcon.style.setProperty('--toolbar-hide-top', this.isMobile ? '56px' : '10px');
-    hideIcon.style.setProperty(
-      '--toolbar-hide-left',
-      this.isMobile ? 'calc(50% + 120px)' : '360px'
-    );
-    hideIcon.addEventListener('click', () => this.hideCurrentPopup());
-    document.body.appendChild(hideIcon);
-    this.currentHideIcon = hideIcon;
+    this.popupControls.updateTitles();
   }
 
   public closePopup(type: string): void {
     const popup = document.getElementById(`${type}Popup`);
-    if (popup && popup.parentNode) {
+    if (popup?.parentNode) {
       popup.parentNode.removeChild(popup);
     }
-    if (this.currentCloseIcon && this.currentCloseIcon.parentNode) {
-      this.currentCloseIcon.parentNode.removeChild(this.currentCloseIcon);
-      this.currentCloseIcon = null;
+
+    if (this.currentPopup && this.currentPopup.id === `${type}Popup`) {
+      this.currentPopup = null;
+      this.popupOpen = false;
+      this.popupControls.remove();
     }
-    if (this.currentHideIcon && this.currentHideIcon.parentNode) {
-      this.currentHideIcon.parentNode.removeChild(this.currentHideIcon);
-      this.currentHideIcon = null;
-    }
-    const inputs = document.querySelectorAll('.popup-input');
-    inputs.forEach(input => input.parentElement?.removeChild(input));
-    this.popupOpen = false;
-    this.currentPopup = null;
   }
 
   private closeCurrentPopup(): void {
-    if (this.currentPopup && this.currentPopup.parentNode) {
+    if (this.currentPopup?.parentNode) {
       this.currentPopup.parentNode.removeChild(this.currentPopup);
       this.currentPopup = null;
     }
-    if (this.currentCloseIcon && this.currentCloseIcon.parentNode) {
-      this.currentCloseIcon.parentNode.removeChild(this.currentCloseIcon);
-      this.currentCloseIcon = null;
-    }
-    if (this.currentHideIcon && this.currentHideIcon.parentNode) {
-      this.currentHideIcon.parentNode.removeChild(this.currentHideIcon);
-      this.currentHideIcon = null;
-    }
     this.popupOpen = false;
+    this.popupControls.remove();
   }
 
   private hideCurrentPopup(): void {
     if (this.currentPopup) {
       this.currentPopup.style.display = 'none';
     }
-    if (this.currentCloseIcon && this.currentCloseIcon.parentNode) {
-      this.currentCloseIcon.parentNode.removeChild(this.currentCloseIcon);
-      this.currentCloseIcon = null;
-    }
-    if (this.currentHideIcon && this.currentHideIcon.parentNode) {
-      this.currentHideIcon.parentNode.removeChild(this.currentHideIcon);
-      this.currentHideIcon = null;
-    }
     this.popupOpen = false;
+    this.popupControls.remove();
   }
 
   private isPopupVisible(popup: HTMLElement): boolean {
@@ -580,7 +466,7 @@ export class Toolbar {
     this.removeEventListeners();
     this.removeCanvas();
     this.closeCurrentPopup();
-    if (this.tooltip && this.tooltip.parentNode) {
+    if (this.tooltip?.parentNode) {
       this.tooltip.parentNode.removeChild(this.tooltip);
       this.tooltip = null;
     }

@@ -1,3 +1,74 @@
 .solve-popup {
   box-sizing: border-box;
+  padding: 64px 10px 14px;
+}
+
+.solve-popup__content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.solve-popup__row {
+  border: 1px solid #2f4453;
+  border-radius: 8px;
+  background: #1a2831;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px;
+  align-items: center;
+  gap: 8px;
+}
+
+.solve-popup__label {
+  color: #d8e6ee;
+  font-size: 15px;
+}
+
+.solve-popup__value {
+  color: #f4fbff;
+  font-size: 14px;
+  text-align: right;
+}
+
+.solve-popup__note {
+  margin: 0;
+  border: 1px dashed #3b4e5b;
+  border-radius: 8px;
+  background: #15242d;
+  color: #cddde5;
+  font-size: 13px;
+  line-height: 1.35;
+  padding: 10px 12px;
+}
+
+.solve-popup__select {
+  width: 170px;
+  min-width: 170px;
+  border: 1px solid #3a5566;
+  border-radius: 5px;
+  background: #0f1b22;
+  color: #f4fbff;
+  font-size: 14px;
+  padding: 7px 10px;
+}
+
+.solve-popup__action-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.solve-popup__btn {
+  border: 1px solid #2f8e74;
+  border-radius: 5px;
+  background: #0f7f61;
+  color: #f7fffb;
+  padding: 8px 14px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.solve-popup__btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
