@@ -75,6 +75,8 @@
   "solve.markers.missingBoth": "Depart et arrivee manquants",
   "solve.markers.missingStart": "Depart manquant",
   "solve.markers.missingEnd": "Arrivee manquante",
+  "solve.singleLayerOnlyAlert": "La resolution est actuellement prise en charge uniquement pour les labyrinthes rectangulaires a une couche.",
+  "solve.noPathFound": "Aucun chemin n'a ete trouve entre le depart et la sortie.",
   "solve.category.classical": "Classique",
   "solve.category.shortestPath": "Plus court chemin",
   "solve.category.heuristic": "Heuristique",

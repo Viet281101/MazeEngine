@@ -33,6 +33,7 @@ const POPUP_SHOW_HANDLERS: Record<PopupType, (toolbar: Toolbar) => void> = {
   tutorial: toolbar => showTutorialPopup(toolbar),
   settings: toolbar => showSettingsPopup(toolbar),
 };
+const TOOLBAR_POPUP_SHOWN_EVENT = 'toolbar-popup-shown';
 
 export class Toolbar {
   private canvas!: HTMLCanvasElement;
@@ -361,6 +362,11 @@ export class Toolbar {
 
     if (existingPopup) {
       existingPopup.style.display = 'block';
+      existingPopup.dispatchEvent(
+        new CustomEvent(TOOLBAR_POPUP_SHOWN_EVENT, {
+          detail: { type },
+        })
+      );
       this.popupOpen = true;
       this.currentPopup = existingPopup;
       this.popupControls.render();

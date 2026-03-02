@@ -1,5 +1,5 @@
 import { PreviewWindow } from '../preview/preview-window';
-import type { MarkerPoint } from '../types/maze';
+import type { MarkerPoint, SolutionPath } from '../types/maze';
 
 interface PreviewWindowFactoryArgs {
   onHide: () => void;
@@ -47,9 +47,10 @@ export class PreviewWindowManager {
 
   public updateMaze(
     mazeData: number[][],
-    markers?: { start?: MarkerPoint | null; end?: MarkerPoint | null }
+    markers?: { start?: MarkerPoint | null; end?: MarkerPoint | null },
+    solutionPath?: SolutionPath
   ): void {
-    this.previewWindow?.updateMaze(mazeData, markers);
+    this.previewWindow?.updateMaze(mazeData, markers, solutionPath);
   }
 
   public handleWindowResize(): void {

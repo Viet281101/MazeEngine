@@ -18,7 +18,13 @@ import {
   createSampleSingleLayerMazeData,
 } from './default-mazes';
 import { MeshReductionSettingsStorage } from './mesh-settings-store';
-import type { MarkerPoint, MazeAppBridge, MazeMarkers, UpdateMazeOptions } from '../types/maze';
+import type {
+  MarkerPoint,
+  MazeAppBridge,
+  MazeMarkers,
+  SolutionPath,
+  UpdateMazeOptions,
+} from '../types/maze';
 
 type MazeInstance = SingleLayerMaze | MultiLayerMaze;
 
@@ -43,6 +49,7 @@ export class MainApp implements MazeController, MazeAppBridge {
   private readonly keydownHandler: (event: KeyboardEvent) => void;
 
   private previewMarkers: MazeMarkers | null = null;
+  private solutionPath: SolutionPath = [];
   private isDebugOverlayVisible: boolean = true;
   private isPreviewVisible: boolean = true;
   private readonly mobileBreakpoint: number = UI_BREAKPOINTS.MOBILE;
@@ -191,6 +198,8 @@ export class MainApp implements MazeController, MazeAppBridge {
     },
     options: UpdateMazeOptions = {}
   ): void {
+    this.solutionPath = [];
+    this.maze.clearSolutionPath();
     const cameraSnapshot = this.captureCameraSnapshot(options.preserveCamera === true);
 
     if (this.canReuseMazeInstance(multiLayer)) {
@@ -271,11 +280,11 @@ export class MainApp implements MazeController, MazeAppBridge {
     }
 
     if (this.previewMarkers) {
-      this.previewWindowManager.updateMaze(mazeData[0], this.previewMarkers);
+      this.previewWindowManager.updateMaze(mazeData[0], this.previewMarkers, this.solutionPath);
       return;
     }
 
-    this.previewWindowManager.updateMaze(mazeData[0]);
+    this.previewWindowManager.updateMaze(mazeData[0], undefined, this.solutionPath);
   }
 
   /**
@@ -349,6 +358,18 @@ export class MainApp implements MazeController, MazeAppBridge {
 
   public getMazeMarkers(): MazeMarkers | null {
     return this.previewMarkers ? { ...this.previewMarkers } : null;
+  }
+
+  public setSolutionPath(path: SolutionPath): void {
+    this.solutionPath = path.map(cell => ({ ...cell }));
+    this.maze.setSolutionPath(this.solutionPath, 0);
+    this.updatePreview();
+  }
+
+  public clearSolutionPath(): void {
+    this.solutionPath = [];
+    this.maze.clearSolutionPath();
+    this.updatePreview();
   }
 
   public updateWallColor(color: string): void {

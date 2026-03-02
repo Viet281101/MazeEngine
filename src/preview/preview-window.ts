@@ -2,6 +2,7 @@ import './preview-window.css';
 import { PREVIEW_COLORS } from './preview-constants';
 import { computeMarkersFromLayer } from '../maze/marker-utils';
 import { subscribeLanguageChange, t } from '../sidebar/i18n';
+import type { SolutionPath } from '../types/maze';
 
 export interface PreviewWindowConfig {
   initialX?: number;
@@ -54,6 +55,7 @@ export class PreviewWindow {
   private hideTimeoutId: number | null = null;
   private readonly hideTransitionMs: number = 350;
   private mazeData: number[][] | null = null;
+  private solutionPath: SolutionPath = [];
   private layout: {
     rows: number;
     cols: number;
@@ -302,9 +304,11 @@ export class PreviewWindow {
     markers?: {
       start?: { row: number; col: number } | null;
       end?: { row: number; col: number } | null;
-    }
+    },
+    solutionPath?: SolutionPath
   ): void {
     this.mazeData = mazeData;
+    this.solutionPath = solutionPath ? solutionPath.map(cell => ({ ...cell })) : [];
     if (markers) {
       this.startCell = markers.start ?? null;
       this.endCell = markers.end ?? null;
@@ -368,6 +372,8 @@ export class PreviewWindow {
       }
     }
 
+    this.drawSolutionPath(rows, cellSize, offsetX, offsetY);
+
     const hasSameCell =
       this.startCell &&
       this.endCell &&
@@ -429,6 +435,32 @@ export class PreviewWindow {
 
     this.ctx.fillStyle = color;
     this.ctx.fillRect(x, y, cellSize, cellSize);
+  }
+
+  private drawSolutionPath(rows: number, cellSize: number, offsetX: number, offsetY: number): void {
+    if (this.solutionPath.length < 2) {
+      return;
+    }
+
+    this.ctx.save();
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = PREVIEW_COLORS.solutionPath;
+    this.ctx.lineWidth = Math.max(2, cellSize * 0.35);
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+
+    this.solutionPath.forEach((cell, index) => {
+      const centerX = offsetX + cell.col * cellSize + cellSize / 2;
+      const centerY = offsetY + (rows - 1 - cell.row) * cellSize + cellSize / 2;
+      if (index === 0) {
+        this.ctx.moveTo(centerX, centerY);
+      } else {
+        this.ctx.lineTo(centerX, centerY);
+      }
+    });
+
+    this.ctx.stroke();
+    this.ctx.restore();
   }
 
   /**

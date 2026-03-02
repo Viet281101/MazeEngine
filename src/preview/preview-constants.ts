@@ -18,6 +18,7 @@ export const PREVIEW_COLORS = {
   resizeGrip: '#5a5a5a',
   markerStart: '#2ecc71',
   markerEnd: '#e74c3c',
+  solutionPath: '#ff3b30',
   markerBoth: '#f1c40f',
   markerStroke: '#111',
   markerText: '#f6f6f6',

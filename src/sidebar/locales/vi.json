@@ -75,6 +75,8 @@
   "solve.markers.missingBoth": "Thiếu điểm bắt đầu và kết thúc",
   "solve.markers.missingStart": "Thiếu điểm bắt đầu",
   "solve.markers.missingEnd": "Thiếu điểm kết thúc",
+  "solve.singleLayerOnlyAlert": "Hiện chỉ hỗ trợ giải cho mê cung 1 tầng (lưới vuông).",
+  "solve.noPathFound": "Không tìm thấy đường đi từ điểm bắt đầu tới lối ra.",
   "solve.category.classical": "Kinh điển",
   "solve.category.shortestPath": "Đường đi ngắn nhất",
   "solve.category.heuristic": "Heuristic",

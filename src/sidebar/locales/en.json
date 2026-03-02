@@ -75,6 +75,8 @@
   "solve.markers.missingBoth": "Missing start and end",
   "solve.markers.missingStart": "Missing start",
   "solve.markers.missingEnd": "Missing end",
+  "solve.singleLayerOnlyAlert": "Solving is currently supported only for single-layer rectangular mazes.",
+  "solve.noPathFound": "No path was found from start to exit.",
   "solve.category.classical": "Classical",
   "solve.category.shortestPath": "Shortest path",
   "solve.category.heuristic": "Heuristic",

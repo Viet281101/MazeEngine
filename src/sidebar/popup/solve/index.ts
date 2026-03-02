@@ -9,7 +9,9 @@ import {
   type SolveAlgorithmCategory,
   type SolveAlgorithmDefinition,
 } from '../../../solve/solve-catalog';
+import { solveSingleLayerMazeWithBfs } from '../../../solve/runtime/single-layer-bfs';
 import './solve.css';
+const TOOLBAR_POPUP_SHOWN_EVENT = 'toolbar-popup-shown';
 
 function getMazeAppBridge(): MazeAppBridge | null {
   return window.mazeApp ?? null;
@@ -68,6 +70,9 @@ class SolvePopup {
   private selectedCategory: SolveAlgorithmCategory = 'shortestPath';
   private selectedAlgorithm: SolveAlgorithmDefinition | null = null;
   private unsubscribeLanguageChange: (() => void) | null = null;
+  private readonly popupShownHandler = () => {
+    this.refreshMazeInfo();
+  };
 
   constructor(toolbar: Toolbar) {
     this.popupContainer = toolbar.createPopupContainerByKey('solvePopup', 'popup.solvingMaze');
@@ -198,6 +203,8 @@ class SolvePopup {
   }
 
   private bindEvents(): void {
+    this.popupContainer.addEventListener(TOOLBAR_POPUP_SHOWN_EVENT, this.popupShownHandler);
+
     this.categorySelect.addEventListener('change', () => {
       this.selectedCategory = this.categorySelect.value as SolveAlgorithmCategory;
       this.refreshAlgorithmOptions();
@@ -212,7 +219,38 @@ class SolvePopup {
       if (!this.selectedAlgorithm) {
         return;
       }
-      console.info(`[solve] Selected algorithm: ${this.selectedAlgorithm.id}`);
+      const mazeApp = getMazeAppBridge();
+      if (!mazeApp) {
+        return;
+      }
+
+      const mazeData = mazeApp.getMazeData();
+      const markers = mazeApp.getMazeMarkers();
+      const topology = detectTopology(mazeData);
+
+      if (topology !== 'singleLayerRect') {
+        mazeApp.clearSolutionPath();
+        window.alert(t('solve.singleLayerOnlyAlert'));
+        return;
+      }
+
+      if (!markers?.start || !markers?.end || mazeData.length === 0) {
+        mazeApp.clearSolutionPath();
+        return;
+      }
+
+      const layer = mazeData[0];
+      const path = solveSingleLayerMazeWithBfs(layer, markers.start, markers.end);
+      if (!path) {
+        mazeApp.clearSolutionPath();
+        window.alert(t('solve.noPathFound'));
+        return;
+      }
+
+      mazeApp.setSolutionPath(path);
+      console.info(
+        `[solve] Solved with BFS runtime (selected: ${this.selectedAlgorithm.id}) path length=${path.length}`
+      );
     });
   }
 
@@ -289,6 +327,7 @@ class SolvePopup {
 
   private watchContainerRemoval(): void {
     watchContainerRemoval(this.popupContainer, () => {
+      this.popupContainer.removeEventListener(TOOLBAR_POPUP_SHOWN_EVENT, this.popupShownHandler);
       if (this.unsubscribeLanguageChange) {
         this.unsubscribeLanguageChange();
         this.unsubscribeLanguageChange = null;

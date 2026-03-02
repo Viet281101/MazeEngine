@@ -4,6 +4,7 @@ import { ResourceManager } from '../resources/resource-manager';
 import { DisposalHelper } from '../resources/disposal-helper';
 import { MeshFactory } from '../resources/mesh-factory';
 import { MESH_REDUCTION } from '../constants/maze';
+import type { SolutionPath } from '../types/maze';
 
 export interface MazeConfig {
   wallHeight?: number;
@@ -39,6 +40,7 @@ export abstract class Maze {
   // Maze data
   protected maze: number[][][];
   protected mazeLayers: THREE.Object3D[] = [];
+  protected solutionPathLine: THREE.Line | null = null;
 
   // Configuration
   protected wallHeight: number;
@@ -144,6 +146,7 @@ export abstract class Maze {
   public updateMazeData(maze: number[][][], options: { preserveCamera?: boolean } = {}): void {
     if (this.isDisposed) return;
     this.maze = maze;
+    this.clearSolutionPath();
     if (options.preserveCamera) {
       this.rebuildMazePreservingCamera();
       return;
@@ -223,6 +226,7 @@ export abstract class Maze {
    * Delete maze layers while keeping the scene
    */
   public deleteMaze(): void {
+    this.clearSolutionPath();
     this.mazeLayers.forEach(layer => {
       DisposalHelper.disposeObject(layer);
       this.scene.remove(layer);
@@ -373,6 +377,69 @@ export abstract class Maze {
 
   public removeRenderListener(listener: () => void): void {
     this.renderListeners.delete(listener);
+  }
+
+  public setSolutionPath(path: SolutionPath, layerIndex: number = 0): void {
+    this.clearSolutionPath();
+    if (path.length < 2) {
+      this.requestRender();
+      return;
+    }
+
+    const targetLayer = this.maze[layerIndex];
+    if (!targetLayer || targetLayer.length === 0) {
+      this.requestRender();
+      return;
+    }
+
+    const points: THREE.Vector3[] = [];
+    const rows = targetLayer.length;
+    const cols = targetLayer[0]?.length ?? 0;
+
+    path.forEach(cell => {
+      if (cell.row < 0 || cell.row >= rows || cell.col < 0 || cell.col >= cols) {
+        return;
+      }
+      const x = cell.col * this.cellSize;
+      const y = 0.04 + layerIndex * this.wallHeight;
+      const z = -cell.row * this.cellSize;
+      points.push(new THREE.Vector3(x, y, z));
+    });
+
+    if (points.length < 2) {
+      this.requestRender();
+      return;
+    }
+
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = new THREE.LineBasicMaterial({
+      color: 0xff3b30,
+      linewidth: 3,
+      transparent: true,
+      opacity: 0.95,
+      depthTest: false,
+    });
+    this.solutionPathLine = new THREE.Line(geometry, material);
+    this.solutionPathLine.renderOrder = 2;
+    this.scene.add(this.solutionPathLine);
+    this.requestRender();
+  }
+
+  public clearSolutionPath(): void {
+    if (!this.solutionPathLine) {
+      return;
+    }
+
+    this.scene.remove(this.solutionPathLine);
+    this.solutionPathLine.geometry.dispose();
+    const material = this.solutionPathLine.material;
+    if (Array.isArray(material)) {
+      material.forEach(item => item.dispose());
+    } else {
+      material.dispose();
+    }
+    this.solutionPathLine = null;
+    this.requestRender();
   }
 
   private shouldMergeWallsForConfig(
