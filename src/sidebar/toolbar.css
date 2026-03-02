@@ -18,6 +18,33 @@
   overflow-x: hidden;
   z-index: 1000;
   user-select: none;
+  scrollbar-width: thin;
+  scrollbar-color: #5e5e5e #b2b2b2;
+}
+
+@supports (overflow: overlay) {
+  .toolbar-popup {
+    overflow-y: overlay;
+  }
+}
+
+.toolbar-popup::-webkit-scrollbar {
+  width: 10px;
+}
+
+.toolbar-popup::-webkit-scrollbar-track {
+  background: #b2b2b2;
+  border-left: 1px solid #8b8b8b;
+}
+
+.toolbar-popup::-webkit-scrollbar-thumb {
+  background: #5e5e5e;
+  border-radius: 999px;
+  border: 2px solid #b2b2b2;
+}
+
+.toolbar-popup::-webkit-scrollbar-thumb:hover {
+  background: #4f4f4f;
 }
 
 .toolbar-popup__title {

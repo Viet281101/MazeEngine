@@ -24,7 +24,7 @@
 
 .settings-popup__label--with-help {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 6px;
   width: 100%;
 }
@@ -40,7 +40,6 @@
   height: 16px;
   cursor: pointer;
   opacity: 0.9;
-  margin-top: 3px;
 }
 
 .settings-popup__help-icon:hover,
@@ -62,20 +61,26 @@
 
 .settings-popup__checkbox {
   justify-self: end;
-  width: 20px;
-  height: 20px;
+  width: 30px;
+  height: 30px;
   accent-color: #00a884;
 }
 
-.settings-popup__input {
+.settings-popup__number-field {
   width: 170px;
   min-width: 170px;
-  height: 34px;
-  border: 1px solid #2b2b2b;
-  background: #ffffff;
-  color: #000000;
-  border-radius: 4px;
-  padding: 0 8px;
+  height: 38px;
+  --popup-number-field-width: 100%;
+  --popup-number-field-height: 100%;
+  --popup-number-input-border: #2b2b2b;
+  --popup-number-input-bg: #ffffff;
+  --popup-number-input-color: #000000;
+  --popup-number-input-padding: 0 8px;
+  --popup-number-input-font-size: 18px;
+  --popup-number-step-border: #2b2b2b;
+  --popup-number-step-bg: #f2f2f2;
+  --popup-number-step-color: #000;
+  --popup-number-step-hover-bg: #e4e4e4;
 }
 
 .settings-popup__action-btn {

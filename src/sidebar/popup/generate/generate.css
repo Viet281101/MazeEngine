@@ -9,6 +9,63 @@
   gap: 8px;
 }
 
+.generate-popup__topology-row {
+  border: 1px solid #2f4453;
+  border-radius: 8px;
+  background: #1a2831;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.generate-popup__topology-label {
+  font-size: 16px;
+  color: #d8e6ee;
+}
+
+.generate-popup__topology-select {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #3a5566;
+  border-radius: 5px;
+  background: #0f1b22;
+  color: #f4fbff;
+  font-size: 15px;
+  padding: 7px 10px;
+}
+
+.generate-popup__generator-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.generate-popup__generator-topology-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.generate-popup__topology-params {
+  border: 1px solid #2f4453;
+  border-radius: 8px;
+  background: #1a2831;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.generate-popup__topology-params:empty {
+  display: none;
+}
+
+.generate-popup__topology-params-label {
+  font-size: 16px;
+  color: #d8e6ee;
+}
+
 .generate-popup__row {
   border: 1px solid #243746;
   border-radius: 8px;
@@ -86,14 +143,18 @@
   font-size: 14px;
 }
 
-.generate-popup__input input {
-  width: 68px;
-  height: 32px;
-  border: 1px solid #3a5566;
-  border-radius: 4px;
-  background: #0f1b22;
-  color: #fff;
-  padding: 4px 6px;
+.generate-popup__input .popup-number-field {
+  --popup-number-field-width: 82px;
+  --popup-number-field-height: 38px;
+  --popup-number-input-border: #3a5566;
+  --popup-number-input-bg: #0f1b22;
+  --popup-number-input-color: #fff;
+  --popup-number-input-padding: 4px 6px;
+  --popup-number-input-font-size: 16px;
+  --popup-number-step-border: #3a5566;
+  --popup-number-step-bg: #172731;
+  --popup-number-step-color: #f0f6fa;
+  --popup-number-step-hover-bg: #233845;
 }
 
 .generate-popup__action-row {
@@ -117,7 +178,42 @@
   opacity: 0.55;
 }
 
+.generate-popup__btn--loading {
+  position: relative;
+  padding-left: 30px;
+}
+
+.generate-popup__btn--loading::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  border: 2px solid rgba(247, 255, 251, 0.35);
+  border-top-color: #f7fffb;
+  border-radius: 50%;
+  animation: generate-popup-spin 0.75s linear infinite;
+}
+
+@keyframes generate-popup-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .generate-popup__hint {
   font-size: 16px;
   color: #c9d8df;
+}
+
+.generate-popup__empty {
+  margin: 0;
+  border: 1px dashed #3b4e5b;
+  border-radius: 8px;
+  background: #1a2831;
+  color: #d8e6ee;
+  font-size: 16px;
+  padding: 12px;
 }
