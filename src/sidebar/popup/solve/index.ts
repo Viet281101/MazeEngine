@@ -15,14 +15,20 @@ function getMazeAppBridge(): MazeAppBridge | null {
   return window.mazeApp ?? null;
 }
 
-const CATEGORY_LABEL_KEYS: Record<SolveAlgorithmCategory, 'solve.category.classical' | 'solve.category.shortestPath' | 'solve.category.heuristic' | 'solve.category.navigation' | 'solve.category.metaheuristic'> =
-  {
-    classical: 'solve.category.classical',
-    shortestPath: 'solve.category.shortestPath',
-    heuristic: 'solve.category.heuristic',
-    navigation: 'solve.category.navigation',
-    metaheuristic: 'solve.category.metaheuristic',
-  };
+const CATEGORY_LABEL_KEYS: Record<
+  SolveAlgorithmCategory,
+  | 'solve.category.classical'
+  | 'solve.category.shortestPath'
+  | 'solve.category.heuristic'
+  | 'solve.category.navigation'
+  | 'solve.category.metaheuristic'
+> = {
+  classical: 'solve.category.classical',
+  shortestPath: 'solve.category.shortestPath',
+  heuristic: 'solve.category.heuristic',
+  navigation: 'solve.category.navigation',
+  metaheuristic: 'solve.category.metaheuristic',
+};
 
 function detectTopology(mazeData: number[][][]): MazeTopologyId | 'unknown' {
   if (!Array.isArray(mazeData) || mazeData.length === 0) {
@@ -205,7 +211,8 @@ class SolvePopup {
 
   private refreshMazeInfo(): void {
     const mazeApp = getMazeAppBridge();
-    const mazeData = mazeApp && typeof mazeApp.getMazeData === 'function' ? mazeApp.getMazeData() : [];
+    const mazeData =
+      mazeApp && typeof mazeApp.getMazeData === 'function' ? mazeApp.getMazeData() : [];
     const markers =
       mazeApp && typeof mazeApp.getMazeMarkers === 'function' ? mazeApp.getMazeMarkers() : null;
 
