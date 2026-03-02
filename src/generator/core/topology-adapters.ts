@@ -173,11 +173,13 @@ function collectReachableInteriorCells(
   const rows = layer.length;
   const cols = layer[0]?.length ?? 0;
   const queue: GridCell[] = [start];
-  const visited = new Set<string>([`${start.row},${start.col}`]);
+  let queueIndex = 0;
+  const visited = new Set<number>([toCellId(start.row, start.col, cols)]);
   const result: GridCell[] = [];
 
-  while (queue.length > 0) {
-    const current = queue.shift() as GridCell;
+  while (queueIndex < queue.length) {
+    const current = queue[queueIndex] as GridCell;
+    queueIndex += 1;
     const key = `${current.row},${current.col}`;
     const isInterior =
       current.row > 0 && current.row < rows - 1 && current.col > 0 && current.col < cols - 1;
@@ -198,11 +200,11 @@ function collectReachableInteriorCells(
       if (layer[next.row][next.col] !== 0) {
         return;
       }
-      const nextKey = `${next.row},${next.col}`;
-      if (visited.has(nextKey)) {
+      const nextId = toCellId(next.row, next.col, cols);
+      if (visited.has(nextId)) {
         return;
       }
-      visited.add(nextKey);
+      visited.add(nextId);
       queue.push(next);
     });
   }
@@ -219,6 +221,8 @@ function pickShaftCells(candidates: GridCell[], count: number): GridCell[] {
   }
 
   const picked: GridCell[] = [];
+  const pickedSet = new Set<number>();
+  const cols = inferGridCols(candidates);
   const center = averagePoint(candidates);
   let first = candidates[0];
   let firstDistance = -1;
@@ -230,27 +234,29 @@ function pickShaftCells(candidates: GridCell[], count: number): GridCell[] {
     }
   });
   picked.push(first);
+  pickedSet.add(toCellId(first.row, first.col, cols));
 
   while (picked.length < count) {
     let best: GridCell | null = null;
     let bestScore = -1;
-    candidates.forEach(cell => {
-      if (picked.some(p => p.row === cell.row && p.col === cell.col)) {
-        return;
+    for (const cell of candidates) {
+      if (pickedSet.has(toCellId(cell.row, cell.col, cols))) {
+        continue;
       }
       let nearest = Number.POSITIVE_INFINITY;
-      picked.forEach(chosen => {
+      for (const chosen of picked) {
         nearest = Math.min(nearest, squaredDistance(cell, chosen));
-      });
+      }
       if (nearest > bestScore) {
         bestScore = nearest;
         best = cell;
       }
-    });
+    }
     if (!best) {
       break;
     }
     picked.push(best);
+    pickedSet.add(toCellId(best.row, best.col, cols));
   }
 
   return picked;
@@ -277,6 +283,20 @@ function squaredDistance(a: GridCell, b: GridCell): number {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function inferGridCols(cells: GridCell[]): number {
+  let maxCol = 0;
+  cells.forEach(cell => {
+    if (cell.col > maxCol) {
+      maxCol = cell.col;
+    }
+  });
+  return maxCol + 1;
+}
+
+function toCellId(row: number, col: number, cols: number): number {
+  return row * cols + col;
 }
 
 const ADAPTERS: Record<MazeTopologyId, TopologyAdapter> = {

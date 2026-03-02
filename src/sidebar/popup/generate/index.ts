@@ -1,89 +1,30 @@
+import type { GeneratorId, MazeTopologyId, ShaftDensity } from '../../../generator';
 import { Toolbar } from '../../toolbar';
-import {
-  executeGenerator,
-  getGeneratorsForTopology,
-  type GeneratorDefinition,
-  type GeneratorId,
-  type MazeTopologyId,
-  type ShaftDensity,
-} from '../../../generator';
-import { subscribeLanguageChange, t, type TranslationKey } from '../../i18n';
-import { MAZE_SIZE } from '../../../constants/maze';
+import { subscribeLanguageChange } from '../../i18n';
 import { watchContainerRemoval } from '../popup-lifecycle';
 import { applyI18nTexts, setI18nText } from '../popup-i18n';
 import { createLabeledNumberInput } from '../popup-inputs';
-import { createI18nButton } from '../popup-elements';
+import {
+  clamp,
+  getGeneratorUiDefinitions,
+  TOPOLOGIES,
+  TOPOLOGY_LAYER_LIMITS,
+} from './generate-config';
+import { createGeneratorRow } from './generator-row';
+import { disposeGenerationRunner, runGeneration } from './generate-runner';
 import './generate.css';
 
-interface GeneratorUiDefinition extends GeneratorDefinition {
-  titleKey: TranslationKey;
-  descriptionKey: TranslationKey;
-}
-
-const TOPOLOGIES: readonly MazeTopologyId[] = [
-  'singleLayerRect',
-  'multiLayerRect',
-  'hexagonal',
-  'triangular',
-  'circular',
-];
-
-const GENERATOR_I18N: Record<
-  GeneratorId,
-  { titleKey: TranslationKey; descriptionKey: TranslationKey }
-> = {
-  binaryTree: {
-    titleKey: 'generate.binaryTree',
-    descriptionKey: 'generate.binaryTreeDescription',
-  },
-  recursiveBacktrack: {
-    titleKey: 'generate.recursiveBacktrack',
-    descriptionKey: 'generate.recursiveBacktrackDescription',
-  },
-  recursiveDivision: {
-    titleKey: 'generate.recursiveDivision',
-    descriptionKey: 'generate.recursiveDivisionDescription',
-  },
-  prim: {
-    titleKey: 'generate.prim',
-    descriptionKey: 'generate.primDescription',
-  },
-  kruskal: {
-    titleKey: 'generate.kruskal',
-    descriptionKey: 'generate.kruskalDescription',
-  },
-  wilson: {
-    titleKey: 'generate.wilson',
-    descriptionKey: 'generate.wilsonDescription',
-  },
-};
-
-function getGeneratorUiDefinitions(topology: MazeTopologyId): readonly GeneratorUiDefinition[] {
-  return getGeneratorsForTopology(topology).map(generator => ({
-    ...generator,
-    titleKey: GENERATOR_I18N[generator.id].titleKey,
-    descriptionKey: GENERATOR_I18N[generator.id].descriptionKey,
-  }));
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
 class GeneratePopup {
-  private static readonly TOPOLOGY_LAYERS_MIN = 2;
-  private static readonly TOPOLOGY_LAYERS_MAX = 30;
-  private static readonly TOPOLOGY_LAYERS_DEFAULT = 3;
-
   private popupContainer: HTMLElement;
   private listContainer: HTMLDivElement | null = null;
   private topologyParamsContainer: HTMLDivElement | null = null;
+  private readonly topologyPanels = new Map<MazeTopologyId, HTMLDivElement>();
   private activeTopology: MazeTopologyId = 'singleLayerRect';
   private topologyParams: {
     layers: number;
     shaftDensity: ShaftDensity;
   } = {
-    layers: GeneratePopup.TOPOLOGY_LAYERS_DEFAULT,
+    layers: TOPOLOGY_LAYER_LIMITS.defaultValue,
     shaftDensity: 'normal',
   };
   private unsubscribeLanguageChange: (() => void) | null = null;
@@ -169,16 +110,16 @@ class GeneratePopup {
 
     const layersInput = createLabeledNumberInput({
       labelKey: 'generate.layers',
-      min: GeneratePopup.TOPOLOGY_LAYERS_MIN,
-      max: GeneratePopup.TOPOLOGY_LAYERS_MAX,
+      min: TOPOLOGY_LAYER_LIMITS.min,
+      max: TOPOLOGY_LAYER_LIMITS.max,
       value: this.topologyParams.layers,
       wrapperClassName: 'generate-popup__input',
     });
     layersInput.input.addEventListener('change', () => {
       this.topologyParams.layers = clamp(
-        layersInput.input.valueAsNumber || GeneratePopup.TOPOLOGY_LAYERS_DEFAULT,
-        GeneratePopup.TOPOLOGY_LAYERS_MIN,
-        GeneratePopup.TOPOLOGY_LAYERS_MAX
+        layersInput.input.valueAsNumber || TOPOLOGY_LAYER_LIMITS.defaultValue,
+        TOPOLOGY_LAYER_LIMITS.min,
+        TOPOLOGY_LAYER_LIMITS.max
       );
       layersInput.input.valueAsNumber = this.topologyParams.layers;
     });
@@ -212,186 +153,82 @@ class GeneratePopup {
     if (!this.listContainer) {
       return;
     }
-    this.listContainer.textContent = '';
 
-    const generators = getGeneratorUiDefinitions(this.activeTopology);
+    const activePanel = this.getOrCreateTopologyPanel(this.activeTopology);
+    const isOnlyActivePanelMounted =
+      this.listContainer.childElementCount === 1 &&
+      this.listContainer.firstElementChild === activePanel;
+    if (!isOnlyActivePanelMounted) {
+      this.listContainer.replaceChildren(activePanel);
+    }
+  }
+
+  private getOrCreateTopologyPanel(topology: MazeTopologyId): HTMLDivElement {
+    const cached = this.topologyPanels.get(topology);
+    if (cached) {
+      return cached;
+    }
+
+    const panel = document.createElement('div');
+    panel.className = 'generate-popup__generator-topology-panel';
+
+    const generators = getGeneratorUiDefinitions(topology);
     if (generators.length === 0) {
       const empty = document.createElement('p');
       empty.className = 'generate-popup__empty';
       setI18nText(empty, 'generate.noGeneratorsForTopology');
-      this.listContainer.appendChild(empty);
-      return;
-    }
-
-    generators.forEach((generator, index) => {
-      const row = this.createGeneratorRow(generator, index === 0);
-      this.listContainer?.appendChild(row);
-    });
-  }
-
-  private createGeneratorRow(generator: GeneratorUiDefinition, expanded: boolean): HTMLElement {
-    const details = document.createElement('details');
-    details.className = 'generate-popup__row';
-    details.open = expanded;
-
-    const summary = document.createElement('summary');
-    summary.className = 'generate-popup__summary';
-
-    const title = document.createElement('span');
-    title.className = 'generate-popup__title';
-    setI18nText(title, generator.titleKey);
-
-    const badge = document.createElement('span');
-    badge.className = generator.available
-      ? 'generate-popup__badge generate-popup__badge--available'
-      : 'generate-popup__badge generate-popup__badge--coming';
-    setI18nText(badge, generator.available ? 'generate.available' : 'generate.comingSoon');
-
-    summary.appendChild(title);
-    summary.appendChild(badge);
-    details.appendChild(summary);
-
-    const panel = document.createElement('div');
-    panel.className = 'generate-popup__panel';
-
-    const description = document.createElement('p');
-    description.className = 'generate-popup__description';
-    setI18nText(description, generator.descriptionKey);
-    panel.appendChild(description);
-
-    const sizeRow = document.createElement('div');
-    sizeRow.className = 'generate-popup__size-row';
-
-    const rowsInput = createLabeledNumberInput({
-      labelKey: 'generate.rows',
-      min: MAZE_SIZE.MIN,
-      max: MAZE_SIZE.MAX,
-      value: MAZE_SIZE.DEFAULT_GENERATE,
-      wrapperClassName: 'generate-popup__input',
-    });
-    const colsInput = createLabeledNumberInput({
-      labelKey: 'generate.cols',
-      min: MAZE_SIZE.MIN,
-      max: MAZE_SIZE.MAX,
-      value: MAZE_SIZE.DEFAULT_GENERATE,
-      wrapperClassName: 'generate-popup__input',
-    });
-    sizeRow.appendChild(rowsInput.wrapper);
-    sizeRow.appendChild(colsInput.wrapper);
-    const biasInput =
-      generator.id === 'binaryTree'
-        ? createLabeledNumberInput({
-            labelKey: 'generate.bias',
-            min: 0,
-            max: 100,
-            value: 50,
-            wrapperClassName: 'generate-popup__input',
-          })
-        : null;
-    if (biasInput) {
-      sizeRow.appendChild(biasInput.wrapper);
-    }
-    panel.appendChild(sizeRow);
-
-    const actionRow = document.createElement('div');
-    actionRow.className = 'generate-popup__action-row';
-
-    const generateBtn = createI18nButton({
-      textKey: 'generate.generateButton',
-      className: 'generate-popup__btn',
-    });
-    actionRow.appendChild(generateBtn);
-
-    const hint = document.createElement('span');
-    hint.className = 'generate-popup__hint';
-    setI18nText(hint, generator.available ? 'generate.sizeHint' : 'generate.comingSoon');
-    actionRow.appendChild(hint);
-
-    panel.appendChild(actionRow);
-    details.appendChild(panel);
-
-    if (generator.available) {
-      let isGenerating = false;
-      generateBtn.addEventListener('click', () => {
-        if (isGenerating) {
-          return;
-        }
-        isGenerating = true;
-        generateBtn.disabled = true;
-        const rows = clamp(rowsInput.input.valueAsNumber || 0, MAZE_SIZE.MIN, MAZE_SIZE.MAX);
-        const cols = clamp(colsInput.input.valueAsNumber || 0, MAZE_SIZE.MIN, MAZE_SIZE.MAX);
-        const biasPercent = clamp(biasInput?.input.valueAsNumber ?? 50, 0, 100);
-        rowsInput.input.valueAsNumber = rows;
-        colsInput.input.valueAsNumber = cols;
-        if (biasInput) {
-          biasInput.input.valueAsNumber = biasPercent;
-        }
-        requestAnimationFrame(() => {
-          try {
-            this.generateById(generator.id, rows, cols, biasPercent / 100);
-          } finally {
-            isGenerating = false;
-            generateBtn.disabled = false;
-          }
-        });
-      });
+      panel.appendChild(empty);
     } else {
-      rowsInput.input.disabled = true;
-      colsInput.input.disabled = true;
-      if (biasInput) {
-        biasInput.input.disabled = true;
-      }
-      generateBtn.disabled = true;
+      generators.forEach((generator, index) => {
+        const row = createGeneratorRow({
+          generator,
+          expanded: index === 0,
+          onGenerate: action =>
+            this.generateById(
+              topology,
+              action.generatorId,
+              action.rows,
+              action.cols,
+              action.northBias
+            ),
+        });
+        panel.appendChild(row);
+      });
     }
 
-    return details;
+    this.topologyPanels.set(topology, panel);
+    return panel;
   }
 
-  private generateById(generatorId: GeneratorId, rows: number, cols: number, northBias: number) {
-    const mazeApp = window.mazeApp;
-    if (!mazeApp || typeof mazeApp.updateMaze !== 'function') {
-      console.warn('mazeApp.updateMaze not available');
-      window.alert(t('generate.appUnavailable'));
-      return;
-    }
-
-    const generated = executeGenerator(generatorId, this.activeTopology, {
+  private async generateById(
+    topology: MazeTopologyId,
+    generatorId: GeneratorId,
+    rows: number,
+    cols: number,
+    northBias: number
+  ): Promise<void> {
+    await runGeneration({
+      generatorId,
+      topology,
       rows,
       cols,
-      params: { northBias },
-      topologyParams:
-        this.activeTopology === 'multiLayerRect'
-          ? {
-              layers: clamp(
-                this.topologyParams.layers,
-                GeneratePopup.TOPOLOGY_LAYERS_MIN,
-                GeneratePopup.TOPOLOGY_LAYERS_MAX
-              ),
-              shaftDensity: this.topologyParams.shaftDensity,
-            }
-          : undefined,
-    });
-    if (!generated) {
-      console.warn(
-        `Generator "${generatorId}" is unavailable for topology "${this.activeTopology}"`
-      );
-      return;
-    }
-    mazeApp.updateMaze(
-      generated.maze,
-      this.activeTopology === 'multiLayerRect',
-      {
-        start: generated.markers.start,
-        end: generated.markers.end,
+      northBias,
+      multiLayerParams: {
+        layers: clamp(
+          this.topologyParams.layers,
+          TOPOLOGY_LAYER_LIMITS.min,
+          TOPOLOGY_LAYER_LIMITS.max
+        ),
+        shaftDensity: this.topologyParams.shaftDensity,
       },
-      {
-        preserveCamera: true,
-      }
-    );
+    });
   }
 
-  private applyTranslations() {
+  private applyTranslations(): void {
     applyI18nTexts(this.popupContainer);
+    this.topologyPanels.forEach(panel => {
+      applyI18nTexts(panel);
+    });
   }
 
   private watchContainerRemoval(): void {
@@ -400,6 +237,7 @@ class GeneratePopup {
         this.unsubscribeLanguageChange();
         this.unsubscribeLanguageChange = null;
       }
+      disposeGenerationRunner();
     });
   }
 }

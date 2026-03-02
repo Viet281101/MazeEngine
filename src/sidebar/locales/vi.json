@@ -46,6 +46,7 @@
   "generate.cols": "Cột",
   "generate.bias": "Ưu tiên Bắc (%)",
   "generate.generateButton": "Generate",
+  "generate.generatingButton": "Đang tạo...",
   "generate.sizeHint": "Kích cỡ: 5 - 80",
   "generate.topology": "Loại topo",
   "generate.topology.singleLayerRect": "1 tầng (lưới vuông)",

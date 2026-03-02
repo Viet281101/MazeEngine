@@ -46,6 +46,7 @@
   "generate.cols": "Colonnes",
   "generate.bias": "Biais nord (%)",
   "generate.generateButton": "Generer",
+  "generate.generatingButton": "Generation...",
   "generate.sizeHint": "Taille: 5 - 80",
   "generate.topology": "Topologie",
   "generate.topology.singleLayerRect": "Monocouche (rectangulaire)",
