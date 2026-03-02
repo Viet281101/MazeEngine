@@ -108,6 +108,8 @@ class SolvePopup {
   } {
     const content = document.createElement('div');
     content.className = 'solve-popup__content';
+    const infoBox = document.createElement('section');
+    infoBox.className = 'solve-popup__box solve-popup__box--info';
 
     const topologyRow = document.createElement('div');
     topologyRow.className = 'solve-popup__row';
@@ -118,7 +120,7 @@ class SolvePopup {
     topologyValue.className = 'solve-popup__value';
     topologyRow.appendChild(topologyLabel);
     topologyRow.appendChild(topologyValue);
-    content.appendChild(topologyRow);
+    infoBox.appendChild(topologyRow);
 
     const sizeRow = document.createElement('div');
     sizeRow.className = 'solve-popup__row';
@@ -129,7 +131,7 @@ class SolvePopup {
     sizeValue.className = 'solve-popup__value';
     sizeRow.appendChild(sizeLabel);
     sizeRow.appendChild(sizeValue);
-    content.appendChild(sizeRow);
+    infoBox.appendChild(sizeRow);
 
     const markerRow = document.createElement('div');
     markerRow.className = 'solve-popup__row';
@@ -140,12 +142,16 @@ class SolvePopup {
     markerValue.className = 'solve-popup__value';
     markerRow.appendChild(markerLabel);
     markerRow.appendChild(markerValue);
-    content.appendChild(markerRow);
+    infoBox.appendChild(markerRow);
 
     const note = document.createElement('p');
     note.className = 'solve-popup__note';
     setI18nText(note, 'solve.autoTopologyNote');
-    content.appendChild(note);
+    infoBox.appendChild(note);
+    content.appendChild(infoBox);
+
+    const algorithmBox = document.createElement('section');
+    algorithmBox.className = 'solve-popup__box solve-popup__box--algorithm';
 
     const categoryRow = document.createElement('label');
     categoryRow.className = 'solve-popup__row';
@@ -163,7 +169,7 @@ class SolvePopup {
     categorySelect.value = this.selectedCategory;
     categoryRow.appendChild(categoryLabel);
     categoryRow.appendChild(categorySelect);
-    content.appendChild(categoryRow);
+    algorithmBox.appendChild(categoryRow);
 
     const algorithmRow = document.createElement('label');
     algorithmRow.className = 'solve-popup__row';
@@ -174,7 +180,8 @@ class SolvePopup {
     algorithmSelect.className = 'solve-popup__select';
     algorithmRow.appendChild(algorithmLabel);
     algorithmRow.appendChild(algorithmSelect);
-    content.appendChild(algorithmRow);
+    algorithmBox.appendChild(algorithmRow);
+    content.appendChild(algorithmBox);
 
     const actionRow = document.createElement('div');
     actionRow.className = 'solve-popup__action-row';
