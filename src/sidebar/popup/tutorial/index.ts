@@ -50,7 +50,7 @@ class TutorialPopup {
     iconButton.className = 'tutorial-popup__icon-button';
     iconButton.title = t('tutorial.viewSourceCode');
     iconButton.addEventListener('click', () => {
-      window.open('https://github.com/Viet281101/MazeSolver3D', '_blank', 'noopener,noreferrer');
+      window.open('https://github.com/Viet281101/MazeEngine', '_blank', 'noopener,noreferrer');
     });
 
     const icon = document.createElement('img');

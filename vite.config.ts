@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 export default defineConfig({
-  base: '/MazeSolver3D/',
+  base: '/MazeEngine/',
   build: {
     outDir: 'dist',
     rollupOptions: {

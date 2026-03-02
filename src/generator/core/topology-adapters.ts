@@ -84,7 +84,10 @@ class MultiLayerRectTopologyAdapter implements TopologyAdapter {
     }
 
     const transitionCount = layers.length - 1;
-    const shaftsPerTransition = this.computeShaftCountPerTransition(candidates.length, shaftDensity);
+    const shaftsPerTransition = this.computeShaftCountPerTransition(
+      candidates.length,
+      shaftDensity
+    );
     const totalShafts = Math.min(candidates.length, shaftsPerTransition * transitionCount);
     const shaftCells = pickShaftCells(candidates, totalShafts);
     if (shaftCells.length === 0) {
@@ -101,7 +104,10 @@ class MultiLayerRectTopologyAdapter implements TopologyAdapter {
     }
   }
 
-  private computeShaftCountPerTransition(candidateCount: number, shaftDensity: ShaftDensity): number {
+  private computeShaftCountPerTransition(
+    candidateCount: number,
+    shaftDensity: ShaftDensity
+  ): number {
     const ratioByDensity: Record<ShaftDensity, number> = {
       sparse: 0.015,
       normal: 0.03,
@@ -138,8 +144,9 @@ function collectShaftCandidates(layer: number[][], output: GeneratedMazeResult):
   const filtered = walkable.filter(cell => !excluded.has(`${cell.row},${cell.col}`));
   const source = filtered.length > 0 ? filtered : walkable;
   const entry =
-    source.find(cell => cell.row === output.markers.start.row && cell.col === output.markers.start.col) ??
-    source[0];
+    source.find(
+      cell => cell.row === output.markers.start.row && cell.col === output.markers.start.col
+    ) ?? source[0];
 
   return collectReachableInteriorCells(layer, entry, excluded);
 }

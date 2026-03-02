@@ -361,14 +361,14 @@ class GeneratePopup {
       params: { northBias },
       topologyParams:
         this.activeTopology === 'multiLayerRect'
-            ? {
-                layers: clamp(
-                  this.topologyParams.layers,
-                  GeneratePopup.TOPOLOGY_LAYERS_MIN,
-                  GeneratePopup.TOPOLOGY_LAYERS_MAX
-                ),
-                shaftDensity: this.topologyParams.shaftDensity,
-              }
+          ? {
+              layers: clamp(
+                this.topologyParams.layers,
+                GeneratePopup.TOPOLOGY_LAYERS_MIN,
+                GeneratePopup.TOPOLOGY_LAYERS_MAX
+              ),
+              shaftDensity: this.topologyParams.shaftDensity,
+            }
           : undefined,
     });
     if (!generated) {

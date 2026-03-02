@@ -1,11 +1,6 @@
 import { generateBinaryTreeMaze } from '../algorithms/binary-tree';
 import { getTopologyAdapter } from './topology-adapters';
-import type {
-  GeneratorDefinition,
-  GeneratorId,
-  GeneratorRunInput,
-  MazeTopologyId,
-} from './types';
+import type { GeneratorDefinition, GeneratorId, GeneratorRunInput, MazeTopologyId } from './types';
 
 const RECT_GRID_TOPOLOGIES: readonly MazeTopologyId[] = ['singleLayerRect', 'multiLayerRect'];
 

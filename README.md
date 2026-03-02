@@ -1,6 +1,6 @@
-# 3D Maze Solving
+# MazeEngine
 
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Viet281101/MazeSolver3D) ![Github language count](https://img.shields.io/github/languages/count/Viet281101/MazeSolver3D) ![GitHub Created At](https://img.shields.io/github/created-at/Viet281101/MazeSolver3D)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Viet281101/MazeEngine) ![Github language count](https://img.shields.io/github/languages/count/Viet281101/MazeEngine) ![GitHub Created At](https://img.shields.io/github/created-at/Viet281101/MazeEngine)
 
 Practice calculating 3-dimensional geometric space and algorithms for creating and solving mazes in 3D.
 
