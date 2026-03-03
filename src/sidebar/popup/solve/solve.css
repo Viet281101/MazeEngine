@@ -16,6 +16,26 @@
   overflow: hidden;
 }
 
+.solve-popup__summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 10px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.solve-popup__summary::-webkit-details-marker {
+  display: none;
+}
+
+.solve-popup__summary-title {
+  color: #f4fbff;
+  font-size: 18px;
+  font-weight: 600;
+}
+
 .solve-popup__row {
   padding: 12px 10px;
   display: grid;
@@ -51,6 +71,44 @@
   font-size: 14px;
   line-height: 1.35;
   padding: 10px 12px;
+}
+
+.solve-popup__insight-panel {
+  border-top: 1px solid #2f4453;
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.solve-popup__insight-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.solve-popup__insight-label {
+  margin: 0;
+  color: #d8e6ee;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.solve-popup__insight-text {
+  margin: 0;
+  color: #d0e0e8;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.solve-popup__insight-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #d0e0e8;
+  font-size: 15px;
+  line-height: 1.35;
 }
 
 .solve-popup__select {

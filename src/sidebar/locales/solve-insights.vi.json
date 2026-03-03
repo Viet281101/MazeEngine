@@ -1,0 +1,523 @@
+{
+  "templates": {
+    "bfs": {
+      "overview": "Mở rộng theo từng lớp từ điểm bắt đầu. Với mê cung không trọng số, luôn tìm được đường đi ngắn nhất.",
+      "pros": [
+        "Đảm bảo đường đi ngắn nhất trên lưới.",
+        "Hành vi ổn định, dễ dự đoán."
+      ],
+      "cons": [
+        "Bộ nhớ tăng nhanh khi biên mở rộng.",
+        "Không tận dụng được heuristic định hướng."
+      ]
+    },
+    "dijkstra": {
+      "overview": "Mở rộng theo chi phí tích lũy nhỏ nhất. Dùng được cho mê cung có hoặc không có trọng số không âm.",
+      "pros": [
+        "Tối ưu khi chi phí cạnh không âm.",
+        "Là baseline rất đáng tin cậy."
+      ],
+      "cons": [
+        "Thường chậm hơn A* khi có heuristic tốt.",
+        "Chi phí duy trì priority queue đáng kể."
+      ]
+    },
+    "aStar": {
+      "overview": "Kết hợp chi phí đã đi và ước lượng heuristic để hướng tìm kiếm về đích hiệu quả.",
+      "pros": [
+        "Thường nhanh hơn rõ rệt so với tìm kiếm không định hướng.",
+        "Vẫn tối ưu nếu heuristic admissible."
+      ],
+      "cons": [
+        "Hiệu năng phụ thuộc mạnh vào heuristic.",
+        "Vẫn có thể tốn nhiều bộ nhớ."
+      ]
+    },
+    "dfs": {
+      "overview": "Duyệt theo chiều sâu, ưu tiên đi sâu trước khi quay lui.",
+      "pros": [
+        "Bộ nhớ thấp trong nhiều trường hợp.",
+        "Đơn giản, dễ cài đặt."
+      ],
+      "cons": [
+        "Không đảm bảo đường đi ngắn nhất.",
+        "Có thể mất thời gian ở ngõ cụt dài."
+      ]
+    },
+    "iddfs": {
+      "overview": "Chạy DFS lặp lại với giới hạn độ sâu tăng dần cho đến khi chạm đích.",
+      "pros": [
+        "Tiết kiệm bộ nhớ hơn BFS.",
+        "Đảm bảo tìm thấy nếu độ sâu hữu hạn."
+      ],
+      "cons": [
+        "Lặp lại việc duyệt tầng nông nhiều lần.",
+        "Có thể chậm hơn BFS thực tế."
+      ]
+    },
+    "bellmanFord": {
+      "overview": "Lặp thư giãn toàn bộ cạnh để tính đường đi ngắn nhất, bền vững với đồ thị có phân bố trọng số phức tạp.",
+      "pros": [
+        "Xử lý được nhiều bối cảnh shortest-path hơn.",
+        "Ý tưởng rõ ràng, dễ kiểm chứng."
+      ],
+      "cons": [
+        "Độ phức tạp thời gian cao.",
+        "Thường quá nặng cho mê cung lưới thường."
+      ]
+    },
+    "bidirectionalBfs": {
+      "overview": "Chạy BFS đồng thời từ đầu và đích, gặp nhau ở giữa.",
+      "pros": [
+        "Thường duyệt ít trạng thái hơn nhiều.",
+        "Vẫn đảm bảo đường đi ngắn nhất trên đồ thị không trọng số."
+      ],
+      "cons": [
+        "Quản lý frontiers và điểm gặp phức tạp hơn.",
+        "Cần ghép đường đi cẩn thận."
+      ]
+    },
+    "bidirectionalDijkstra": {
+      "overview": "Chạy Dijkstra từ hai đầu để giảm không gian tìm kiếm trong bối cảnh có trọng số.",
+      "pros": [
+        "Có thể giảm runtime đáng kể.",
+        "Giữ được tính tối ưu trong điều kiện chuẩn."
+      ],
+      "cons": [
+        "Cài đặt và bookkeeping khó hơn.",
+        "Cần tiêu chí dừng chắc chắn."
+      ]
+    },
+    "kShortest": {
+      "overview": "Tính nhiều phương án đường đi ngắn thay vì chỉ một đường.",
+      "pros": [
+        "Hữu ích khi cần phương án thay thế.",
+        "Phù hợp cho lập kế hoạch linh hoạt."
+      ],
+      "cons": [
+        "Tốn kém hơn solver một đường.",
+        "Quản lý kết quả phức tạp hơn."
+      ]
+    },
+    "floydWarshall": {
+      "overview": "Quy hoạch động all-pairs shortest path trên ma trận đầy đủ của đồ thị.",
+      "pros": [
+        "Sau tiền xử lý, trả lời truy vấn nhanh cho mọi cặp.",
+        "Công thức lặp đơn giản."
+      ],
+      "cons": [
+        "Chi phí O(n^3) thời gian và O(n^2) bộ nhớ rất cao.",
+        "Không thực tế cho mê cung lớn."
+      ]
+    },
+    "johnson": {
+      "overview": "Tái trọng số cạnh rồi chạy Dijkstra từ nhiều nguồn để giải all-pairs hiệu quả trên đồ thị thưa.",
+      "pros": [
+        "Hiệu quả cho all-pairs trên đồ thị thưa.",
+        "Nền tảng lý thuyết tốt."
+      ],
+      "cons": [
+        "Pipeline và triển khai phức tạp.",
+        "Thường không cần cho bài toán một truy vấn."
+      ]
+    },
+    "spfa": {
+      "overview": "Biến thể thư giãn shortest path dựa trên hàng đợi, có thể nhanh ở một số đồ thị thưa.",
+      "pros": [
+        "Có thể thực dụng trên đồ thị thuận lợi.",
+        "Triển khai theo hàng đợi tương đối đơn giản."
+      ],
+      "cons": [
+        "Hiệu năng xấu nhất có thể giảm mạnh.",
+        "Kém ổn định hơn Dijkstra/A*."
+      ]
+    },
+    "uniformCost": {
+      "overview": "Mở rộng frontier có chi phí nhỏ nhất trước, tương đương Dijkstra trong khung graph search.",
+      "pros": [
+        "Tối ưu với chi phí không âm.",
+        "Rõ ràng về mặt ý tưởng cho điều hướng có trọng số."
+      ],
+      "cons": [
+        "Có thể phải duyệt nhiều trạng thái nếu không có heuristic.",
+        "Chi phí hàng đợi lớn trên map to."
+      ]
+    },
+    "deadEndFill": {
+      "overview": "Lặp loại bỏ các ngõ cụt cho đến khi còn lại xương sống đường giải.",
+      "pros": [
+        "Trực quan và hiệu quả trên mê cung hoàn hảo.",
+        "Có thể đơn giản hóa cấu trúc map nhanh."
+      ],
+      "cons": [
+        "Kém phù hợp khi mê cung có nhiều vòng lặp.",
+        "Không nhắm tới tối ưu trọng số."
+      ]
+    },
+    "floodFill": {
+      "overview": "Lan truyền nhãn từ nguồn trên vùng liên thông rồi truy vết đường đi.",
+      "pros": [
+        "Đơn giản và bền trên mê cung lưới.",
+        "Tốt cho trực quan hóa và học thuật."
+      ],
+      "cons": [
+        "Tốn bộ nhớ với vùng lan truyền lớn.",
+        "Có thể chậm hơn tìm kiếm có định hướng."
+      ]
+    },
+    "wallFollower": {
+      "overview": "Bám một bên tường liên tục (tay trái/tay phải), dựa vào hình học cục bộ.",
+      "pros": [
+        "Trạng thái tối thiểu, logic điều khiển đơn giản.",
+        "Hoạt động tốt ở mê cung liên thông đơn."
+      ],
+      "cons": [
+        "Dễ thất bại/lặp với layout nhiều vòng không liên thông đơn.",
+        "Chất lượng đường đi thường kém."
+      ]
+    },
+    "pledge": {
+      "overview": "Wall-following có bù tổng góc quay để thoát vòng quanh vật cản.",
+      "pros": [
+        "Xử lý bẫy vòng tốt hơn wall-following thuần.",
+        "Vẫn nhẹ và cục bộ."
+      ],
+      "cons": [
+        "Vẫn có thể đi vòng dài.",
+        "Không đảm bảo tối ưu."
+      ]
+    },
+    "randomMouse": {
+      "overview": "Chọn ngẫu nhiên bước đi hợp lệ cho tới khi gặp đích; baseline ngẫu nhiên.",
+      "pros": [
+        "Cài đặt cực kỳ dễ.",
+        "Hữu ích làm baseline thăm dò."
+      ],
+      "cons": [
+        "Thời gian chạy biến động mạnh.",
+        "Chất lượng đường đi trung bình thấp."
+      ]
+    },
+    "tremaux": {
+      "overview": "Đánh dấu hành lang đã đi để tránh lặp sai lầm; phương pháp điều hướng backtracking kinh điển.",
+      "pros": [
+        "Hạn chế lang thang vô hạn một cách hệ thống.",
+        "Là chiến lược điều hướng thực dụng."
+      ],
+      "cons": [
+        "Đường đi vẫn có thể dài hơn tối ưu.",
+        "Cần cơ chế nhớ đánh dấu."
+      ]
+    },
+    "lee": {
+      "overview": "Phương pháp lan sóng trên lưới, tương đương BFS shortest-path trong lưới trực giao.",
+      "pros": [
+        "Đảm bảo đường ngắn nhất trên lưới đồng nhất.",
+        "Dễ trực quan hóa và debug."
+      ],
+      "cons": [
+        "Tốn bộ nhớ trên map lớn.",
+        "Kém hiệu quả hơn phương pháp heuristic."
+      ]
+    },
+    "chainAlgorithm": {
+      "overview": "Xây và mở rộng cấu trúc frontier dạng chuỗi để nối các ứng viên đường đi.",
+      "pros": [
+        "Có thể tổ chức vùng duyệt rõ ràng.",
+        "Phù hợp cho thử nghiệm học thuật."
+      ],
+      "cons": [
+        "Ít chuẩn hóa hơn thuật toán phổ biến.",
+        "Hiệu năng phụ thuộc chính sách tạo chuỗi."
+      ]
+    },
+    "dfsWallTracer": {
+      "overview": "Lai giữa duyệt sâu và bám tường để điều chỉnh thứ tự duyệt.",
+      "pros": [
+        "Hành vi lai đơn giản.",
+        "Có thể giảm một số vòng vèo ngẫu nhiên."
+      ],
+      "cons": [
+        "Vẫn không đảm bảo đường ngắn nhất.",
+        "Nhạy với hình học cục bộ."
+      ]
+    },
+    "recursiveBacktrackingSolver": {
+      "overview": "Solver kiểu DFS đệ quy với điểm quay lui rõ ràng.",
+      "pros": [
+        "Cài đặt gọn.",
+        "Phù hợp với mê cung gần dạng cây."
+      ],
+      "cons": [
+        "Có thể đi sâu vào nhánh sai trước.",
+        "Không đảm bảo tối ưu ngắn nhất."
+      ]
+    },
+    "wavefront": {
+      "overview": "Lan sóng từ đích/nguồn để tạo gradient giảm dần rồi truy vết đường đi.",
+      "pros": [
+        "Tạo trường hướng dẫn ổn định.",
+        "Hỗ trợ trực quan hóa lưới tự nhiên."
+      ],
+      "cons": [
+        "Tốn bộ nhớ với map dày.",
+        "Giới hạn mở rộng tương tự BFS."
+      ]
+    },
+    "anytimeAStar": {
+      "overview": "Biến thể anytime của A*: trả về đường đi khả thi nhanh, rồi cải thiện dần khi còn thời gian.",
+      "pros": [
+        "Có đáp án ban đầu rất nhanh.",
+        "Cải thiện chất lượng lời giải theo thời gian."
+      ],
+      "cons": [
+        "Cần kiểm soát trade-off thời gian/chất lượng.",
+        "Độ phức tạp triển khai cao hơn."
+      ]
+    },
+    "beamSearch": {
+      "overview": "Heuristic search chỉ giữ top-k ứng viên mỗi lớp duyệt.",
+      "pros": [
+        "Tiết kiệm bộ nhớ nếu beam nhỏ.",
+        "Có thể nhanh trong bối cảnh ràng buộc."
+      ],
+      "cons": [
+        "Có thể loại mất đường tối ưu sớm.",
+        "Chất lượng phụ thuộc tuning beam width."
+      ]
+    },
+    "bestFirst": {
+      "overview": "Mở rộng nút có điểm heuristic tốt nhất trước (định hướng tham lam).",
+      "pros": [
+        "Thường tìm ra đường đi khả thi nhanh.",
+        "Chính sách ưu tiên đơn giản."
+      ],
+      "cons": [
+        "Có thể lệch xa tối ưu.",
+        "Dễ bị heuristic đánh lừa."
+      ]
+    },
+    "dStarLite": {
+      "overview": "Lập kế hoạch lại heuristic dạng incremental cho môi trường động, chi phí thay đổi.",
+      "pros": [
+        "Cập nhật nhanh khi map thay đổi cục bộ.",
+        "Rất phù hợp cho điều hướng động."
+      ],
+      "cons": [
+        "Cấu trúc dữ liệu và invariant khá phức tạp.",
+        "Overhead cao nếu mê cung tĩnh."
+      ]
+    },
+    "fringeSearch": {
+      "overview": "Phương pháp gần A* nhưng tiết kiệm bộ nhớ, xử lý theo các fringe f-cost.",
+      "pros": [
+        "Có thể giảm áp lực bộ nhớ so với A* cổ điển.",
+        "Trade-off tốt cho tìm kiếm lớn."
+      ],
+      "cons": [
+        "Ít phổ biến, khó tuning hơn.",
+        "Hiệu năng phụ thuộc chính sách ngưỡng."
+      ]
+    },
+    "greedyBfs": {
+      "overview": "Biến thể greedy ưu tiên hoàn toàn theo khoảng cách heuristic.",
+      "pros": [
+        "Thường rất nhanh để tìm một đường đi.",
+        "Chi phí tính mỗi lần mở rộng thấp."
+      ],
+      "cons": [
+        "Không đảm bảo tối ưu.",
+        "Có thể đi vòng xấu trong layout đánh lừa heuristic."
+      ]
+    },
+    "idaStar": {
+      "overview": "Làm sâu dần theo ngưỡng f-cost (ý tưởng A* nhưng bộ nhớ kiểu DFS).",
+      "pros": [
+        "Dùng ít bộ nhớ hơn A*.",
+        "Vẫn tận dụng được heuristic admissible."
+      ],
+      "cons": [
+        "Mở rộng lặp lại có thể tốn kém.",
+        "Thời gian chạy nhạy với cách tăng ngưỡng."
+      ]
+    },
+    "jumpPointSearch": {
+      "overview": "Cắt tỉa các bước đối xứng trên lưới đồng chi phí để tăng tốc A*.",
+      "pros": [
+        "Tăng tốc mạnh trên lưới đều.",
+        "Giữ tối ưu nếu giả định phù hợp."
+      ],
+      "cons": [
+        "Phụ thuộc mạnh vào cấu trúc lưới.",
+        "Phức tạp hơn A* cơ bản."
+      ]
+    },
+    "lifelongPlanningAStar": {
+      "overview": "Phương pháp họ A* incremental, tái sử dụng kết quả tìm kiếm cũ khi map đổi.",
+      "pros": [
+        "Hiệu quả khi phải replan nhiều lần.",
+        "Phù hợp khi trạng thái mê cung thay đổi."
+      ],
+      "cons": [
+        "Quản lý trạng thái không đơn giản.",
+        "Overhead cao nếu chỉ giải một lần."
+      ]
+    },
+    "thetaStar": {
+      "overview": "Mở rộng any-angle của A* có thể rút ngắn đường đi bằng cách nới ràng buộc parent.",
+      "pros": [
+        "Có thể cho đường đi mượt và ngắn hơn thực tế.",
+        "Chất lượng đường đi thường tốt hơn A* lưới thuần."
+      ],
+      "cons": [
+        "Cần kiểm tra line-of-sight.",
+        "Độ phức tạp triển khai tăng."
+      ]
+    },
+    "bug1": {
+      "overview": "Chiến lược robot: đi về đích, đi vòng trọn vật cản, rồi rời tại điểm tốt nhất.",
+      "pros": [
+        "Hoạt động với thông tin cảm biến cục bộ.",
+        "Logic xử lý vật cản rõ ràng."
+      ],
+      "cons": [
+        "Có thể tạo đường đi vòng rất dài.",
+        "Không hướng tới đường đi ngắn nhất."
+      ]
+    },
+    "bug2": {
+      "overview": "Cải tiến Bug1 bằng cách dùng đường nối nguồn-đích (M-line) để rời biên vật cản sớm hơn.",
+      "pros": [
+        "Thường ngắn hơn Bug1.",
+        "Vẫn cục bộ và đơn giản."
+      ],
+      "cons": [
+        "Vẫn có thể đi vòng nhiều ở bản đồ phức tạp.",
+        "Không có đảm bảo tối ưu toàn cục."
+      ]
+    },
+    "potentialField": {
+      "overview": "Dùng lực hút về đích và lực đẩy khỏi vật cản để điều hướng.",
+      "pros": [
+        "Phản ứng nhanh, hành vi điều hướng liên tục.",
+        "Tính toán cục bộ mỗi bước tương đối đơn giản."
+      ],
+      "cons": [
+        "Dễ mắc kẹt tại cực tiểu cục bộ.",
+        "Đường đi có thể dao động gần vật cản."
+      ]
+    },
+    "tangentBug": {
+      "overview": "Suy luận biên vật cản cục bộ bằng thông tin tiếp tuyến để cải thiện nhóm Bug.",
+      "pros": [
+        "Quyết định tốt hơn Bug cơ bản ở map dày vật cản.",
+        "Giữ mô hình cảm biến cục bộ."
+      ],
+      "cons": [
+        "Logic thuật toán phức tạp hơn.",
+        "Vẫn không đảm bảo đường đi ngắn nhất."
+      ]
+    },
+    "antColony": {
+      "overview": "Quần thể tác tử đặt và theo dấu pheromone để tăng cường tuyến hứa hẹn.",
+      "pros": [
+        "Khả năng thăm dò toàn cục tốt.",
+        "Có thể tìm ra nhiều đường ứng viên đa dạng."
+      ],
+      "cons": [
+        "Cần tuning tham số và nhiều vòng lặp.",
+        "Không có đảm bảo tối ưu xác định."
+      ]
+    },
+    "geneticSearch": {
+      "overview": "Tìm kiếm tiến hóa trên quần thể đường đi bằng chọn lọc, lai ghép, đột biến.",
+      "pros": [
+        "Linh hoạt khi định nghĩa hàm mục tiêu.",
+        "Có thể thoát mẫu cục bộ xấu."
+      ],
+      "cons": [
+        "Không đảm bảo hội tụ.",
+        "Thường tốn tài nguyên tính toán."
+      ]
+    },
+    "qLearning": {
+      "overview": "Học chính sách từ phần thưởng bằng cách cập nhật giá trị hành động qua nhiều episode.",
+      "pros": [
+        "Thích nghi dựa trên kinh nghiệm.",
+        "Hữu ích khi giải lặp trên môi trường tương tự."
+      ],
+      "cons": [
+        "Huấn luyện có thể chậm.",
+        "Nhạy với thiết kế reward và chính sách exploration."
+      ]
+    },
+    "simulatedAnnealing": {
+      "overview": "Tối ưu xác suất: giai đoạn đầu chấp nhận bước xấu để thoát cực tiểu cục bộ.",
+      "pros": [
+        "Có thể tránh một số bẫy cục bộ.",
+        "Khung metaheuristic tương đối đơn giản."
+      ],
+      "cons": [
+        "Lịch làm nguội ảnh hưởng mạnh đến kết quả.",
+        "Không có đảm bảo tối ưu nghiêm ngặt."
+      ]
+    }
+  },
+  "categoryDefaults": {
+    "classical": {
+      "overview": "Nhóm kinh điển ưu tiên quy tắc di chuyển xác định và tính đơn giản.",
+      "pros": [
+        "Dễ hiểu và dễ so sánh.",
+        "Tốt cho mục đích học thuật."
+      ],
+      "cons": [
+        "Thường không tối ưu đường đi ngắn nhất.",
+        "Có thể giảm hiệu quả trên cấu trúc phức tạp."
+      ]
+    },
+    "shortestPath": {
+      "overview": "Nhóm shortest-path tập trung vào tối ưu độ dài đường đi và đảm bảo đúng mạnh.",
+      "pros": [
+        "Độ tin cậy và ổn định cao.",
+        "Bảo chứng lý thuyết mạnh."
+      ],
+      "cons": [
+        "Có thể nặng trên đồ thị lớn.",
+        "Đôi khi chậm hơn heuristic có định hướng."
+      ]
+    },
+    "heuristic": {
+      "overview": "Nhóm heuristic đánh đổi độ chính xác để tăng tốc nhờ hướng tìm kiếm bằng ước lượng.",
+      "pros": [
+        "Hội tụ nhanh trong nhiều bản đồ thực tế.",
+        "Khả năng mở rộng tốt hơn khi map lớn."
+      ],
+      "cons": [
+        "Chất lượng phụ thuộc heuristic.",
+        "Có thể mất tính tối ưu."
+      ]
+    },
+    "navigation": {
+      "overview": "Nhóm navigation dùng quy tắc/cảm biến cục bộ, thường lấy cảm hứng từ robotics.",
+      "pros": [
+        "Ít phụ thuộc bản đồ toàn cục.",
+        "Vòng quyết định cục bộ đơn giản."
+      ],
+      "cons": [
+        "Tối ưu đường đi thường yếu.",
+        "Có thể thất bại ở hình học bất lợi."
+      ]
+    },
+    "metaheuristic": {
+      "overview": "Nhóm metaheuristic dùng chiến lược tối ưu ngẫu nhiên/toàn cục qua nhiều vòng lặp.",
+      "pros": [
+        "Linh hoạt với hàm mục tiêu.",
+        "Có thể khám phá vượt qua cực tiểu cục bộ."
+      ],
+      "cons": [
+        "Cần tuning và ngân sách tính toán.",
+        "Không có đảm bảo tối ưu nghiêm ngặt."
+      ]
+    }
+  }
+}

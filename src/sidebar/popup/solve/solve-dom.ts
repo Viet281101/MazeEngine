@@ -11,6 +11,10 @@ export interface SolvePopupDomRefs {
   sizeValue: HTMLSpanElement;
   markerValue: HTMLSpanElement;
   solveButton: HTMLButtonElement;
+  insightTitle: HTMLSpanElement;
+  insightOverviewValue: HTMLParagraphElement;
+  insightProsList: HTMLUListElement;
+  insightConsList: HTMLUListElement;
 }
 
 const CATEGORY_LABEL_KEYS: Record<
@@ -110,6 +114,56 @@ export function createSolvePopupDom(
   algorithmBox.appendChild(algorithmRow);
   content.appendChild(algorithmBox);
 
+  const insightBox = document.createElement('details');
+  insightBox.className = 'solve-popup__box solve-popup__box--insight';
+  insightBox.open = true;
+
+  const insightSummary = document.createElement('summary');
+  insightSummary.className = 'solve-popup__summary';
+  const insightTitle = document.createElement('span');
+  insightTitle.className = 'solve-popup__summary-title';
+  insightSummary.appendChild(insightTitle);
+  insightBox.appendChild(insightSummary);
+
+  const insightPanel = document.createElement('div');
+  insightPanel.className = 'solve-popup__insight-panel';
+
+  const overviewSection = document.createElement('div');
+  overviewSection.className = 'solve-popup__insight-section';
+  const overviewLabel = document.createElement('h4');
+  overviewLabel.className = 'solve-popup__insight-label';
+  setI18nText(overviewLabel, 'solve.algorithmOverview');
+  const insightOverviewValue = document.createElement('p');
+  insightOverviewValue.className = 'solve-popup__insight-text';
+  overviewSection.appendChild(overviewLabel);
+  overviewSection.appendChild(insightOverviewValue);
+  insightPanel.appendChild(overviewSection);
+
+  const prosSection = document.createElement('div');
+  prosSection.className = 'solve-popup__insight-section';
+  const prosLabel = document.createElement('h4');
+  prosLabel.className = 'solve-popup__insight-label';
+  setI18nText(prosLabel, 'solve.algorithmPros');
+  const insightProsList = document.createElement('ul');
+  insightProsList.className = 'solve-popup__insight-list';
+  prosSection.appendChild(prosLabel);
+  prosSection.appendChild(insightProsList);
+  insightPanel.appendChild(prosSection);
+
+  const consSection = document.createElement('div');
+  consSection.className = 'solve-popup__insight-section';
+  const consLabel = document.createElement('h4');
+  consLabel.className = 'solve-popup__insight-label';
+  setI18nText(consLabel, 'solve.algorithmCons');
+  const insightConsList = document.createElement('ul');
+  insightConsList.className = 'solve-popup__insight-list';
+  consSection.appendChild(consLabel);
+  consSection.appendChild(insightConsList);
+  insightPanel.appendChild(consSection);
+
+  insightBox.appendChild(insightPanel);
+  content.appendChild(insightBox);
+
   const actionRow = document.createElement('div');
   actionRow.className = 'solve-popup__action-row';
   const solveButton = document.createElement('button');
@@ -121,5 +175,16 @@ export function createSolvePopupDom(
   content.appendChild(actionRow);
 
   popupContainer.appendChild(content);
-  return { categorySelect, algorithmSelect, topologyValue, sizeValue, markerValue, solveButton };
+  return {
+    categorySelect,
+    algorithmSelect,
+    topologyValue,
+    sizeValue,
+    markerValue,
+    solveButton,
+    insightTitle,
+    insightOverviewValue,
+    insightProsList,
+    insightConsList,
+  };
 }

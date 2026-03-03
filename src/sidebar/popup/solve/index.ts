@@ -16,6 +16,7 @@ import {
 import {
   createMazeInfoSnapshot,
   findAlgorithmById,
+  getAlgorithmInsight,
   getAlgorithmsForCategory,
 } from './solve-view-model';
 import './solve.css';
@@ -38,6 +39,10 @@ class SolvePopup {
   private readonly sizeValue: HTMLSpanElement;
   private readonly markerValue: HTMLSpanElement;
   private readonly solveButton: HTMLButtonElement;
+  private readonly insightTitle: HTMLSpanElement;
+  private readonly insightOverviewValue: HTMLParagraphElement;
+  private readonly insightProsList: HTMLUListElement;
+  private readonly insightConsList: HTMLUListElement;
 
   private selectedCategory: SolveAlgorithmCategory = 'shortestPath';
   private selectedAlgorithm: SolveAlgorithmDefinition | null = null;
@@ -58,6 +63,10 @@ class SolvePopup {
     this.sizeValue = refs.sizeValue;
     this.markerValue = refs.markerValue;
     this.solveButton = refs.solveButton;
+    this.insightTitle = refs.insightTitle;
+    this.insightOverviewValue = refs.insightOverviewValue;
+    this.insightProsList = refs.insightProsList;
+    this.insightConsList = refs.insightConsList;
 
     this.bindEvents();
     this.refreshAlgorithmOptions();
@@ -84,6 +93,7 @@ class SolvePopup {
 
     this.algorithmSelect.addEventListener('change', () => {
       this.selectedAlgorithm = this.getSelectedAlgorithmById(this.algorithmSelect.value);
+      this.renderAlgorithmInsight();
       this.updateSolveButtonState();
     });
 
@@ -143,6 +153,7 @@ class SolvePopup {
     if (this.selectedAlgorithm) {
       this.algorithmSelect.value = this.selectedAlgorithm.id;
     }
+    this.renderAlgorithmInsight();
     this.updateSolveButtonState();
   }
 
@@ -162,8 +173,33 @@ class SolvePopup {
     this.solveButton.disabled = !hasMarkers || !this.selectedAlgorithm;
   }
 
+  private renderAlgorithmInsight(): void {
+    this.insightTitle.textContent = this.selectedAlgorithm?.label ?? t('solve.algorithm');
+    const insight = getAlgorithmInsight(this.selectedCategory, this.selectedAlgorithm);
+    this.insightOverviewValue.textContent = insight.overview;
+
+    this.insightProsList.textContent = '';
+    const prosFragment = document.createDocumentFragment();
+    insight.pros.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      prosFragment.appendChild(li);
+    });
+    this.insightProsList.appendChild(prosFragment);
+
+    this.insightConsList.textContent = '';
+    const consFragment = document.createDocumentFragment();
+    insight.cons.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      consFragment.appendChild(li);
+    });
+    this.insightConsList.appendChild(consFragment);
+  }
+
   private applyTranslations(): void {
     applyI18nTexts(this.popupContainer);
+    this.renderAlgorithmInsight();
     this.refreshMazeInfo();
   }
 

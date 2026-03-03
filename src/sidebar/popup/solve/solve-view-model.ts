@@ -4,6 +4,7 @@ import {
   type SolveAlgorithmCategory,
   type SolveAlgorithmDefinition,
 } from '../../../solve/solve-catalog';
+import { getSolveInsights } from '../../i18n';
 import type { SolveTopology } from './solve-runtime';
 
 type MarkerStatusKey =
@@ -20,6 +21,66 @@ export interface MazeInfoSnapshot {
   hasReadyMarkers: boolean;
   markerStatusKey: MarkerStatusKey;
 }
+
+export interface AlgorithmInsight {
+  overview: string;
+  pros: string[];
+  cons: string[];
+}
+
+interface LocaleInsightDataset {
+  templates: Record<string, AlgorithmInsight>;
+  categoryDefaults: Record<SolveAlgorithmCategory, AlgorithmInsight>;
+}
+
+const ALGORITHM_TEMPLATE_KEY_BY_ID: Record<string, string> = {
+  'chain-algorithm': 'chainAlgorithm',
+  'dead-end-fill': 'deadEndFill',
+  'dfs-wall-tracer': 'dfsWallTracer',
+  'flood-fill': 'floodFill',
+  lee: 'lee',
+  'left-hand-rule': 'wallFollower',
+  pledge: 'pledge',
+  'random-mouse': 'randomMouse',
+  'recursive-backtracking-solver': 'recursiveBacktrackingSolver',
+  'right-hand-rule': 'wallFollower',
+  tremaux: 'tremaux',
+  'wall-follower': 'wallFollower',
+  wavefront: 'wavefront',
+  'bellman-ford': 'bellmanFord',
+  bfs: 'bfs',
+  'bidirectional-bfs': 'bidirectionalBfs',
+  'bidirectional-dijkstra': 'bidirectionalDijkstra',
+  dfs: 'dfs',
+  dijkstra: 'dijkstra',
+  'eppstein-k-shortest': 'kShortest',
+  'floyd-warshall': 'floydWarshall',
+  iddfs: 'iddfs',
+  johnson: 'johnson',
+  spfa: 'spfa',
+  'uniform-cost-search': 'uniformCost',
+  'yen-k-shortest': 'kShortest',
+  'a-star': 'aStar',
+  'anytime-repairing-a-star': 'anytimeAStar',
+  'beam-search': 'beamSearch',
+  'best-first-search': 'bestFirst',
+  'bidirectional-a-star': 'aStar',
+  'd-star-lite': 'dStarLite',
+  'fringe-search': 'fringeSearch',
+  'greedy-bfs': 'greedyBfs',
+  'ida-star': 'idaStar',
+  'jump-point-search': 'jumpPointSearch',
+  'lifelong-planning-a-star': 'lifelongPlanningAStar',
+  'theta-star': 'thetaStar',
+  bug1: 'bug1',
+  bug2: 'bug2',
+  'potential-field': 'potentialField',
+  'tangent-bug': 'tangentBug',
+  'ant-colony': 'antColony',
+  'genetic-search': 'geneticSearch',
+  'q-learning': 'qLearning',
+  'simulated-annealing': 'simulatedAnnealing',
+};
 
 export function createMazeInfoSnapshot(
   topology: SolveTopology,
@@ -65,4 +126,21 @@ export function findAlgorithmById(
   id: string
 ): SolveAlgorithmDefinition | null {
   return getAlgorithmsForCategory(category).find(algorithm => algorithm.id === id) ?? null;
+}
+
+export function getAlgorithmInsight(
+  category: SolveAlgorithmCategory,
+  algorithm: SolveAlgorithmDefinition | null
+): AlgorithmInsight {
+  const dataset = getSolveInsights() as LocaleInsightDataset;
+  if (!algorithm) {
+    return dataset.categoryDefaults[category];
+  }
+
+  const templateKey = ALGORITHM_TEMPLATE_KEY_BY_ID[algorithm.id];
+  if (!templateKey) {
+    return dataset.categoryDefaults[category];
+  }
+
+  return dataset.templates[templateKey] ?? dataset.categoryDefaults[category];
 }
