@@ -103,6 +103,12 @@
   line-height: 1.35;
 }
 
+.solve-popup__insight-complexity {
+  color: #f4fbff;
+  font-size: 14px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
 .solve-popup__insight-list {
   margin: 0;
   padding-left: 18px;

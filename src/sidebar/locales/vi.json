@@ -82,6 +82,7 @@
   "solve.category.heuristic": "Heuristic",
   "solve.category.navigation": "Điều hướng",
   "solve.category.metaheuristic": "Metaheuristic",
+  "solve.algorithmTimeComplexity": "Độ phức tạp thời gian",
   "solve.algorithmOverview": "Tổng quan",
   "solve.algorithmPros": "Ưu điểm",
   "solve.algorithmCons": "Nhược điểm",

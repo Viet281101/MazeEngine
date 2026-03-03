@@ -40,6 +40,7 @@ class SolvePopup {
   private readonly markerValue: HTMLSpanElement;
   private readonly solveButton: HTMLButtonElement;
   private readonly insightTitle: HTMLSpanElement;
+  private readonly insightComplexityValue: HTMLSpanElement;
   private readonly insightOverviewValue: HTMLParagraphElement;
   private readonly insightProsList: HTMLUListElement;
   private readonly insightConsList: HTMLUListElement;
@@ -64,6 +65,7 @@ class SolvePopup {
     this.markerValue = refs.markerValue;
     this.solveButton = refs.solveButton;
     this.insightTitle = refs.insightTitle;
+    this.insightComplexityValue = refs.insightComplexityValue;
     this.insightOverviewValue = refs.insightOverviewValue;
     this.insightProsList = refs.insightProsList;
     this.insightConsList = refs.insightConsList;
@@ -176,6 +178,7 @@ class SolvePopup {
   private renderAlgorithmInsight(): void {
     this.insightTitle.textContent = this.selectedAlgorithm?.label ?? t('solve.algorithm');
     const insight = getAlgorithmInsight(this.selectedCategory, this.selectedAlgorithm);
+    this.insightComplexityValue.textContent = insight.timeComplexity;
     this.insightOverviewValue.textContent = insight.overview;
 
     this.insightProsList.textContent = '';

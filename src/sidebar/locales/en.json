@@ -82,6 +82,7 @@
   "solve.category.heuristic": "Heuristic",
   "solve.category.navigation": "Navigation",
   "solve.category.metaheuristic": "Metaheuristic",
+  "solve.algorithmTimeComplexity": "Time Complexity",
   "solve.algorithmOverview": "Overview",
   "solve.algorithmPros": "Pros",
   "solve.algorithmCons": "Cons",

@@ -23,6 +23,7 @@ export interface MazeInfoSnapshot {
 }
 
 export interface AlgorithmInsight {
+  timeComplexity: string;
   overview: string;
   pros: string[];
   cons: string[];

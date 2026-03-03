@@ -12,6 +12,7 @@ export interface SolvePopupDomRefs {
   markerValue: HTMLSpanElement;
   solveButton: HTMLButtonElement;
   insightTitle: HTMLSpanElement;
+  insightComplexityValue: HTMLSpanElement;
   insightOverviewValue: HTMLParagraphElement;
   insightProsList: HTMLUListElement;
   insightConsList: HTMLUListElement;
@@ -128,6 +129,17 @@ export function createSolvePopupDom(
   const insightPanel = document.createElement('div');
   insightPanel.className = 'solve-popup__insight-panel';
 
+  const complexitySection = document.createElement('div');
+  complexitySection.className = 'solve-popup__insight-section';
+  const complexityLabel = document.createElement('h4');
+  complexityLabel.className = 'solve-popup__insight-label';
+  setI18nText(complexityLabel, 'solve.algorithmTimeComplexity');
+  const insightComplexityValue = document.createElement('span');
+  insightComplexityValue.className = 'solve-popup__insight-complexity';
+  complexitySection.appendChild(complexityLabel);
+  complexitySection.appendChild(insightComplexityValue);
+  insightPanel.appendChild(complexitySection);
+
   const overviewSection = document.createElement('div');
   overviewSection.className = 'solve-popup__insight-section';
   const overviewLabel = document.createElement('h4');
@@ -183,6 +195,7 @@ export function createSolvePopupDom(
     markerValue,
     solveButton,
     insightTitle,
+    insightComplexityValue,
     insightOverviewValue,
     insightProsList,
     insightConsList,

@@ -1,523 +1,492 @@
 {
   "templates": {
     "bfs": {
-      "overview": "Explore couche par couche depuis le depart. Dans un labyrinthe non pondere, il trouve toujours le plus court chemin.",
-      "pros": [
-        "Garantit le plus court chemin sur grille.",
-        "Comportement stable et previsible."
-      ],
+      "overview": "Explore couche par couche depuis le départ. Dans un labyrinthe non pondère, il trouve toujours le plus court chemin.",
+      "pros": ["Garantit le plus court chemin sur grille.", "Comportement stable et prévisible."],
       "cons": [
-        "La memoire augmente vite avec la frontiere.",
-        "N utilise pas d heuristique directionnelle."
-      ]
+        "La mémoire augmente vite avec la frontière.",
+        "N utilise pas d'heuristique directionnelle."
+      ],
+      "timeComplexity": "O(V + E)"
     },
     "dijkstra": {
-      "overview": "Etend les noeuds selon le cout cumule minimal. Convient aux labyrinthes ponderes ou non, avec poids non negatifs.",
-      "pros": [
-        "Optimal avec des couts d arete non negatifs.",
-        "Base de reference tres fiable."
-      ],
+      "overview": "Étend les nœuds selon le coût cumule minimal. Convient aux labyrinthes pondères ou non, avec poids non negatifs.",
+      "pros": ["Optimal avec des coûts d'arête non négatifs.", "Base de reference très fiable."],
       "cons": [
         "Souvent plus lent que A* avec une bonne heuristique.",
-        "La maintenance de la file de priorite ajoute du surcout."
-      ]
+        "La maintenance de la file de priorité ajoute du surcoût."
+      ],
+      "timeComplexity": "O((V + E) log V)"
     },
     "aStar": {
-      "overview": "Combine le cout parcouru et une heuristique pour guider efficacement la recherche vers la cible.",
+      "overview": "Combine le coût parcouru et une heuristique pour guider efficacement la recherche vers la cible.",
       "pros": [
-        "Souvent bien plus rapide que la recherche non informee.",
+        "Souvent bien plus rapide que la recherche non informée.",
         "Reste optimal avec une heuristique admissible."
       ],
       "cons": [
-        "Les performances dependent fortement de l heuristique.",
-        "Peut quand meme consommer beaucoup de memoire."
-      ]
+        "Les performances dépendent fortement de l'heuristique.",
+        "Peut quand même consommer beaucoup de mémoire."
+      ],
+      "timeComplexity": "Typical: O((V + E) log V), worst-case exponential"
     },
     "dfs": {
-      "overview": "Parcours en profondeur, avec exploration profonde avant retour arriere.",
-      "pros": [
-        "Faible memoire dans de nombreux cas.",
-        "Simple et facile a implementer."
-      ],
+      "overview": "Parcours en profondeur, avec exploration profonde avant retour arrière.",
+      "pros": ["Faible mémoire dans de nombreux cas.", "Simple et facile a implémenter."],
       "cons": [
         "Ne garantit pas le plus court chemin.",
         "Peut perdre du temps dans de longues impasses."
-      ]
+      ],
+      "timeComplexity": "O(V + E)"
     },
     "iddfs": {
-      "overview": "Execute DFS de maniere iterative avec limite de profondeur croissante jusqu a atteindre l objectif.",
-      "pros": [
-        "Moins de memoire que BFS.",
-        "Complet pour les labyrinthes de profondeur finie."
-      ],
+      "overview": "Execute DFS de manière itérative avec limite de profondeur croissante jusqu a atteindre l'objectif.",
+      "pros": ["Moins de mémoire que BFS.", "Complet pour les labyrinthes de profondeur finie."],
       "cons": [
-        "Reexplore de nombreux niveaux plusieurs fois.",
-        "Peut etre plus lent que BFS en pratique."
-      ]
+        "Réemploie de nombreux niveaux plusieurs fois.",
+        "Peut être plus lent que BFS en pratique."
+      ],
+      "timeComplexity": "O(b^d)"
     },
     "bellmanFord": {
-      "overview": "Relache toutes les aretes a plusieurs reprises pour calculer les plus courts chemins, robuste sur des graphes a poids complexes.",
+      "overview": "Relâche toutes les arêtes a plusieurs reprises pour calculer les plus courts chemins, robuste sur des graphes a poids complexes.",
       "pros": [
         "Couvre des contextes de plus court chemin plus larges.",
         "Conceptuellement simple."
       ],
-      "cons": [
-        "Complexite temporelle elevee.",
-        "Souvent excessif pour des labyrinthes en grille."
-      ]
+      "cons": ["Complexité temporelle élevée.", "Souvent excessif pour des labyrinthes en grille."],
+      "timeComplexity": "O(VE)"
     },
     "bidirectionalBfs": {
-      "overview": "Lance BFS depuis le depart et l arrivee pour se rencontrer au milieu.",
+      "overview": "Lance BFS depuis le départ et l'arrivée pour se rencontrer au milieu.",
       "pros": [
-        "Explore souvent beaucoup moins d etats.",
-        "Conserve la garantie du plus court chemin en graphe non pondere."
+        "Explore souvent beaucoup moins d'états.",
+        "Conserve la garantie du plus court chemin en graphe non pondère."
       ],
       "cons": [
-        "Gestion des frontieres et de la rencontre plus complexe.",
-        "Nécessite une reconstruction de chemin soignee."
-      ]
+        "Gestion des frontières et de la rencontre plus complexe.",
+        "Nécessite une reconstruction de chemin soignée."
+      ],
+      "timeComplexity": "O(V + E)"
     },
     "bidirectionalDijkstra": {
-      "overview": "Execute Dijkstra dans les deux sens pour reduire l espace de recherche en contexte pondere.",
+      "overview": "Execute Dijkstra dans les deux sens pour réduire l'espace de recherche en contexte pondère.",
       "pros": [
-        "Peut reduire fortement le temps de calcul.",
-        "Conserve l optimalite dans les hypotheses standard."
+        "Peut réduire fortement le temps de calcul.",
+        "Conserve l'optimalité dans les hypothèses standard."
       ],
-      "cons": [
-        "Implementation et suivi plus difficiles.",
-        "Necessite un critere d arret robuste."
-      ]
+      "cons": ["Implémentation et suivi plus difficiles.", "Nécessite un critère d'arrêt robuste."],
+      "timeComplexity": "O((V + E) log V)"
     },
     "kShortest": {
-      "overview": "Calcule plusieurs chemins candidats au lieu d un seul.",
+      "overview": "Calcule plusieurs chemins candidats au lieu d'un seul.",
       "pros": [
         "Utile pour les alternatives et le reroutage.",
         "Aide une planification plus robuste."
       ],
       "cons": [
-        "Plus couteux qu un solveur a chemin unique.",
-        "La gestion des resultats est plus complexe."
-      ]
+        "Plus coûteux qu un solveur a chemin unique.",
+        "La gestion des résultats est plus complexe."
+      ],
+      "timeComplexity": "Typically O(K * V * (E + V log V))"
     },
     "floydWarshall": {
       "overview": "Programmation dynamique all-pairs shortest path sur la matrice complete du graphe.",
       "pros": [
-        "Apres pretraitement, repond vite a toute paire source-cible.",
-        "Relation de recurrence simple."
+        "Après prétraitement, répond vite a toute paire source-cible.",
+        "Relation de récurrence simple."
       ],
       "cons": [
-        "Cout O(n^3) en temps et O(n^2) en memoire tres eleve.",
+        "Coût O(n^3) en temps et O(n^2) en mémoire très élève.",
         "Peu pratique pour de grands graphes de labyrinthe."
-      ]
+      ],
+      "timeComplexity": "O(V^3)"
     },
     "johnson": {
-      "overview": "Repondere les aretes puis execute Dijkstra depuis plusieurs sources pour un all-pairs efficace sur graphe clairseme.",
-      "pros": [
-        "Efficace pour all-pairs sur graphes clairsemes.",
-        "Approche theorique solide."
-      ],
+      "overview": "Répondre les arêtes puis execute Dijkstra depuis plusieurs sources pour un all-pairs efficace sur graphe clairsemé.",
+      "pros": ["Efficace pour all-pairs sur graphes clairsemés.", "Approche théorique solide."],
       "cons": [
         "Pipeline et mise en oeuvre complexes.",
-        "Souvent inutile pour une seule requete de resolution."
-      ]
+        "Souvent inutile pour une seule requête de resolution."
+      ],
+      "timeComplexity": "O(VE + V^2 log V)"
     },
     "spfa": {
-      "overview": "Variante de relaxation des plus courts chemins basee sur file, souvent rapide sur certains cas clairsemes.",
+      "overview": "Variante de relaxation des plus courts chemins basée sur file, souvent rapide sur certains cas clairsemés.",
       "pros": [
-        "Peut etre pratique sur des graphes favorables.",
-        "Implementation orientee file assez simple."
+        "Peut être pratique sur des graphes favorables.",
+        "Implémentation orientée file assez simple."
       ],
       "cons": [
-        "Les performances en pire cas peuvent fortement se degrader.",
-        "Moins previsible que Dijkstra/A*."
-      ]
+        "Les performances en pire cas peuvent fortement se dégrader.",
+        "Moins prévisible que Dijkstra/A*."
+      ],
+      "timeComplexity": "Average O(E), worst O(VE)"
     },
     "uniformCost": {
-      "overview": "Etend d abord la frontiere de cout minimal, equivalent a Dijkstra en recherche sur graphe.",
+      "overview": "Étend d'abord la frontière de coût minimal, équivalent a Dijkstra en recherche sur graphe.",
       "pros": [
-        "Optimal avec couts non negatifs.",
-        "Clair conceptuellement pour navigation ponderee."
+        "Optimal avec coûts non négatifs.",
+        "Clair conceptuellement pour navigation pondérée."
       ],
       "cons": [
-        "Peut explorer beaucoup d etats sans heuristique.",
+        "Peut explorer beaucoup d'états sans heuristique.",
         "Les operations de file dominent sur grandes cartes."
-      ]
+      ],
+      "timeComplexity": "O((V + E) log V)"
     },
     "deadEndFill": {
-      "overview": "Supprime iterativement les impasses jusqu a ne garder que l ossature de la solution.",
+      "overview": "Supprime itérativement les impasses jusqu a ne garder que l'ossature de la solution.",
       "pros": [
-        "Tres intuitif sur les labyrinthes parfaits.",
+        "Très intuitif sur les labyrinthes parfaits.",
         "Peut simplifier rapidement la structure du labyrinthe."
       ],
       "cons": [
-        "Moins adapte aux labyrinthes tres cycliques.",
-        "Non concu pour l optimalite ponderee."
-      ]
+        "Moins adapte aux labyrinthes très cycliques.",
+        "Non conçu pour l'optimalité pondérée."
+      ],
+      "timeComplexity": "O(V + E)"
     },
     "floodFill": {
-      "overview": "Propage des etiquettes depuis la source sur la region connexe puis reconstruit le chemin.",
+      "overview": "Propage des étiquettes depuis la source sur la region connexe puis reconstruit le chemin.",
       "pros": [
         "Simple et robuste sur labyrinthe en grille.",
         "Bon pour visualisation et apprentissage."
       ],
       "cons": [
-        "Consomme beaucoup de memoire sur grandes regions atteignables.",
-        "Peut etre plus lent qu une recherche guidee."
-      ]
+        "Consomme beaucoup de mémoire sur grandes regions atteignables.",
+        "Peut être plus lent qu une recherche guidée."
+      ],
+      "timeComplexity": "O(V + E)"
     },
     "wallFollower": {
-      "overview": "Suit continuellement un mur (main gauche/droite), base sur la geometrie locale.",
+      "overview": "Suit continuellement un mur (main gauche/droite), base sur la géométrie locale.",
       "pros": [
-        "Etat minimal et logique de controle simple.",
+        "État minimal et logique de contrôle simple.",
         "Fonctionne bien dans les labyrinthes simplement connexes."
       ],
       "cons": [
-        "Echoue ou boucle dans de nombreux layouts non simplement connexes.",
-        "Qualite de chemin souvent faible."
-      ]
+        "Échoué ou boucle dans de nombreux layouts non simplement connexes.",
+        "Qualité de chemin souvent faible."
+      ],
+      "timeComplexity": "Depends on traversed steps (path-dependent)"
     },
     "pledge": {
-      "overview": "Wall-following avec compensation de somme des rotations pour eviter les boucles autour des obstacles.",
+      "overview": "Wall-following avec compensation de somme des rotations pour éviter les boucles autour des obstacles.",
       "pros": [
-        "Gere mieux certains pieges en boucle que le simple wall-following.",
-        "Reste leger et local."
+        "Géré mieux certains pièges en boucle que le simple wall-following.",
+        "Reste léger et local."
       ],
-      "cons": [
-        "Peut encore produire de longs detours.",
-        "Aucune garantie d optimalite."
-      ]
+      "cons": ["Peut encore produire de longs détours.", "Aucune garantie d'optimalité."],
+      "timeComplexity": "Depends on traversed steps (path-dependent)"
     },
     "randomMouse": {
-      "overview": "Choisit des mouvements valides aleatoires jusqu a l objectif; comportement de reference stochastique.",
-      "pros": [
-        "Tres facile a implementer.",
-        "Utile comme baseline d exploration."
-      ],
-      "cons": [
-        "Temps d execution tres instable.",
-        "Qualite moyenne de chemin faible."
-      ]
+      "overview": "Choisit des mouvements valides aléatoires jusqu a l'objectif; comportement de reference stochastique.",
+      "pros": ["Très facile a implémenter.", "Utile comme baseline d'exploration."],
+      "cons": ["Temps d'execution très instable.", "Qualité moyenne de chemin faible."],
+      "timeComplexity": "Expected unbounded (stochastic)"
     },
     "tremaux": {
-      "overview": "Marque les couloirs visites pour eviter les repetitions; methode classique de navigation par retour arriere.",
+      "overview": "Marque les couloirs visites pour éviter les répétitions; méthode classique de navigation par retour arrière.",
       "pros": [
-        "Evite systematiquement l errance infinie.",
-        "Bonne strategie de navigation pratique."
+        "Évite systématiquement l'errance infinie.",
+        "Bonne stratégie de navigation pratique."
       ],
       "cons": [
         "Peut rester plus long que le plus court chemin.",
-        "Necessite une memoire de marquage."
-      ]
+        "Nécessité une mémoire de marquage."
+      ],
+      "timeComplexity": "O(V + E)"
     },
     "lee": {
-      "overview": "Methode de propagation d onde sur grille, equivalente a BFS shortest-path sur grilles orthogonales.",
+      "overview": "Méthode de propagation d'onde sur grille, équivalente a BFS shortest-path sur grilles orthogonales.",
       "pros": [
         "Garantit le plus court chemin sur grilles uniformes.",
-        "Facile a visualiser et debuguer."
+        "Facile a visualiser et débuguer."
       ],
       "cons": [
-        "Intensif en memoire sur grandes cartes.",
+        "Intensif en mémoire sur grandes cartes.",
         "Moins efficace que les approches heuristiques."
-      ]
+      ],
+      "timeComplexity": "O(V + E)"
     },
     "chainAlgorithm": {
-      "overview": "Construit et etend des frontieres en chaine pour connecter des chemins candidats.",
+      "overview": "Construit et étend des frontières en chaîne pour connecter des chemins candidats.",
       "pros": [
-        "Peut structurer clairement l exploration.",
-        "Pertinent pour experimentation pedagogique."
+        "Peut structurer clairement l'exploration.",
+        "Pertinent pour expérimentation pédagogique."
       ],
       "cons": [
         "Moins standardise que les algorithmes majeurs.",
-        "Les performances dependent de la politique de chaine."
-      ]
+        "Les performances dependent de la politique de chaîne."
+      ],
+      "timeComplexity": "Implementation-dependent, often near O(V + E)"
     },
     "dfsWallTracer": {
-      "overview": "Hybride entre exploration en profondeur et suivi de mur pour orienter l ordre de parcours.",
-      "pros": [
-        "Comportement hybride simple.",
-        "Peut reduire certains detours aleatoires."
-      ],
+      "overview": "Hybride entre exploration en profondeur et suivi de mur pour orienter l'ordre de parcours.",
+      "pros": ["Comportement hybride simple.", "Peut réduire certains détours aléatoires."],
       "cons": [
         "Ne garantit toujours pas le plus court chemin.",
-        "Comportement sensible a la geometrie locale."
-      ]
+        "Comportement sensible a la géométrie locale."
+      ],
+      "timeComplexity": "O(V + E)"
     },
     "recursiveBacktrackingSolver": {
-      "overview": "Solveur de style DFS recursif avec points de retour explicites.",
+      "overview": "Solveur de style DFS récursif avec points de retour explicites.",
       "pros": [
         "Implementation compacte.",
-        "Bon pour des structures de labyrinthe proches d un arbre."
+        "Bon pour des structures de labyrinthe proches d'un arbre."
       ],
       "cons": [
-        "Peut d abord suivre des branches profondes non pertinentes.",
+        "Peut d'abord suivre des branches profondes non pertinentes.",
         "Aucune garantie de plus court chemin."
-      ]
+      ],
+      "timeComplexity": "O(V + E)"
     },
     "wavefront": {
-      "overview": "Expansion en onde depuis la cible/source pour creer un gradient puis extraire le chemin.",
+      "overview": "Expansion en onde depuis la cible/source pour créer un gradient puis extraire le chemin.",
       "pros": [
         "Produit des champs de guidage stables.",
         "Supporte naturellement la visualisation sur grille."
       ],
       "cons": [
-        "Consomme beaucoup de memoire sur cartes denses.",
-        "Limites de passage a l echelle proches de BFS."
-      ]
+        "Consomme beaucoup de mémoire sur cartes denses.",
+        "Limites de passage a l'échelle proches de BFS."
+      ],
+      "timeComplexity": "O(V + E)"
     },
     "anytimeAStar": {
-      "overview": "Variante anytime de A*: retourne vite un chemin faisable puis l ameliore tant que le temps le permet.",
-      "pros": [
-        "Premiere reponse rapide.",
-        "Ameliore la qualite de solution au fil du temps."
-      ],
+      "overview": "Variante anytime de A*: retourne vite un chemin faisable puis l'amélioré tant que le temps le permet.",
+      "pros": ["Première réponse rapide.", "Amélioré la qualité de solution au fil du temps."],
       "cons": [
-        "Necessite un bon controle du compromis temps/qualite.",
-        "Complexite d implementation plus elevee."
-      ]
+        "Nécessite un bon contrôle du compromis temps/qualité.",
+        "Complexité d'implémentation plus élevée."
+      ],
+      "timeComplexity": "Initial A* cost + itérative refinements"
     },
     "beamSearch": {
       "overview": "Recherche heuristique qui ne conserve que les k meilleurs candidats a chaque couche.",
       "pros": [
-        "Tres econome en memoire avec un faisceau faible.",
-        "Peut etre rapide dans des contextes contraints."
+        "Très économe en mémoire avec un faisceau faible.",
+        "Peut être rapide dans des contextes contraints."
       ],
       "cons": [
-        "Peut eliminer tot le chemin optimal.",
-        "Qualite sensible au reglage de la largeur du faisceau."
-      ]
+        "Peut éliminer tot le chemin optimal.",
+        "Qualité sensible au réglage de la largeur du faisceau."
+      ],
+      "timeComplexity": "O(w * d) with beam width w, depth d"
     },
     "bestFirst": {
-      "overview": "Etend d abord le noeud avec le meilleur score heuristique (orientation gloutonne).",
-      "pros": [
-        "Trouve souvent rapidement un chemin faisable.",
-        "Politique de priorite simple."
-      ],
-      "cons": [
-        "Peut etre loin de l optimum.",
-        "Peut etre piege par une heuristique trompeuse."
-      ]
+      "overview": "Étend d'abord le noeud avec le meilleur score heuristique (orientation gloutonne).",
+      "pros": ["Trouve souvent rapidement un chemin faisable.", "Politique de priorité simple."],
+      "cons": ["Peut être loin de l'optimum.", "Peut être piège par une heuristique trompeuse."],
+      "timeComplexity": "O((V + E) log V)"
     },
     "dStarLite": {
-      "overview": "Replanification heuristique incrementale pour environnements dynamiques a couts changeants.",
+      "overview": "Replanification heuristique incrémentale pour environnements dynamiques a coûts changeants.",
       "pros": [
-        "Mises a jour efficaces apres changements locaux.",
-        "Tres bon choix pour navigation dynamique."
+        "Mises a jour efficaces après changements locaux.",
+        "Très bon choix pour navigation dynamique."
       ],
       "cons": [
-        "Structures de donnees et invariants complexes.",
-        "Surcout eleve pour labyrinthes statiques."
-      ]
+        "Structures de données et invariants complexes.",
+        "Surcoût élevé pour labyrinthes statiques."
+      ],
+      "timeComplexity": "Per replan typically O((V + E) log V)"
     },
     "fringeSearch": {
-      "overview": "Methode proche de A* mais econome en memoire, traitant les noeuds par franges de cout f.",
+      "overview": "Méthode proche de A* mais économe en mémoire, traitant les noeuds par franges de coût f.",
       "pros": [
-        "Peut reduire la pression memoire par rapport a A* classique.",
+        "Peut réduire la pression mémoire par rapport a A* classique.",
         "Bon compromis pour grandes recherches."
       ],
       "cons": [
-        "Moins courant et plus difficile a regler.",
-        "Le profil de performance depend de la politique de seuil."
-      ]
+        "Moins courant et plus difficile a régler.",
+        "Le profil de performance dépend de la politique de seuil."
+      ],
+      "timeComplexity": "A*-like, implementation-dependent"
     },
     "greedyBfs": {
       "overview": "Variante gloutonne qui priorise uniquement la distance heuristique.",
       "pros": [
-        "Souvent tres rapide pour trouver un chemin.",
-        "Faible cout de calcul par expansion."
+        "Souvent très rapide pour trouver un chemin.",
+        "Faible coût de calcul par expansion."
       ],
       "cons": [
-        "Aucune garantie d optimalite.",
-        "Peut faire de mauvais detours dans des layouts trompeurs."
-      ]
+        "Aucune garantie d'optimalité.",
+        "Peut faire de mauvais détours dans des layouts trompeurs."
+      ],
+      "timeComplexity": "O((V + E) log V)"
     },
     "idaStar": {
-      "overview": "Approfondissement iteratif en profondeur sur seuils de cout f (idee de A* avec memoire de DFS).",
+      "overview": "Approfondissement itératif en profondeur sur seuils de coût f (idée de A* avec mémoire de DFS).",
       "pros": [
-        "Empreinte memoire plus faible que A*.",
-        "Peut quand meme exploiter des heuristiques admissibles."
+        "Empreinte mémoire plus faible que A*.",
+        "Peut quand même exploiter des heuristiques admissibles."
       ],
       "cons": [
-        "Les expansions repetitives peuvent couter cher.",
-        "Le temps depend de la progression des seuils."
-      ]
+        "Les expansions répétitives peuvent coûter cher.",
+        "Le temps dépend de la progression des seuils."
+      ],
+      "timeComplexity": "O(b^d)"
     },
     "jumpPointSearch": {
-      "overview": "Elague les mouvements symetriques sur grilles a cout uniforme pour accelerer A*.",
+      "overview": "Élagué les mouvements symétriques sur grilles a coût uniforme pour accélérer A*.",
       "pros": [
-        "Accelarations importantes sur grilles regulieres.",
-        "Preserve l optimalite sous hypotheses valides."
+        "Accélérations importantes sur grilles régulières.",
+        "Préserve l’optimalité sous hypothèses valides."
       ],
-      "cons": [
-        "Tres dependant de la structure de grille.",
-        "Plus complexe que A* standard."
-      ]
+      "cons": ["Très dépendant de la structure de grille.", "Plus complexe que A* standard."],
+      "timeComplexity": "A*-like with strong pruning on grids"
     },
     "lifelongPlanningAStar": {
-      "overview": "Methode incrementale de la famille A* qui reutilise les resultats precedents apres changement de carte.",
+      "overview": "Méthode incrémentale de la famille A* qui réutilise les résultats précédents après changement de carte.",
       "pros": [
-        "Efficace en replanification repetee.",
-        "Bon pour des etats de labyrinthe evolutifs."
+        "Efficace en replanification répétée.",
+        "Bon pour des états de labyrinthe évolutifs."
       ],
-      "cons": [
-        "La maintenance d etat est non triviale.",
-        "Surcout pour une resolution unique."
-      ]
+      "cons": ["La maintenance d’état est non triviale.", "Surcoût pour une resolution unique."],
+      "timeComplexity": "Incremental; update-dependent"
     },
     "thetaStar": {
-      "overview": "Extension any-angle de A* pouvant raccourcir le chemin en relachant les contraintes de parent.",
+      "overview": "Extension any-angle de A* pouvant raccourcir le chemin en relâchant les contraintes de parent.",
       "pros": [
         "Peut produire des trajectoires plus lisses et plus courtes en pratique.",
-        "Souvent meilleure qualite de chemin que A* strict sur grille."
+        "Souvent meilleure qualité de chemin que A* strict sur grille."
       ],
       "cons": [
-        "Necessite des verifications de ligne de vue.",
-        "Complexite d implementation accrue."
-      ]
+        "Nécessite des vérifications de ligne de vue.",
+        "Complexité d'implementation accrue."
+      ],
+      "timeComplexity": "A*-like with line-of-sight checks"
     },
     "bug1": {
-      "overview": "Strategie robotique: aller vers la cible, contourner completement l obstacle, puis repartir au meilleur point.",
+      "overview": "Stratégie robotique: aller vers la cible, contourner complètement l'obstacle, puis repartir au meilleur point.",
       "pros": [
         "Fonctionne avec perception locale uniquement.",
-        "Logique de gestion d obstacles robuste."
+        "Logique de gestion d'obstacles robuste."
       ],
-      "cons": [
-        "Peut generer de longs detours.",
-        "N est pas oriente plus court chemin."
-      ]
+      "cons": ["Peut générer de longs détours.", "N est pas oriente plus court chemin."],
+      "timeComplexity": "Depends on traversed steps (path-dependent)"
     },
     "bug2": {
-      "overview": "Ameliore Bug1 avec une ligne objectif (M-line) pour quitter plus tot le bord des obstacles.",
-      "pros": [
-        "Generalement plus court que Bug1.",
-        "Reste local et simple."
-      ],
+      "overview": "Améliore Bug1 avec une ligne objectif (M-line) pour quitter plus tot le bord des obstacles.",
+      "pros": ["Généralement plus court que Bug1.", "Reste local et simple."],
       "cons": [
-        "Peut encore faire de grands detours dans des cartes complexes.",
-        "Aucune garantie d optimalite globale."
-      ]
+        "Peut encore faire de grands détours dans des cartes complexes.",
+        "Aucune garantie d’optimalité globale."
+      ],
+      "timeComplexity": "Depends on traversed steps (path-dependent)"
     },
     "potentialField": {
-      "overview": "Utilise une force d attraction vers la cible et de repulsion des obstacles pour naviguer.",
+      "overview": "Utilise une force d'attraction vers la cible et de répulsion des obstacles pour naviguer.",
       "pros": [
-        "Comportement de navigation tres reactif et continu.",
+        "Comportement de navigation très réactif et continu.",
         "Calcul local par pas relativement simple."
       ],
       "cons": [
         "Peut rester bloque dans des minima locaux.",
-        "Le chemin peut osciller pres des obstacles."
-      ]
+        "Le chemin peut osciller près des obstacles."
+      ],
+      "timeComplexity": "Depends on control steps / iterations"
     },
     "tangentBug": {
-      "overview": "Raisonnement local sur le bord d obstacle avec information de tangente pour ameliorer les methodes de type Bug.",
+      "overview": "Raisonnement local sur le bord d'obstacle avec information de tangente pour améliorer les méthodes de type Bug.",
       "pros": [
-        "Prend de meilleures decisions que les methodes Bug de base dans des cartes encombrees.",
+        "Prend de meilleures décisions que les méthodes Bug de base dans des cartes encombrées.",
         "Conserve le paradigme de perception locale."
       ],
       "cons": [
         "Logique algorithmique plus complexe.",
         "Toujours sans garantie stricte de plus court chemin."
-      ]
+      ],
+      "timeComplexity": "Depends on traversed steps (path-dependent)"
     },
     "antColony": {
-      "overview": "Une population d agents depose et suit des traces de pheromones pour favoriser les routes prometteuses.",
+      "overview": "Une population d'agents dépose et suit des traces de phéromones pour favoriser les routes prometteuses.",
       "pros": [
-        "Bonne capacite d exploration globale.",
-        "Peut decouvrir des chemins candidats varies."
+        "Bonne capacité d'exploration globale.",
+        "Peut découvrir des chemins candidats varies."
       ],
       "cons": [
-        "Necessite reglages de parametres et iterations.",
-        "Pas de garantie deterministe d optimalite."
-      ]
+        "Nécessite réglages de paramétrés et iterations.",
+        "Pas de garantie déterministe d’optimalité."
+      ],
+      "timeComplexity": "O(iterations * ants * graph work)"
     },
     "geneticSearch": {
-      "overview": "Recherche evolutionnaire sur une population de chemins avec selection, croisement et mutation.",
-      "pros": [
-        "Conception d objectif flexible.",
-        "Peut echapper a de mauvais motifs locaux."
-      ],
-      "cons": [
-        "La convergence n est pas garantie.",
-        "Souvent couteux en calcul."
-      ]
+      "overview": "Recherche évolutionnaire sur une population de chemins avec selection, croisement et mutation.",
+      "pros": ["Conception d'objectif flexible.", "Peut échapper a de mauvais motifs locaux."],
+      "cons": ["La convergence n est pas garantie.", "Souvent coûteux en calcul."],
+      "timeComplexity": "O(generations * population * fitness cost)"
     },
     "qLearning": {
-      "overview": "Apprend une politique via retour de recompense en mettant a jour les valeurs d action au fil des episodes.",
-      "pros": [
-        "S adapte via l experience.",
-        "Utile pour des environnements repetes."
-      ],
+      "overview": "Apprend une politique via retour de récompense en mettant a jour les valeurs d'action au fil des episodes.",
+      "pros": ["S adapte via l’expérience.", "Utile pour des environnements répètes."],
       "cons": [
-        "L apprentissage peut etre lent.",
-        "Sensible a la conception des recompenses et de la politique d exploration."
-      ]
+        "l apprentissage peut être lent.",
+        "Sensible a la conception des récompenses et de la politique d'exploration."
+      ],
+      "timeComplexity": "O(episodes * steps per episode)"
     },
     "simulatedAnnealing": {
       "overview": "Optimisation probabiliste qui accepte parfois de moins bons mouvements au debut pour sortir des minima locaux.",
       "pros": [
-        "Peut eviter certains pieges locaux.",
+        "Peut éviter certains pièges locaux.",
         "Structure metaheuristique relativement simple."
       ],
       "cons": [
-        "Le calendrier de refroidissement influence fortement les resultats.",
-        "Aucune garantie stricte d optimalite."
-      ]
+        "Le calendrier de refroidissement influence fortement les résultats.",
+        "Aucune garantie stricte d’optimalité."
+      ],
+      "timeComplexity": "O(iterations * neighborhood evaluation)"
     }
   },
   "categoryDefaults": {
     "classical": {
-      "overview": "Les methodes classiques privilegient des regles de mouvement deterministes et la simplicite.",
-      "pros": [
-        "Faciles a comprendre et comparer.",
-        "Bonne base pedagogique."
-      ],
+      "overview": "Les méthodes classiques privilégient des règles de mouvement déterministes et la simplicité.",
+      "pros": ["Faciles a comprendre et comparer.", "Bonne base pédagogique."],
       "cons": [
         "Souvent non optimales en plus court chemin.",
-        "Peuvent se degrader sur des structures complexes."
-      ]
+        "Peuvent se dégrader sur des structures complexes."
+      ],
+      "timeComplexity": "Varie selon l'algorithme sélectionné"
     },
     "shortestPath": {
-      "overview": "La famille shortest-path se concentre sur l optimalite du chemin et de fortes garanties de correction.",
-      "pros": [
-        "Fiabilite et predictibilite elevees.",
-        "Fortes garanties theoriques."
-      ],
+      "overview": "La famille shortest-path se concentre sur l’optimalité du chemin et de fortes garanties de correction.",
+      "pros": ["Fiabilité et prédictibilité élevées.", "Fortes garanties théoriques."],
       "cons": [
-        "Peut etre couteux sur de grands graphes.",
-        "Parfois plus lent que les heuristiques informees."
-      ]
+        "Peut être coûteux sur de grands graphes.",
+        "Parfois plus lent que les heuristiques informées."
+      ],
+      "timeComplexity": "Varie selon l'algorithme sélectionné"
     },
     "heuristic": {
-      "overview": "Les methodes heuristiques echangent de l exactitude contre de la vitesse via des estimations directrices.",
+      "overview": "Les méthodes heuristiques échangent de l'exactitude contre de la vitesse via des estimations directrices.",
       "pros": [
         "Convergence rapide dans de nombreuses cartes pratiques.",
-        "Passe mieux a l echelle quand la carte grandit."
+        "Passe mieux a l’échelle quand la carte grandit."
       ],
-      "cons": [
-        "La qualite depend de l heuristique.",
-        "Peut perdre l optimalite."
-      ]
+      "cons": ["La qualité dépend de l'heuristique.", "Peut perdre l’optimalité."],
+      "timeComplexity": "Varie selon l'algorithme sélectionne"
     },
     "navigation": {
-      "overview": "Les methodes de navigation utilisent des regles/perceptions locales, souvent inspirees de la robotique.",
-      "pros": [
-        "Faible dependance a une carte globale.",
-        "Boucles de decision locales simples."
-      ],
+      "overview": "Les méthodes de navigation utilisent des règles/perceptions locales, souvent inspirées de la robotique.",
+      "pros": ["Faible dépendance a une carte globale.", "Boucles de decision locales simples."],
       "cons": [
-        "L optimalite du trajet est souvent faible.",
-        "Peut echouer sur des geometries defavorables."
-      ]
+        "l’optimalité du trajet est souvent faible.",
+        "Peut échouer sur des géométries défavorables."
+      ],
+      "timeComplexity": "Varie selon l'algorithme sélectionne"
     },
     "metaheuristic": {
-      "overview": "Les metaheuristiques utilisent des strategies d optimisation stochastiques/globales sur de nombreuses iterations.",
-      "pros": [
-        "Gestion flexible des objectifs.",
-        "Peut explorer au-dela des minima locaux."
-      ],
+      "overview": "Les Metaheuristique utilisent des stratégies d'optimisation stochastiques/globales sur de nombreuses iterations.",
+      "pros": ["Gestion flexible des objectifs.", "Peut explorer au-delà des minima locaux."],
       "cons": [
-        "Necessite reglages et budget de calcul.",
-        "Pas de garanties strictes d optimalite."
-      ]
+        "Nécessite réglages et budget de calcul.",
+        "Pas de garanties strictes d’optimalité."
+      ],
+      "timeComplexity": "Varie selon l'algorithme sélectionné"
     }
   }
 }

@@ -2,25 +2,18 @@
   "templates": {
     "bfs": {
       "overview": "Breadth-first expansion by layers. In unweighted mazes, it always finds the shortest path.",
-      "pros": [
-        "Shortest-path guarantee on grid mazes.",
-        "Stable, predictable behavior."
-      ],
-      "cons": [
-        "Memory grows quickly with frontier size.",
-        "Ignores directional heuristics."
-      ]
+      "pros": ["Shortest-path guarantee on grid mazes.", "Stable, predictable behavior."],
+      "cons": ["Memory grows quickly with frontier size.", "Ignores directional heuristics."],
+      "timeComplexity": "O(V + E)"
     },
     "dijkstra": {
       "overview": "Expands nodes by minimum accumulated cost. Works for weighted and unweighted mazes with non-negative weights.",
-      "pros": [
-        "Optimal under non-negative edge costs.",
-        "Very reliable baseline solver."
-      ],
+      "pros": ["Optimal under non-negative edge costs.", "Very reliable baseline solver."],
       "cons": [
         "Usually slower than A* with good heuristic.",
         "Priority queue maintenance adds overhead."
-      ]
+      ],
+      "timeComplexity": "O((V + E) log V)"
     },
     "aStar": {
       "overview": "Combines traveled cost and heuristic estimate to guide search toward goal efficiently.",
@@ -31,40 +24,26 @@
       "cons": [
         "Performance depends on heuristic quality.",
         "Can still consume substantial memory."
-      ]
+      ],
+      "timeComplexity": "Typical: O((V + E) log V), worst-case exponential"
     },
     "dfs": {
       "overview": "Depth-first traversal prioritizing deep exploration before backtracking.",
-      "pros": [
-        "Low memory in many cases.",
-        "Simple and easy to implement."
-      ],
-      "cons": [
-        "No shortest-path guarantee.",
-        "May waste time in long dead ends."
-      ]
+      "pros": ["Low memory in many cases.", "Simple and easy to implement."],
+      "cons": ["No shortest-path guarantee.", "May waste time in long dead ends."],
+      "timeComplexity": "O(V + E)"
     },
     "iddfs": {
       "overview": "Runs DFS repeatedly with increasing depth limits until goal is reached.",
-      "pros": [
-        "Lower memory than BFS.",
-        "Complete for finite-depth mazes."
-      ],
-      "cons": [
-        "Re-explores upper levels many times.",
-        "Can be slower than BFS in practice."
-      ]
+      "pros": ["Lower memory than BFS.", "Complete for finite-depth mazes."],
+      "cons": ["Re-explores upper levels many times.", "Can be slower than BFS in practice."],
+      "timeComplexity": "O(b^d)"
     },
     "bellmanFord": {
       "overview": "Relaxes all edges repeatedly to compute shortest paths, robust on graphs with difficult weight patterns.",
-      "pros": [
-        "Handles broader shortest-path settings.",
-        "Conceptually straightforward."
-      ],
-      "cons": [
-        "High time complexity.",
-        "Usually overkill for regular maze grids."
-      ]
+      "pros": ["Handles broader shortest-path settings.", "Conceptually straightforward."],
+      "cons": ["High time complexity.", "Usually overkill for regular maze grids."],
+      "timeComplexity": "O(VE)"
     },
     "bidirectionalBfs": {
       "overview": "Runs BFS from both start and goal and meets in the middle.",
@@ -75,7 +54,8 @@
       "cons": [
         "More complex frontier/meeting management.",
         "Requires careful path reconstruction."
-      ]
+      ],
+      "timeComplexity": "O(V + E)"
     },
     "bidirectionalDijkstra": {
       "overview": "Dijkstra from both ends to reduce search space on weighted scenarios.",
@@ -83,21 +63,14 @@
         "Can reduce runtime significantly.",
         "Retains optimality under standard assumptions."
       ],
-      "cons": [
-        "Implementation and bookkeeping are harder.",
-        "Needs robust stopping criteria."
-      ]
+      "cons": ["Implementation and bookkeeping are harder.", "Needs robust stopping criteria."],
+      "timeComplexity": "O((V + E) log V)"
     },
     "kShortest": {
       "overview": "Computes multiple candidate shortest paths instead of only one.",
-      "pros": [
-        "Useful for alternatives and rerouting.",
-        "Supports robustness-oriented planning."
-      ],
-      "cons": [
-        "More expensive than single-path solvers.",
-        "Result management is more complex."
-      ]
+      "pros": ["Useful for alternatives and rerouting.", "Supports robustness-oriented planning."],
+      "cons": ["More expensive than single-path solvers.", "Result management is more complex."],
+      "timeComplexity": "Typically O(K * V * (E + V log V))"
     },
     "floydWarshall": {
       "overview": "All-pairs shortest path dynamic programming over full graph matrix.",
@@ -108,62 +81,41 @@
       "cons": [
         "Very high O(n^3) runtime and O(n^2) memory.",
         "Not practical for large maze graphs."
-      ]
+      ],
+      "timeComplexity": "O(V^3)"
     },
     "johnson": {
       "overview": "Reweights edges then runs Dijkstra from multiple sources for efficient sparse all-pairs shortest path.",
-      "pros": [
-        "Efficient all-pairs on sparse graphs.",
-        "Theoretically strong approach."
-      ],
-      "cons": [
-        "Complex pipeline and setup.",
-        "Often unnecessary for single query solve."
-      ]
+      "pros": ["Efficient all-pairs on sparse graphs.", "Theoretically strong approach."],
+      "cons": ["Complex pipeline and setup.", "Often unnecessary for single query solve."],
+      "timeComplexity": "O(VE + V^2 log V)"
     },
     "spfa": {
       "overview": "Queue-based shortest path relaxation variant, often fast on some sparse instances.",
-      "pros": [
-        "Can be practical on favorable graphs.",
-        "Simple queue-oriented implementation."
-      ],
-      "cons": [
-        "Worst-case performance can degrade badly.",
-        "Less predictable than Dijkstra/A*."
-      ]
+      "pros": ["Can be practical on favorable graphs.", "Simple queue-oriented implementation."],
+      "cons": ["Worst-case performance can degrade badly.", "Less predictable than Dijkstra/A*."],
+      "timeComplexity": "Average O(E), worst O(VE)"
     },
     "uniformCost": {
       "overview": "Expands least-cost frontier first, equivalent to Dijkstra when represented as graph search.",
-      "pros": [
-        "Optimal with non-negative costs.",
-        "Conceptually clear for weighted navigation."
-      ],
+      "pros": ["Optimal with non-negative costs.", "Conceptually clear for weighted navigation."],
       "cons": [
         "Can explore many states without heuristic.",
         "Queue operations dominate on large maps."
-      ]
+      ],
+      "timeComplexity": "O((V + E) log V)"
     },
     "deadEndFill": {
       "overview": "Iteratively removes dead-end corridors until only solution backbone remains.",
-      "pros": [
-        "Very intuitive on perfect mazes.",
-        "Can simplify map structure quickly."
-      ],
-      "cons": [
-        "Less suitable for heavily loopy mazes.",
-        "Not designed for weighted optimality."
-      ]
+      "pros": ["Very intuitive on perfect mazes.", "Can simplify map structure quickly."],
+      "cons": ["Less suitable for heavily loopy mazes.", "Not designed for weighted optimality."],
+      "timeComplexity": "O(V + E)"
     },
     "floodFill": {
       "overview": "Spreads reachable labels from source across connected region, then reconstructs path.",
-      "pros": [
-        "Simple and robust on grid mazes.",
-        "Good for visual debugging and education."
-      ],
-      "cons": [
-        "Memory-heavy for large reachable regions.",
-        "Can be slower than guided search."
-      ]
+      "pros": ["Simple and robust on grid mazes.", "Good for visual debugging and education."],
+      "cons": ["Memory-heavy for large reachable regions.", "Can be slower than guided search."],
+      "timeComplexity": "O(V + E)"
     },
     "wallFollower": {
       "overview": "Follows one wall continuously (left/right hand), relying on local geometry.",
@@ -174,7 +126,8 @@
       "cons": [
         "Fails or loops in many non-simply-connected layouts.",
         "Path quality is usually poor."
-      ]
+      ],
+      "timeComplexity": "Depends on traversed steps (path-dependent)"
     },
     "pledge": {
       "overview": "Wall-following with turn-sum compensation to escape loops around obstacles.",
@@ -182,98 +135,59 @@
         "Handles some loop traps better than pure wall-following.",
         "Still lightweight and local."
       ],
-      "cons": [
-        "Can still produce long detours.",
-        "No optimality guarantee."
-      ]
+      "cons": ["Can still produce long detours.", "No optimality guarantee."],
+      "timeComplexity": "Depends on traversed steps (path-dependent)"
     },
     "randomMouse": {
       "overview": "Chooses random valid moves until reaching goal; stochastic baseline behavior.",
-      "pros": [
-        "Very easy to implement.",
-        "Useful as exploration baseline."
-      ],
-      "cons": [
-        "Highly unstable runtime.",
-        "Poor path quality on average."
-      ]
+      "pros": ["Very easy to implement.", "Useful as exploration baseline."],
+      "cons": ["Highly unstable runtime.", "Poor path quality on average."],
+      "timeComplexity": "Expected unbounded (stochastic)"
     },
     "tremaux": {
       "overview": "Marks visited corridors to avoid repeated mistakes; classic backtracking navigation method.",
-      "pros": [
-        "Systematically avoids infinite wandering.",
-        "Good practical navigation strategy."
-      ],
-      "cons": [
-        "Can still be longer than shortest path.",
-        "Requires marker memory."
-      ]
+      "pros": ["Systematically avoids infinite wandering.", "Good practical navigation strategy."],
+      "cons": ["Can still be longer than shortest path.", "Requires marker memory."],
+      "timeComplexity": "O(V + E)"
     },
     "lee": {
       "overview": "Grid wave propagation method equivalent to shortest-path BFS in orthogonal grids.",
-      "pros": [
-        "Guarantees shortest path in uniform grids.",
-        "Easy to visualize and debug."
-      ],
-      "cons": [
-        "Memory intensive on large maps.",
-        "Less efficient than heuristic approaches."
-      ]
+      "pros": ["Guarantees shortest path in uniform grids.", "Easy to visualize and debug."],
+      "cons": ["Memory intensive on large maps.", "Less efficient than heuristic approaches."],
+      "timeComplexity": "O(V + E)"
     },
     "chainAlgorithm": {
       "overview": "Builds and extends chained frontier structures to connect route candidates.",
-      "pros": [
-        "Can structure exploration clearly.",
-        "Reasonable for pedagogical experimentation."
-      ],
+      "pros": ["Can structure exploration clearly.", "Reasonable for pedagogical experimentation."],
       "cons": [
         "Less standardized than mainstream algorithms.",
         "Performance depends on chain policy."
-      ]
+      ],
+      "timeComplexity": "Implementation-dependent, often near O(V + E)"
     },
     "dfsWallTracer": {
       "overview": "Hybrid of depth-first exploration and wall tracing to bias traversal order.",
-      "pros": [
-        "Simple hybrid behavior.",
-        "Can reduce some random detours."
-      ],
-      "cons": [
-        "Still no shortest-path guarantee.",
-        "Behavior is sensitive to local geometry."
-      ]
+      "pros": ["Simple hybrid behavior.", "Can reduce some random detours."],
+      "cons": ["Still no shortest-path guarantee.", "Behavior is sensitive to local geometry."],
+      "timeComplexity": "O(V + E)"
     },
     "recursiveBacktrackingSolver": {
       "overview": "Recursive DFS-style solver with explicit backtracking points.",
-      "pros": [
-        "Compact implementation.",
-        "Good for tree-like maze structures."
-      ],
-      "cons": [
-        "May follow deep wrong branches first.",
-        "No shortest guarantee."
-      ]
+      "pros": ["Compact implementation.", "Good for tree-like maze structures."],
+      "cons": ["May follow deep wrong branches first.", "No shortest guarantee."],
+      "timeComplexity": "O(V + E)"
     },
     "wavefront": {
       "overview": "Wave expansion from target/source to create descending gradient for path extraction.",
-      "pros": [
-        "Produces stable guidance fields.",
-        "Naturally supports grid visualization."
-      ],
-      "cons": [
-        "High memory on dense maps.",
-        "Similar scalability limits to BFS."
-      ]
+      "pros": ["Produces stable guidance fields.", "Naturally supports grid visualization."],
+      "cons": ["High memory on dense maps.", "Similar scalability limits to BFS."],
+      "timeComplexity": "O(V + E)"
     },
     "anytimeAStar": {
       "overview": "Anytime variant of A*: quickly returns a feasible path, then improves it as time allows.",
-      "pros": [
-        "Fast first answer.",
-        "Improves solution quality over time."
-      ],
-      "cons": [
-        "Requires careful time/quality control.",
-        "Implementation complexity is higher."
-      ]
+      "pros": ["Fast first answer.", "Improves solution quality over time."],
+      "cons": ["Requires careful time/quality control.", "Implementation complexity is higher."],
+      "timeComplexity": "Initial A* cost + iterative refinements"
     },
     "beamSearch": {
       "overview": "Heuristic search that keeps only top-k candidates at each layer.",
@@ -281,32 +195,20 @@
         "Very memory-efficient with small beam width.",
         "Can be fast in constrained settings."
       ],
-      "cons": [
-        "May discard optimal path early.",
-        "Quality sensitive to beam width tuning."
-      ]
+      "cons": ["May discard optimal path early.", "Quality sensitive to beam width tuning."],
+      "timeComplexity": "O(w * d) with beam width w, depth d"
     },
     "bestFirst": {
       "overview": "Expands node with best heuristic score first (greedy orientation).",
-      "pros": [
-        "Often quickly reaches a feasible path.",
-        "Simple priority policy."
-      ],
-      "cons": [
-        "Can be far from optimal.",
-        "Can be trapped by misleading heuristic."
-      ]
+      "pros": ["Often quickly reaches a feasible path.", "Simple priority policy."],
+      "cons": ["Can be far from optimal.", "Can be trapped by misleading heuristic."],
+      "timeComplexity": "O((V + E) log V)"
     },
     "dStarLite": {
       "overview": "Incremental heuristic replanning for dynamic environments with changing costs.",
-      "pros": [
-        "Efficient updates after local changes.",
-        "Strong choice for dynamic navigation."
-      ],
-      "cons": [
-        "Complex data structures and invariants.",
-        "Overhead is high for static mazes."
-      ]
+      "pros": ["Efficient updates after local changes.", "Strong choice for dynamic navigation."],
+      "cons": ["Complex data structures and invariants.", "Overhead is high for static mazes."],
+      "timeComplexity": "Per replan typically O((V + E) log V)"
     },
     "fringeSearch": {
       "overview": "Memory-lean A*-like method processing nodes in f-cost fringes.",
@@ -317,51 +219,35 @@
       "cons": [
         "Less common and harder to tune.",
         "Performance profile depends on threshold policy."
-      ]
+      ],
+      "timeComplexity": "A*-like, implementation-dependent"
     },
     "greedyBfs": {
       "overview": "Greedy best-first variant that prioritizes heuristic distance only.",
-      "pros": [
-        "Usually very fast to find a path.",
-        "Low computation per expansion."
-      ],
-      "cons": [
-        "No optimality guarantee.",
-        "Can take poor detours in deceptive layouts."
-      ]
+      "pros": ["Usually very fast to find a path.", "Low computation per expansion."],
+      "cons": ["No optimality guarantee.", "Can take poor detours in deceptive layouts."],
+      "timeComplexity": "O((V + E) log V)"
     },
     "idaStar": {
       "overview": "Depth-first iterative deepening over f-cost thresholds (A* idea with DFS memory).",
-      "pros": [
-        "Lower memory footprint than A*.",
-        "Can still exploit admissible heuristics."
-      ],
+      "pros": ["Lower memory footprint than A*.", "Can still exploit admissible heuristics."],
       "cons": [
         "Repeated expansions can be expensive.",
         "Runtime sensitive to threshold progression."
-      ]
+      ],
+      "timeComplexity": "O(b^d)"
     },
     "jumpPointSearch": {
       "overview": "Prunes symmetric moves in uniform-cost grids to accelerate A* search.",
-      "pros": [
-        "Major speedups on regular grids.",
-        "Preserves optimality under valid assumptions."
-      ],
-      "cons": [
-        "Highly grid-structure dependent.",
-        "More complex than vanilla A*."
-      ]
+      "pros": ["Major speedups on regular grids.", "Preserves optimality under valid assumptions."],
+      "cons": ["Highly grid-structure dependent.", "More complex than vanilla A*."],
+      "timeComplexity": "A*-like with strong pruning on grids"
     },
     "lifelongPlanningAStar": {
       "overview": "Incremental A* family method that reuses previous search results after map changes.",
-      "pros": [
-        "Efficient under repeated replanning.",
-        "Good for evolving maze states."
-      ],
-      "cons": [
-        "State maintenance is non-trivial.",
-        "Overhead for single-shot solving."
-      ]
+      "pros": ["Efficient under repeated replanning.", "Good for evolving maze states."],
+      "cons": ["State maintenance is non-trivial.", "Overhead for single-shot solving."],
+      "timeComplexity": "Incremental; update-dependent"
     },
     "thetaStar": {
       "overview": "Any-angle extension of A* that can shorten paths by relaxing parent constraints.",
@@ -369,32 +255,20 @@
         "Can produce smoother and shorter practical routes.",
         "Often better path quality than strict grid A*."
       ],
-      "cons": [
-        "Requires line-of-sight checks.",
-        "Implementation complexity increases."
-      ]
+      "cons": ["Requires line-of-sight checks.", "Implementation complexity increases."],
+      "timeComplexity": "A*-like with line-of-sight checks"
     },
     "bug1": {
       "overview": "Robot navigation strategy: move toward goal, circumnavigate obstacle fully, then leave at best point.",
-      "pros": [
-        "Works with local sensing only.",
-        "Robust obstacle handling logic."
-      ],
-      "cons": [
-        "Can create long detours.",
-        "Not shortest-path oriented."
-      ]
+      "pros": ["Works with local sensing only.", "Robust obstacle handling logic."],
+      "cons": ["Can create long detours.", "Not shortest-path oriented."],
+      "timeComplexity": "Depends on traversed steps (path-dependent)"
     },
     "bug2": {
       "overview": "Improves Bug1 by using a goal line (M-line) to leave obstacle boundaries earlier.",
-      "pros": [
-        "Usually shorter than Bug1.",
-        "Still local and simple."
-      ],
-      "cons": [
-        "Still can detour heavily in complex maps.",
-        "No global optimality guarantee."
-      ]
+      "pros": ["Usually shorter than Bug1.", "Still local and simple."],
+      "cons": ["Still can detour heavily in complex maps.", "No global optimality guarantee."],
+      "timeComplexity": "Depends on traversed steps (path-dependent)"
     },
     "potentialField": {
       "overview": "Uses attractive force to goal and repulsive force from obstacles to navigate.",
@@ -402,10 +276,8 @@
         "Very reactive and continuous navigation behavior.",
         "Simple local computation per step."
       ],
-      "cons": [
-        "Can get trapped in local minima.",
-        "Path can oscillate near obstacles."
-      ]
+      "cons": ["Can get trapped in local minima.", "Path can oscillate near obstacles."],
+      "timeComplexity": "Depends on control steps / iterations"
     },
     "tangentBug": {
       "overview": "Local obstacle-boundary reasoning with tangent information to improve Bug-style navigation.",
@@ -413,111 +285,64 @@
         "Better decisions than basic Bug methods in cluttered maps.",
         "Maintains local-sensing paradigm."
       ],
-      "cons": [
-        "Algorithmic logic is more intricate.",
-        "Still no strict shortest guarantee."
-      ]
+      "cons": ["Algorithmic logic is more intricate.", "Still no strict shortest guarantee."],
+      "timeComplexity": "Depends on traversed steps (path-dependent)"
     },
     "antColony": {
       "overview": "Population of agents lays and follows pheromone trails to bias promising routes.",
-      "pros": [
-        "Good global exploration capabilities.",
-        "Can discover diverse candidate paths."
-      ],
-      "cons": [
-        "Needs parameter tuning and iterations.",
-        "No deterministic optimality guarantee."
-      ]
+      "pros": ["Good global exploration capabilities.", "Can discover diverse candidate paths."],
+      "cons": ["Needs parameter tuning and iterations.", "No deterministic optimality guarantee."],
+      "timeComplexity": "O(iterations * ants * graph work)"
     },
     "geneticSearch": {
       "overview": "Evolutionary search over path populations using selection, crossover, and mutation.",
-      "pros": [
-        "Flexible objective design.",
-        "Can escape poor local patterns."
-      ],
-      "cons": [
-        "Convergence is not guaranteed.",
-        "Often computationally expensive."
-      ]
+      "pros": ["Flexible objective design.", "Can escape poor local patterns."],
+      "cons": ["Convergence is not guaranteed.", "Often computationally expensive."],
+      "timeComplexity": "O(generations * population * fitness cost)"
     },
     "qLearning": {
       "overview": "Learns policy from reward feedback by updating action-value estimates over episodes.",
-      "pros": [
-        "Adapts through experience.",
-        "Useful for repeated environments."
-      ],
-      "cons": [
-        "Training can be slow.",
-        "Sensitive to reward design and exploration policy."
-      ]
+      "pros": ["Adapts through experience.", "Useful for repeated environments."],
+      "cons": ["Training can be slow.", "Sensitive to reward design and exploration policy."],
+      "timeComplexity": "O(episodes * steps per episode)"
     },
     "simulatedAnnealing": {
       "overview": "Probabilistic optimization that accepts occasional worse moves early to escape local minima.",
-      "pros": [
-        "Can avoid some local traps.",
-        "Simple metaheuristic structure."
-      ],
-      "cons": [
-        "Cooling schedule strongly affects results.",
-        "No strict optimal guarantee."
-      ]
+      "pros": ["Can avoid some local traps.", "Simple metaheuristic structure."],
+      "cons": ["Cooling schedule strongly affects results.", "No strict optimal guarantee."],
+      "timeComplexity": "O(iterations * neighborhood evaluation)"
     }
   },
   "categoryDefaults": {
     "classical": {
       "overview": "Classical traversal methods prioritize deterministic movement rules and simplicity.",
-      "pros": [
-        "Easy to understand and compare.",
-        "Good educational baseline."
-      ],
-      "cons": [
-        "Often not shortest-path optimal.",
-        "Can degrade on complex structures."
-      ]
+      "pros": ["Easy to understand and compare.", "Good educational baseline."],
+      "cons": ["Often not shortest-path optimal.", "Can degrade on complex structures."],
+      "timeComplexity": "Varies by selected algorithm"
     },
     "shortestPath": {
       "overview": "Shortest-path family focuses on path optimality and strong correctness guarantees.",
-      "pros": [
-        "High reliability and predictability.",
-        "Strong theoretical guarantees."
-      ],
-      "cons": [
-        "Can be heavy on large graphs.",
-        "Sometimes slower than informed heuristics."
-      ]
+      "pros": ["High reliability and predictability.", "Strong theoretical guarantees."],
+      "cons": ["Can be heavy on large graphs.", "Sometimes slower than informed heuristics."],
+      "timeComplexity": "Varies by selected algorithm"
     },
     "heuristic": {
       "overview": "Heuristic methods trade exactness for speed by guiding exploration with estimates.",
-      "pros": [
-        "Fast convergence in many practical maps.",
-        "Scales better with map size."
-      ],
-      "cons": [
-        "Result quality depends on heuristic quality.",
-        "May lose optimality."
-      ]
+      "pros": ["Fast convergence in many practical maps.", "Scales better with map size."],
+      "cons": ["Result quality depends on heuristic quality.", "May lose optimality."],
+      "timeComplexity": "Varies by selected algorithm"
     },
     "navigation": {
       "overview": "Navigation methods use local sensing/rules, often inspired by robotics.",
-      "pros": [
-        "Low global map requirements.",
-        "Simple local decision loops."
-      ],
-      "cons": [
-        "Route optimality is typically weak.",
-        "Can fail in adversarial geometries."
-      ]
+      "pros": ["Low global map requirements.", "Simple local decision loops."],
+      "cons": ["Route optimality is typically weak.", "Can fail in adversarial geometries."],
+      "timeComplexity": "Varies by selected algorithm"
     },
     "metaheuristic": {
       "overview": "Metaheuristics use stochastic/global optimization strategies over many iterations.",
-      "pros": [
-        "Flexible objective handling.",
-        "Can explore beyond local minima."
-      ],
-      "cons": [
-        "Needs tuning and compute budget.",
-        "No strict optimality guarantees."
-      ]
+      "pros": ["Flexible objective handling.", "Can explore beyond local minima."],
+      "cons": ["Needs tuning and compute budget.", "No strict optimality guarantees."],
+      "timeComplexity": "Varies by selected algorithm"
     }
   }
 }
