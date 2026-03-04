@@ -1,5 +1,5 @@
 import en from './locales/en.json';
-import solveInsightsEn from './locales/solve-insights.en.json';
+import solveInsightsEn from './locales/solve-insights-en.json';
 
 const LANGUAGE_STORAGE_KEY = 'maze_solver_3d_language';
 
@@ -115,12 +115,12 @@ async function loadSolveInsights(language: AppLanguage): Promise<SolveInsightsDa
     let loaded: SolveInsightsDataset;
     switch (language) {
       case 'vi': {
-        const module = await import('./locales/solve-insights.vi.json');
+        const module = await import('./locales/solve-insights-vi.json');
         loaded = module.default as SolveInsightsDataset;
         break;
       }
       case 'fr': {
-        const module = await import('./locales/solve-insights.fr.json');
+        const module = await import('./locales/solve-insights-fr.json');
         loaded = module.default as SolveInsightsDataset;
         break;
       }

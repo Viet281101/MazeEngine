@@ -1,7 +1,8 @@
 import { MAZE_SIZE } from '../../../constants/maze';
+import { getIconPath } from '../../../constants/assets';
 import type { TranslationKey } from '../../i18n';
 import { createI18nButton } from '../popup-elements';
-import { setI18nText } from '../popup-i18n';
+import { setI18nAriaLabel, setI18nText, setI18nTitle } from '../popup-i18n';
 import { createLabeledNumberInput } from '../popup-inputs';
 import type { MazePopupViewRefs, ToolMode } from './types';
 
@@ -49,6 +50,7 @@ export function buildMazePopupView(canvas: HTMLCanvasElement): MazePopupViewRefs
     value: MAZE_SIZE.DEFAULT_CUSTOM_EDITOR,
     wrapperClassName: 'maze-popup__input',
   });
+
   const createBtn = createI18nButton({ textKey: 'maze.create', className: 'maze-popup__btn' });
   const loadBtn = createI18nButton({
     textKey: 'maze.loadCurrentMaze',
@@ -63,21 +65,17 @@ export function buildMazePopupView(canvas: HTMLCanvasElement): MazePopupViewRefs
   const toolSection = document.createElement('div');
   toolSection.className = 'maze-popup__section';
 
-  const penBtn = createI18nButton({ textKey: 'maze.pen', className: 'maze-popup__tool' });
-  const eraserBtn = createI18nButton({ textKey: 'maze.eraser', className: 'maze-popup__tool' });
-  const startBtn = createI18nButton({ textKey: 'maze.start', className: 'maze-popup__tool' });
-  const endBtn = createI18nButton({ textKey: 'maze.end', className: 'maze-popup__tool' });
+  const penBtn = createIconToolButton('maze.pen', 'pen.png');
+  const eraserBtn = createIconToolButton('maze.eraser', 'erase.png');
+  const startBtn = createIconToolButton('maze.start', 'start.png');
+  const endBtn = createIconToolButton('maze.end', 'end.png');
+  const clearBtn = createIconToolButton('maze.clear', 'trash.png');
 
   toolSection.appendChild(penBtn);
   toolSection.appendChild(eraserBtn);
   toolSection.appendChild(startBtn);
   toolSection.appendChild(endBtn);
-
-  const actionSection = document.createElement('div');
-  actionSection.className = 'maze-popup__section';
-
-  const clearBtn = createI18nButton({ textKey: 'maze.clear', className: 'maze-popup__btn' });
-  actionSection.appendChild(clearBtn);
+  toolSection.appendChild(clearBtn);
 
   const applySection = document.createElement('div');
   applySection.className = 'maze-popup__section maze-popup__section--apply';
@@ -89,7 +87,6 @@ export function buildMazePopupView(canvas: HTMLCanvasElement): MazePopupViewRefs
 
   panel.appendChild(sizeSection);
   panel.appendChild(toolSection);
-  panel.appendChild(actionSection);
   panel.appendChild(canvas);
   panel.appendChild(applySection);
   editorRow.appendChild(panel);
@@ -114,6 +111,28 @@ export function buildMazePopupView(canvas: HTMLCanvasElement): MazePopupViewRefs
       end: endBtn,
     } as Record<ToolMode, HTMLButtonElement>,
   };
+}
+
+function createIconToolButton(textKey: TranslationKey, iconFile: string): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'maze-popup__tool';
+  setI18nAriaLabel(button, textKey);
+  setI18nTitle(button, textKey);
+
+  const icon = document.createElement('img');
+  icon.className = 'maze-popup__tool-icon';
+  icon.src = getIconPath(iconFile);
+  icon.alt = '';
+  icon.setAttribute('aria-hidden', 'true');
+
+  const tooltip = document.createElement('span');
+  tooltip.className = 'maze-popup__tool-tooltip';
+  setI18nText(tooltip, textKey);
+
+  button.appendChild(icon);
+  button.appendChild(tooltip);
+  return button;
 }
 
 function createPlaceholderMazeTypeRow(titleKey: TranslationKey): HTMLElement {
