@@ -5,6 +5,9 @@ import * as THREE from 'three';
  * MultiLayerMaze - Maze with multiple stacked layers
  */
 export class MultiLayerMaze extends Maze {
+  private static readonly OPENING_CELL_VALUE = 2;
+  private static readonly STAIR_STEP_COUNT = 4;
+
   constructor(canvas: HTMLCanvasElement, maze: number[][][], config?: MazeConfig) {
     super(canvas, maze, config);
   }
@@ -21,7 +24,7 @@ export class MultiLayerMaze extends Maze {
 
       // Create floors (except for first layer which has main floor)
       if (layerIndex > 0) {
-        this.createLayerFloors(layer, layerHeight, mazeLayer);
+        this.createLayerFloorsAndConnectors(layer, layerIndex, layerHeight, mazeLayer);
       } else {
         this.createMainFloor(layer, mazeLayer);
       }
@@ -159,27 +162,47 @@ export class MultiLayerMaze extends Maze {
   }
 
   /**
-   * Create small floors for cells in layer (except cells with value 2)
+   * Create small floors and vertical connectors for a non-ground layer.
    */
-  private createLayerFloors(
+  private createLayerFloorsAndConnectors(
     layer: number[][],
+    layerIndex: number,
     layerHeight: number,
     mazeLayer: THREE.Object3D
   ): void {
-    layer.forEach((row, rowIndex) => {
-      row.forEach((cell, colIndex) => {
-        // Cell value 2 = no floor (hole/opening)
-        if (cell !== 2) {
-          const smallFloor = this.meshFactory.createSmallFloor(
-            colIndex * this.cellSize,
-            layerHeight,
-            -rowIndex * this.cellSize,
-            this.cellSize
-          );
+    const previousLayer = this.maze[layerIndex - 1];
+    const previousLayerObject = this.mazeLayers[layerIndex - 1];
+    const connectorBaseHeight = (layerIndex - 1) * this.wallHeight;
+
+    for (let rowIndex = 0; rowIndex < layer.length; rowIndex += 1) {
+      const row = layer[rowIndex];
+      for (let colIndex = 0; colIndex < row.length; colIndex += 1) {
+        const cell = row[colIndex];
+        const x = colIndex * this.cellSize;
+        const z = -rowIndex * this.cellSize;
+
+        if (cell !== MultiLayerMaze.OPENING_CELL_VALUE) {
+          const smallFloor = this.meshFactory.createSmallFloor(x, layerHeight, z, this.cellSize);
           mazeLayer.add(smallFloor);
+          continue;
         }
-      });
-    });
+
+        const canStandOnPreviousLayer = previousLayer[rowIndex]?.[colIndex] !== 1;
+        if (!canStandOnPreviousLayer) {
+          continue;
+        }
+
+        const connector = this.meshFactory.createStairConnector({
+          x,
+          y: connectorBaseHeight,
+          z,
+          cellSize: this.cellSize,
+          riseHeight: this.wallHeight,
+          stepCount: MultiLayerMaze.STAIR_STEP_COUNT,
+        });
+        previousLayerObject.add(connector);
+      }
+    }
   }
 
   /**

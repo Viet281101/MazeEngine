@@ -22,13 +22,30 @@ interface MazeCenter {
   z: number;
 }
 
+interface RenderQualityInfo {
+  pixelRatio: number;
+  adaptiveScale: number;
+  adaptiveEnabled: boolean;
+}
+
 /**
  * Base Maze Class - Manages Three.js scene and rendering
  * Refactored with proper memory management
  */
 export abstract class Maze {
-  private static readonly INTERACTION_PIXEL_RATIO_CAP = 1.0;
+  private static readonly STABLE_PIXEL_RATIO_CAP = 1.25;
+  private static readonly INTERACTION_PIXEL_RATIO_CAP = 0.85;
+  private static readonly MIN_PIXEL_RATIO = 0.5;
   private static readonly INTERACTION_END_DELAY_MS = 120;
+  private static readonly INITIAL_QUALITY_UPGRADE_DELAY_MS = 300;
+  private static readonly ADAPTIVE_QUALITY_MIN_SCALE = 0.6;
+  private static readonly ADAPTIVE_QUALITY_MAX_SCALE = 1.0;
+  private static readonly ADAPTIVE_QUALITY_DECREASE_STEP = 0.08;
+  private static readonly ADAPTIVE_QUALITY_INCREASE_STEP = 0.04;
+  private static readonly ADAPTIVE_QUALITY_HIGH_FRAME_TIME_MS = 26;
+  private static readonly ADAPTIVE_QUALITY_LOW_FRAME_TIME_MS = 16;
+  private static readonly ADAPTIVE_QUALITY_UPDATE_COOLDOWN_MS = 280;
+  private static readonly ADAPTIVE_QUALITY_EMA_ALPHA = 0.18;
 
   // Three.js core
   protected canvas: HTMLCanvasElement;
@@ -67,8 +84,24 @@ export abstract class Maze {
   private isDisposed: boolean = false;
   private preserveCameraOnRebuild: boolean = false;
   private interactionRestoreTimer: number | null = null;
+  private initialQualityUpgradeTimer: number | null = null;
   private currentInteractionMode: boolean = false;
   private renderListeners: Set<() => void> = new Set();
+  private edgeObjects: THREE.LineSegments[] = [];
+  private edgesTemporarilyHidden: boolean = false;
+  private hideEdgesDuringInteractionEnabled: boolean = false;
+  private adaptiveQualityEnabled: boolean = true;
+  private currentRenderWidth: number = 0;
+  private currentRenderHeight: number = 0;
+  private currentRenderPixelRatio: number = 0;
+  private adaptiveQualityScale: number = Maze.ADAPTIVE_QUALITY_MAX_SCALE;
+  private frameTimeEmaMs: number | null = null;
+  private lastRenderTimestampMs: number | null = null;
+  private lastAdaptiveAdjustmentMs: number = 0;
+  private backgroundColor: THREE.Color = new THREE.Color(0x000000);
+  private backgroundAlpha: number = 1;
+  private readonly handleContextLost: (event: Event) => void;
+  private readonly handleContextRestored: () => void;
 
   constructor(canvas: HTMLCanvasElement, maze: number[][][], config: MazeConfig = {}) {
     this.canvas = canvas;
@@ -102,6 +135,22 @@ export abstract class Maze {
       powerPreference: 'high-performance',
     });
     this.renderer.domElement.style.touchAction = 'none';
+    this.renderer.getClearColor(this.backgroundColor);
+    this.backgroundAlpha = this.renderer.getClearAlpha();
+    this.handleContextLost = event => {
+      event.preventDefault();
+      this.stopAnimation();
+      this.isRendering = false;
+      this.needsRender = true;
+    };
+    this.handleContextRestored = () => {
+      this.renderer.setClearColor(this.backgroundColor, this.backgroundAlpha);
+      this.resetAdaptiveQualityMetrics();
+      this.applyRendererSizeForMode(this.currentInteractionMode);
+      this.requestRender();
+    };
+    this.renderer.domElement.addEventListener('webglcontextlost', this.handleContextLost);
+    this.renderer.domElement.addEventListener('webglcontextrestored', this.handleContextRestored);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
     // Initialize resource managers
@@ -122,7 +171,9 @@ export abstract class Maze {
    * Initialize renderer and start animation loop
    */
   protected init(): void {
-    this.applyRendererSizeForMode(false);
+    // Start at interaction quality to avoid a heavy first frame when users drag immediately.
+    this.applyRendererSizeForMode(true);
+    this.scheduleInitialQualityUpgrade();
 
     // Configure controls
     this.controls.enableDamping = true;
@@ -132,6 +183,7 @@ export abstract class Maze {
     this.controls.addEventListener('end', () => this.handleInteractionEnd());
 
     this.createMaze();
+    this.refreshEdgeObjectCache();
     this.requestRender();
   }
 
@@ -152,6 +204,7 @@ export abstract class Maze {
       return;
     }
     this.createMaze();
+    this.refreshEdgeObjectCache();
     this.requestRender();
   }
 
@@ -177,7 +230,7 @@ export abstract class Maze {
     if (this.isRendering) return;
 
     this.isRendering = true;
-    this.animationId = requestAnimationFrame(() => {
+    this.animationId = requestAnimationFrame(timestampMs => {
       if (this.isDisposed) {
         this.isRendering = false;
         return;
@@ -191,6 +244,7 @@ export abstract class Maze {
       this.needsRender = false;
       const needsMore = this.controls.update();
       this.renderer.render(this.scene, this.camera);
+      this.updateAdaptiveQuality(timestampMs);
       this.renderListeners.forEach(listener => listener());
       this.isRendering = false;
 
@@ -218,6 +272,7 @@ export abstract class Maze {
 
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
+    this.resetAdaptiveQualityMetrics();
     this.applyRendererSizeForMode(this.currentInteractionMode);
     this.requestRender();
   }
@@ -232,6 +287,8 @@ export abstract class Maze {
       this.scene.remove(layer);
     });
     this.mazeLayers = [];
+    this.edgeObjects = [];
+    this.edgesTemporarilyHidden = false;
   }
 
   /**
@@ -245,6 +302,13 @@ export abstract class Maze {
     // Stop animation
     this.stopAnimation();
     this.clearInteractionRestoreTimer();
+    this.clearInitialQualityUpgradeTimer();
+
+    this.renderer.domElement.removeEventListener('webglcontextlost', this.handleContextLost);
+    this.renderer.domElement.removeEventListener(
+      'webglcontextrestored',
+      this.handleContextRestored
+    );
 
     // Delete maze
     this.deleteMaze();
@@ -286,6 +350,14 @@ export abstract class Maze {
     const centerX = (cols * this.cellSize) / 2 - this.cellSize / 2;
     const centerZ = -(rows * this.cellSize) / 2 + this.cellSize / 2;
     return { x: centerX, z: centerZ };
+  }
+
+  public getRenderQualityInfo(): RenderQualityInfo {
+    return {
+      pixelRatio: this.currentRenderPixelRatio,
+      adaptiveScale: this.adaptiveQualityScale,
+      adaptiveEnabled: this.adaptiveQualityEnabled,
+    };
   }
 
   public setCameraState(state: CameraState): void {
@@ -330,6 +402,13 @@ export abstract class Maze {
     this.showEdges = showEdges;
     this.meshFactory.updateSettings({ showEdges });
     this.rebuildEdges();
+    this.refreshEdgeObjectCache();
+    if (!showEdges) {
+      this.edgesTemporarilyHidden = false;
+    } else if (this.currentInteractionMode && this.hideEdgesDuringInteractionEnabled) {
+      this.setEdgeVisibility(false);
+      this.edgesTemporarilyHidden = true;
+    }
     this.requestRender();
   }
 
@@ -377,6 +456,57 @@ export abstract class Maze {
 
   public removeRenderListener(listener: () => void): void {
     this.renderListeners.delete(listener);
+  }
+
+  public setHideEdgesDuringInteractionEnabled(enabled: boolean): void {
+    this.hideEdgesDuringInteractionEnabled = enabled;
+
+    if (!enabled && this.edgesTemporarilyHidden) {
+      this.setEdgeVisibility(true);
+      this.edgesTemporarilyHidden = false;
+      this.requestRender();
+      return;
+    }
+
+    if (enabled && this.currentInteractionMode && this.showEdges && this.edgeObjects.length > 0) {
+      this.setEdgeVisibility(false);
+      this.edgesTemporarilyHidden = true;
+      this.requestRender();
+    }
+  }
+
+  public isHideEdgesDuringInteractionEnabled(): boolean {
+    return this.hideEdgesDuringInteractionEnabled;
+  }
+
+  public setAdaptiveQualityEnabled(enabled: boolean): void {
+    if (this.adaptiveQualityEnabled === enabled) {
+      return;
+    }
+    this.adaptiveQualityEnabled = enabled;
+    this.resetAdaptiveQualityMetrics();
+    if (!this.currentInteractionMode) {
+      this.applyRendererSizeForMode(this.currentInteractionMode);
+    }
+    this.requestRender();
+  }
+
+  public isAdaptiveQualityEnabled(): boolean {
+    return this.adaptiveQualityEnabled;
+  }
+
+  public setBackgroundColor(color: THREE.ColorRepresentation, alpha: number = 1): void {
+    const nextAlpha = Number.isFinite(alpha) ? Math.min(1, Math.max(0, alpha)) : 1;
+    const previousHex = this.backgroundColor.getHex();
+    this.backgroundColor.set(color);
+    const colorChanged = this.backgroundColor.getHex() !== previousHex;
+    const alphaChanged = Math.abs(this.backgroundAlpha - nextAlpha) > 0.0001;
+    if (!colorChanged && !alphaChanged) {
+      return;
+    }
+    this.backgroundAlpha = nextAlpha;
+    this.renderer.setClearColor(this.backgroundColor, this.backgroundAlpha);
+    this.requestRender();
   }
 
   public setSolutionPath(path: SolutionPath, layerIndex: number = 0): void {
@@ -479,11 +609,17 @@ export abstract class Maze {
     } finally {
       this.preserveCameraOnRebuild = false;
     }
+    this.refreshEdgeObjectCache();
     this.requestRender();
   }
 
   private handleInteractionStart(): void {
     this.clearInteractionRestoreTimer();
+    this.clearInitialQualityUpgradeTimer();
+    if (this.hideEdgesDuringInteractionEnabled && this.showEdges && this.edgeObjects.length > 0) {
+      this.setEdgeVisibility(false);
+      this.edgesTemporarilyHidden = true;
+    }
     this.applyRendererSizeForMode(true);
     this.requestRender();
   }
@@ -492,6 +628,10 @@ export abstract class Maze {
     this.clearInteractionRestoreTimer();
     this.interactionRestoreTimer = window.setTimeout(() => {
       this.interactionRestoreTimer = null;
+      if (this.edgesTemporarilyHidden && this.showEdges) {
+        this.setEdgeVisibility(true);
+      }
+      this.edgesTemporarilyHidden = false;
       this.applyRendererSizeForMode(false);
       this.requestRender();
     }, Maze.INTERACTION_END_DELAY_MS);
@@ -503,6 +643,83 @@ export abstract class Maze {
     }
     window.clearTimeout(this.interactionRestoreTimer);
     this.interactionRestoreTimer = null;
+  }
+
+  private scheduleInitialQualityUpgrade(): void {
+    this.clearInitialQualityUpgradeTimer();
+    this.initialQualityUpgradeTimer = window.setTimeout(() => {
+      this.initialQualityUpgradeTimer = null;
+      if (this.isDisposed) {
+        return;
+      }
+      this.applyRendererSizeForMode(false);
+      this.requestRender();
+    }, Maze.INITIAL_QUALITY_UPGRADE_DELAY_MS);
+  }
+
+  private updateAdaptiveQuality(nowMs: number): void {
+    if (!this.adaptiveQualityEnabled) {
+      return;
+    }
+
+    if (this.lastRenderTimestampMs === null) {
+      this.lastRenderTimestampMs = nowMs;
+      return;
+    }
+
+    const deltaMs = nowMs - this.lastRenderTimestampMs;
+    this.lastRenderTimestampMs = nowMs;
+    if (!Number.isFinite(deltaMs) || deltaMs <= 0 || deltaMs > 200) {
+      return;
+    }
+
+    if (this.frameTimeEmaMs === null) {
+      this.frameTimeEmaMs = deltaMs;
+    } else {
+      this.frameTimeEmaMs =
+        this.frameTimeEmaMs + (deltaMs - this.frameTimeEmaMs) * Maze.ADAPTIVE_QUALITY_EMA_ALPHA;
+    }
+
+    if (nowMs - this.lastAdaptiveAdjustmentMs < Maze.ADAPTIVE_QUALITY_UPDATE_COOLDOWN_MS) {
+      return;
+    }
+
+    let nextScale = this.adaptiveQualityScale;
+    if (this.frameTimeEmaMs > Maze.ADAPTIVE_QUALITY_HIGH_FRAME_TIME_MS) {
+      nextScale = Math.max(
+        Maze.ADAPTIVE_QUALITY_MIN_SCALE,
+        this.adaptiveQualityScale - Maze.ADAPTIVE_QUALITY_DECREASE_STEP
+      );
+    } else if (this.frameTimeEmaMs < Maze.ADAPTIVE_QUALITY_LOW_FRAME_TIME_MS) {
+      nextScale = Math.min(
+        Maze.ADAPTIVE_QUALITY_MAX_SCALE,
+        this.adaptiveQualityScale + Maze.ADAPTIVE_QUALITY_INCREASE_STEP
+      );
+    }
+
+    if (Math.abs(nextScale - this.adaptiveQualityScale) < 0.001) {
+      return;
+    }
+
+    this.adaptiveQualityScale = nextScale;
+    this.lastAdaptiveAdjustmentMs = nowMs;
+    this.applyRendererSizeForMode(this.currentInteractionMode);
+    this.needsRender = true;
+  }
+
+  private resetAdaptiveQualityMetrics(): void {
+    this.frameTimeEmaMs = null;
+    this.lastRenderTimestampMs = null;
+    this.lastAdaptiveAdjustmentMs = 0;
+    this.adaptiveQualityScale = Maze.ADAPTIVE_QUALITY_MAX_SCALE;
+  }
+
+  private clearInitialQualityUpgradeTimer(): void {
+    if (this.initialQualityUpgradeTimer === null) {
+      return;
+    }
+    window.clearTimeout(this.initialQualityUpgradeTimer);
+    this.initialQualityUpgradeTimer = null;
   }
 
   /**
@@ -519,12 +736,15 @@ export abstract class Maze {
           if (this.showEdges) {
             child.children.forEach(obj => {
               if (obj instanceof THREE.Mesh) {
-                const edges = new THREE.EdgesGeometry(obj.geometry);
+                const edges = this.resourceManager.getEdgesGeometry(obj.geometry);
                 const material = this.resourceManager.getEdgeMaterial();
                 const line = new THREE.LineSegments(edges, material);
 
                 line.position.copy(obj.position);
                 line.rotation.copy(obj.rotation);
+                line.renderOrder = 1;
+                line.userData.sharedGeometry = true;
+                line.userData.sharedMaterial = true;
 
                 child.add(line);
               }
@@ -537,9 +757,37 @@ export abstract class Maze {
     this.requestRender();
   }
 
+  private refreshEdgeObjectCache(): void {
+    const lines: THREE.LineSegments[] = [];
+    this.mazeLayers.forEach(layer => {
+      layer.traverse(object => {
+        if (object instanceof THREE.LineSegments) {
+          lines.push(object);
+        }
+      });
+    });
+    this.edgeObjects = lines;
+  }
+
+  private setEdgeVisibility(visible: boolean): void {
+    this.edgeObjects.forEach(edge => {
+      edge.visible = visible;
+    });
+  }
+
   private applyRendererSizeForMode(isInteraction: boolean): void {
     this.currentInteractionMode = isInteraction;
     const { width, height, pixelRatio } = this.getRendererSize(isInteraction);
+    if (
+      width === this.currentRenderWidth &&
+      height === this.currentRenderHeight &&
+      Math.abs(pixelRatio - this.currentRenderPixelRatio) < 0.001
+    ) {
+      return;
+    }
+    this.currentRenderWidth = width;
+    this.currentRenderHeight = height;
+    this.currentRenderPixelRatio = pixelRatio;
     this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(width, height, false);
   }
@@ -549,13 +797,21 @@ export abstract class Maze {
     height: number;
     pixelRatio: number;
   } {
-    const stableCap = 1.5;
-    const dynamicCap = isInteraction ? Maze.INTERACTION_PIXEL_RATIO_CAP : stableCap;
-    const pixelRatio = Math.min(window.devicePixelRatio, dynamicCap);
+    const dynamicCap = isInteraction
+      ? Maze.INTERACTION_PIXEL_RATIO_CAP
+      : Maze.STABLE_PIXEL_RATIO_CAP;
+    const adaptiveScale = this.adaptiveQualityEnabled ? this.adaptiveQualityScale : 1;
+    const adaptiveCap = dynamicCap * adaptiveScale;
+    const pixelRatio = Math.max(
+      Maze.MIN_PIXEL_RATIO,
+      Math.min(window.devicePixelRatio, adaptiveCap)
+    );
     const maxSize = this.renderer.capabilities.maxTextureSize;
     const maxDimension = Math.floor(maxSize / pixelRatio);
-    const width = Math.min(window.innerWidth, maxDimension);
-    const height = Math.min(window.innerHeight, maxDimension);
+    const canvasWidth = Math.max(Math.floor(this.canvas.clientWidth), 1);
+    const canvasHeight = Math.max(Math.floor(this.canvas.clientHeight), 1);
+    const width = Math.min(canvasWidth, maxDimension);
+    const height = Math.min(canvasHeight, maxDimension);
     return { width, height, pixelRatio };
   }
 }

@@ -12,11 +12,7 @@ import { MESH_REDUCTION } from '../constants/maze';
 import { PREVIEW_WINDOW, UI_BREAKPOINTS } from '../constants/ui';
 import { PREVIEW_WINDOW_STATUS_CHANGED_EVENT } from '../constants/events';
 import type { WebGLRenderer } from 'three';
-import {
-  createInitialMazeData,
-  createSampleMultiLayerMazeData,
-  createSampleSingleLayerMazeData,
-} from './default-mazes';
+import { createSampleMultiLayerMazeData, createSampleSingleLayerMazeData } from './default-mazes';
 import { MeshReductionSettingsStorage } from './mesh-settings-store';
 import type {
   MarkerPoint,
@@ -55,6 +51,8 @@ export class MainApp implements MazeController, MazeAppBridge {
   private readonly mobileBreakpoint: number = UI_BREAKPOINTS.MOBILE;
   private meshReductionThreshold: number = MESH_REDUCTION.DEFAULT_THRESHOLD;
   private meshReductionEnabled: boolean = MESH_REDUCTION.DEFAULT_ENABLED;
+  private hideEdgesDuringInteractionEnabled: boolean = false;
+  private adaptiveQualityEnabled: boolean = true;
   private unsubscribeLanguageChange: (() => void) | null = null;
 
   constructor() {
@@ -86,13 +84,14 @@ export class MainApp implements MazeController, MazeAppBridge {
 
     this.debugOverlay = new DebugOverlay({
       getMazeData: () => this.maze.getMazeData(),
+      getRenderQualityInfo: () => this.maze.getRenderQualityInfo(),
     });
     this.renderListener = () => this.debugOverlay.recordRender();
     this.maze.addRenderListener(this.renderListener);
 
     this.setDebugOverlayVisible(this.isDebugOverlayVisible);
     this.setPreviewVisible(this.isPreviewVisible);
-    this.getRenderer().setClearColor(this.guiController.settings.backgroundColor);
+    this.maze.setBackgroundColor(this.guiController.settings.backgroundColor);
     this.updatePreview();
 
     this.resizeHandler = () => this.onWindowResize();
@@ -116,14 +115,20 @@ export class MainApp implements MazeController, MazeAppBridge {
     const loaded = this.settingsStorage.load({
       enabled: MESH_REDUCTION.DEFAULT_ENABLED,
       threshold: MESH_REDUCTION.DEFAULT_THRESHOLD,
+      hideEdgesDuringInteractionEnabled: false,
+      adaptiveQualityEnabled: true,
     });
     this.meshReductionEnabled = loaded.enabled;
     this.meshReductionThreshold = loaded.threshold;
+    this.hideEdgesDuringInteractionEnabled = loaded.hideEdgesDuringInteractionEnabled;
+    this.adaptiveQualityEnabled = loaded.adaptiveQualityEnabled;
   }
 
   private applyMeshReductionSettingsToMaze(): void {
     this.maze.setMeshMergeThreshold(this.meshReductionThreshold);
     this.maze.setMeshReductionEnabled(this.meshReductionEnabled);
+    this.maze.setHideEdgesDuringInteractionEnabled(this.hideEdgesDuringInteractionEnabled);
+    this.maze.setAdaptiveQualityEnabled(this.adaptiveQualityEnabled);
   }
 
   private initializeVisibilityByViewport(): void {
@@ -156,8 +161,8 @@ export class MainApp implements MazeController, MazeAppBridge {
     window.removeEventListener('keydown', this.keydownHandler);
   }
 
-  private createInitialMaze(): SingleLayerMaze {
-    return new SingleLayerMaze(this.canvas, createInitialMazeData());
+  private createInitialMaze(): MazeInstance {
+    return new MultiLayerMaze(this.canvas, createSampleMultiLayerMazeData());
   }
 
   /**
@@ -291,12 +296,7 @@ export class MainApp implements MazeController, MazeAppBridge {
    * Apply current GUI settings to maze
    */
   private applyGUISettings(): void {
-    const renderer = this.getRenderer();
-    if (!renderer) {
-      return;
-    }
-    renderer.setClearColor(this.guiController.settings.backgroundColor);
-    this.requestRender();
+    this.maze.setBackgroundColor(this.guiController.settings.backgroundColor);
   }
 
   /**
@@ -344,6 +344,26 @@ export class MainApp implements MazeController, MazeAppBridge {
 
   public isMeshReductionEnabled(): boolean {
     return this.meshReductionEnabled;
+  }
+
+  public setHideEdgesDuringInteractionEnabled(enabled: boolean): void {
+    this.hideEdgesDuringInteractionEnabled = enabled;
+    this.maze.setHideEdgesDuringInteractionEnabled(enabled);
+    this.settingsStorage.saveHideEdgesDuringInteractionEnabled(enabled);
+  }
+
+  public isHideEdgesDuringInteractionEnabled(): boolean {
+    return this.hideEdgesDuringInteractionEnabled;
+  }
+
+  public setAdaptiveQualityEnabled(enabled: boolean): void {
+    this.adaptiveQualityEnabled = enabled;
+    this.maze.setAdaptiveQualityEnabled(enabled);
+    this.settingsStorage.saveAdaptiveQualityEnabled(enabled);
+  }
+
+  public isAdaptiveQualityEnabled(): boolean {
+    return this.adaptiveQualityEnabled;
   }
 
   // ========== MazeController Interface Implementation ==========

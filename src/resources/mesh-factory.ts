@@ -19,11 +19,22 @@ export interface FloorParams {
   rotationX?: number;
 }
 
+export interface StairConnectorParams {
+  x: number;
+  y: number;
+  z: number;
+  cellSize: number;
+  riseHeight: number;
+  stepCount?: number;
+}
+
 /**
  * MeshFactory - Factory pattern to create meshes
  * Use ResourceManager to reuse geometries
  */
 export class MeshFactory {
+  private static readonly DEFAULT_STAIR_STEP_COUNT = 4;
+
   constructor(
     private resourceManager: ResourceManager,
     private wallColor: THREE.Color,
@@ -104,6 +115,84 @@ export class MeshFactory {
       height: size,
       rotationX: -Math.PI / 2,
     });
+  }
+
+  /**
+   * Create compact symbolic stairs to connect two layers within one maze cell.
+   */
+  createStairConnector(params: StairConnectorParams): THREE.Group {
+    const {
+      x,
+      y,
+      z,
+      cellSize,
+      riseHeight,
+      stepCount = MeshFactory.DEFAULT_STAIR_STEP_COUNT,
+    } = params;
+    const steps = Math.max(1, Math.floor(stepCount));
+
+    const group = new THREE.Group();
+    group.position.set(x, y, z);
+
+    const geometry = this.getStairGeometry(cellSize, riseHeight, steps);
+
+    const material = this.resourceManager.getMaterial(
+      'wall',
+      'wall',
+      this.wallColor,
+      this.wallOpacity
+    );
+    const stairs = new THREE.Mesh(geometry, material);
+    stairs.position.set(0, 0, -cellSize / 2);
+    stairs.userData.sharedGeometry = true;
+    stairs.userData.sharedMaterial = true;
+    group.add(stairs);
+
+    if (this.showEdges) {
+      const edges = this.resourceManager.getEdgesGeometry(geometry);
+      const edgeMaterial = this.resourceManager.getEdgeMaterial();
+      const edgeLines = new THREE.LineSegments(edges, edgeMaterial);
+      edgeLines.position.copy(stairs.position);
+      edgeLines.renderOrder = 1;
+      edgeLines.userData.sharedGeometry = true;
+      edgeLines.userData.sharedMaterial = true;
+      group.add(edgeLines);
+    }
+
+    return group;
+  }
+
+  private getStairGeometry(
+    cellSize: number,
+    riseHeight: number,
+    stepCount: number
+  ): THREE.ExtrudeGeometry {
+    const geometryKey = `stair-${cellSize}-${riseHeight}-${stepCount}`;
+    return this.resourceManager.getCustomGeometry(geometryKey, () => {
+      // Build one solid stair volume so edges only draw on the outer shell.
+      const stepDepth = cellSize / stepCount;
+      const stepRise = riseHeight / stepCount;
+      const halfRun = cellSize / 2;
+
+      const profile = new THREE.Shape();
+      profile.moveTo(-halfRun, 0);
+
+      for (let stepIndex = 0; stepIndex < stepCount; stepIndex += 1) {
+        const xEdge = -halfRun + stepIndex * stepDepth;
+        const yEdge = (stepIndex + 1) * stepRise;
+        profile.lineTo(xEdge, yEdge);
+        profile.lineTo(xEdge + stepDepth, yEdge);
+      }
+
+      profile.lineTo(halfRun, 0);
+      profile.lineTo(-halfRun, 0);
+
+      return new THREE.ExtrudeGeometry(profile, {
+        depth: cellSize,
+        bevelEnabled: false,
+        steps: 1,
+      });
+    }) as THREE.ExtrudeGeometry;
   }
 
   /**

@@ -10,16 +10,26 @@ export interface SettingsPopupDom {
   languageLabel: HTMLSpanElement;
   meshReductionLabel: HTMLSpanElement;
   thresholdLabel: HTMLSpanElement;
+  hideEdgesDuringInteractionLabel: HTMLSpanElement;
+  adaptiveQualityLabel: HTMLSpanElement;
   previewLabel: HTMLSpanElement;
   previewButton: HTMLButtonElement;
   meshReductionToggle: HTMLInputElement;
   thresholdInput: HTMLInputElement;
+  hideEdgesDuringInteractionToggle: HTMLInputElement;
+  adaptiveQualityToggle: HTMLInputElement;
   meshReductionHelpIcon: HTMLImageElement;
   thresholdHelpIcon: HTMLImageElement;
+  hideEdgesDuringInteractionHelpIcon: HTMLImageElement;
+  adaptiveQualityHelpIcon: HTMLImageElement;
   meshReductionTooltip: HTMLDivElement;
   thresholdTooltip: HTMLDivElement;
+  hideEdgesDuringInteractionTooltip: HTMLDivElement;
+  adaptiveQualityTooltip: HTMLDivElement;
   meshReductionTooltipText: HTMLParagraphElement;
   thresholdTooltipText: HTMLParagraphElement;
+  hideEdgesDuringInteractionTooltipText: HTMLParagraphElement;
+  adaptiveQualityTooltipText: HTMLParagraphElement;
   meshReductionTooltipButton: HTMLButtonElement;
 }
 
@@ -43,7 +53,9 @@ function createHelpIcon(): HTMLImageElement {
 
 export function createSettingsPopupDom(
   initialMeshEnabled: boolean,
-  initialThreshold: number
+  initialThreshold: number,
+  initialHideEdgesDuringInteractionEnabled: boolean,
+  initialAdaptiveQualityEnabled: boolean
 ): SettingsPopupDom {
   const content = document.createElement('div');
   content.className = 'settings-popup__content';
@@ -109,6 +121,41 @@ export function createSettingsPopupDom(
   thresholdRow.appendChild(thresholdField);
   content.appendChild(thresholdRow);
 
+  const hideEdgesDuringInteractionRow = document.createElement('label');
+  hideEdgesDuringInteractionRow.className = 'settings-popup__row';
+  const hideEdgesDuringInteractionLabelWrap = document.createElement('span');
+  hideEdgesDuringInteractionLabelWrap.className =
+    'settings-popup__label settings-popup__label--with-help';
+  const hideEdgesDuringInteractionLabel = document.createElement('span');
+  hideEdgesDuringInteractionLabel.className = 'settings-popup__label-text';
+  const hideEdgesDuringInteractionHelpIcon = createHelpIcon();
+  hideEdgesDuringInteractionLabelWrap.appendChild(hideEdgesDuringInteractionLabel);
+  hideEdgesDuringInteractionLabelWrap.appendChild(hideEdgesDuringInteractionHelpIcon);
+  const hideEdgesDuringInteractionToggle = document.createElement('input');
+  hideEdgesDuringInteractionToggle.type = 'checkbox';
+  hideEdgesDuringInteractionToggle.className = 'settings-popup__checkbox';
+  hideEdgesDuringInteractionToggle.checked = initialHideEdgesDuringInteractionEnabled;
+  hideEdgesDuringInteractionRow.appendChild(hideEdgesDuringInteractionLabelWrap);
+  hideEdgesDuringInteractionRow.appendChild(hideEdgesDuringInteractionToggle);
+  content.appendChild(hideEdgesDuringInteractionRow);
+
+  const adaptiveQualityRow = document.createElement('label');
+  adaptiveQualityRow.className = 'settings-popup__row';
+  const adaptiveQualityLabelWrap = document.createElement('span');
+  adaptiveQualityLabelWrap.className = 'settings-popup__label settings-popup__label--with-help';
+  const adaptiveQualityLabel = document.createElement('span');
+  adaptiveQualityLabel.className = 'settings-popup__label-text';
+  const adaptiveQualityHelpIcon = createHelpIcon();
+  adaptiveQualityLabelWrap.appendChild(adaptiveQualityLabel);
+  adaptiveQualityLabelWrap.appendChild(adaptiveQualityHelpIcon);
+  const adaptiveQualityToggle = document.createElement('input');
+  adaptiveQualityToggle.type = 'checkbox';
+  adaptiveQualityToggle.className = 'settings-popup__checkbox';
+  adaptiveQualityToggle.checked = initialAdaptiveQualityEnabled;
+  adaptiveQualityRow.appendChild(adaptiveQualityLabelWrap);
+  adaptiveQualityRow.appendChild(adaptiveQualityToggle);
+  content.appendChild(adaptiveQualityRow);
+
   const previewRow = document.createElement('div');
   previewRow.className = 'settings-popup__row';
   const previewLabel = document.createElement('span');
@@ -142,6 +189,23 @@ export function createSettingsPopupDom(
   thresholdTooltip.appendChild(thresholdTooltipText);
   content.appendChild(thresholdTooltip);
 
+  const hideEdgesDuringInteractionTooltip = document.createElement('div');
+  hideEdgesDuringInteractionTooltip.className =
+    'settings-popup__tooltip settings-popup__tooltip--hide-edges';
+  hideEdgesDuringInteractionTooltip.style.display = 'none';
+  const hideEdgesDuringInteractionTooltipText = document.createElement('p');
+  hideEdgesDuringInteractionTooltipText.className = 'settings-popup__tooltip-text';
+  hideEdgesDuringInteractionTooltip.appendChild(hideEdgesDuringInteractionTooltipText);
+  content.appendChild(hideEdgesDuringInteractionTooltip);
+
+  const adaptiveQualityTooltip = document.createElement('div');
+  adaptiveQualityTooltip.className = 'settings-popup__tooltip settings-popup__tooltip--adaptive';
+  adaptiveQualityTooltip.style.display = 'none';
+  const adaptiveQualityTooltipText = document.createElement('p');
+  adaptiveQualityTooltipText.className = 'settings-popup__tooltip-text';
+  adaptiveQualityTooltip.appendChild(adaptiveQualityTooltipText);
+  content.appendChild(adaptiveQualityTooltip);
+
   return {
     content,
     select,
@@ -149,16 +213,26 @@ export function createSettingsPopupDom(
     languageLabel,
     meshReductionLabel,
     thresholdLabel,
+    hideEdgesDuringInteractionLabel,
+    adaptiveQualityLabel,
     previewLabel,
     previewButton,
     meshReductionToggle,
     thresholdInput,
+    hideEdgesDuringInteractionToggle,
+    adaptiveQualityToggle,
     meshReductionHelpIcon,
     thresholdHelpIcon,
+    hideEdgesDuringInteractionHelpIcon,
+    adaptiveQualityHelpIcon,
     meshReductionTooltip,
     thresholdTooltip,
+    hideEdgesDuringInteractionTooltip,
+    adaptiveQualityTooltip,
     meshReductionTooltipText,
     thresholdTooltipText,
+    hideEdgesDuringInteractionTooltipText,
+    adaptiveQualityTooltipText,
     meshReductionTooltipButton,
   };
 }

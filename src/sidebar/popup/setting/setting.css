@@ -119,6 +119,14 @@
   top: 144px;
 }
 
+.settings-popup__tooltip--hide-edges {
+  top: 196px;
+}
+
+.settings-popup__tooltip--adaptive {
+  top: 248px;
+}
+
 .settings-popup__tooltip-text {
   margin: 0 0 8px;
   color: #d8e7ed;

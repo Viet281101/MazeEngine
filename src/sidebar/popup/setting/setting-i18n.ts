@@ -13,10 +13,16 @@ export function applySettingsTranslations(dom: SettingsPopupDom): void {
   dom.languageLabel.textContent = t('settings.language');
   dom.meshReductionLabel.textContent = t('settings.meshVisible');
   dom.thresholdLabel.textContent = t('settings.meshReductionThreshold');
+  dom.hideEdgesDuringInteractionLabel.textContent = t('settings.hideEdgesDuringInteraction');
+  dom.adaptiveQualityLabel.textContent = t('settings.adaptiveQuality');
   dom.previewLabel.textContent = t('settings.previewWindow');
   dom.previewButton.textContent = t('settings.openPreviewWindow');
   dom.meshReductionTooltipText.textContent = t('settings.meshReductionTooltip');
   dom.thresholdTooltipText.textContent = t('settings.meshReductionThresholdTooltip');
+  dom.hideEdgesDuringInteractionTooltipText.textContent = t(
+    'settings.hideEdgesDuringInteractionTooltip'
+  );
+  dom.adaptiveQualityTooltipText.textContent = t('settings.adaptiveQualityTooltip');
   dom.meshReductionTooltipButton.textContent = `${t('settings.openTutorial')} (${t('settings.tutorialSoon')})`;
 
   dom.languageOptions.vi.textContent = t('settings.language.vi');

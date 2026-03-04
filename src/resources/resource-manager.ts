@@ -82,6 +82,24 @@ export class ResourceManager {
   }
 
   /**
+   * Get or create custom geometry from a deterministic cache key.
+   */
+  getCustomGeometry<T extends THREE.BufferGeometry>(key: string, factory: () => T): T {
+    const cached = this.touchCacheEntry(this.geometries, key);
+    if (cached) {
+      return cached as T;
+    }
+
+    const geometry = factory();
+    this.geometries.set(key, geometry);
+    this.evictOldestEntries(this.geometries, ResourceManager.MAX_GEOMETRY_CACHE_ENTRIES, entry =>
+      entry.dispose()
+    );
+
+    return geometry;
+  }
+
+  /**
    * Get or create edge material (shared)
    */
   getEdgeMaterial(): THREE.LineBasicMaterial {

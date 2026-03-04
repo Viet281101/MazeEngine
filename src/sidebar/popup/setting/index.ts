@@ -7,6 +7,8 @@ import {
   canOpenPreviewWindow,
   getInitialSettingsValues,
   reopenPreviewWindow,
+  setAdaptiveQualityEnabled,
+  setHideEdgesDuringInteractionEnabled,
   setMeshReductionEnabled,
 } from './setting-app-bridge';
 import { createSettingsPopupDom } from './setting-dom';
@@ -22,7 +24,9 @@ export function showSettingsPopup(toolbar: Toolbar): void {
 
   const dom = createSettingsPopupDom(
     initialValues.meshReductionEnabled,
-    initialValues.meshReductionThreshold
+    initialValues.meshReductionThreshold,
+    initialValues.hideEdgesDuringInteractionEnabled,
+    initialValues.adaptiveQualityEnabled
   );
   const {
     content,
@@ -30,10 +34,16 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     previewButton,
     meshReductionToggle,
     thresholdInput,
+    hideEdgesDuringInteractionToggle,
+    adaptiveQualityToggle,
     meshReductionHelpIcon,
     thresholdHelpIcon,
+    hideEdgesDuringInteractionHelpIcon,
+    adaptiveQualityHelpIcon,
     meshReductionTooltip,
     thresholdTooltip,
+    hideEdgesDuringInteractionTooltip,
+    adaptiveQualityTooltip,
   } = dom;
 
   popupContainer.insertBefore(content, popupContainer.firstChild);
@@ -54,8 +64,12 @@ export function showSettingsPopup(toolbar: Toolbar): void {
   const cleanupTooltips = setupSettingsTooltips({
     meshHelpIcon: meshReductionHelpIcon,
     thresholdHelpIcon: thresholdHelpIcon,
+    hideEdgesHelpIcon: hideEdgesDuringInteractionHelpIcon,
+    adaptiveHelpIcon: adaptiveQualityHelpIcon,
     meshTooltip: meshReductionTooltip,
     thresholdTooltip: thresholdTooltip,
+    hideEdgesTooltip: hideEdgesDuringInteractionTooltip,
+    adaptiveTooltip: adaptiveQualityTooltip,
   });
 
   const handlePreviewStatusChanged = () => {
@@ -82,6 +96,12 @@ export function showSettingsPopup(toolbar: Toolbar): void {
 
   thresholdInput.addEventListener('change', applyThreshold);
   thresholdInput.addEventListener('blur', applyThreshold);
+  hideEdgesDuringInteractionToggle.addEventListener('change', () => {
+    setHideEdgesDuringInteractionEnabled(hideEdgesDuringInteractionToggle.checked);
+  });
+  adaptiveQualityToggle.addEventListener('change', () => {
+    setAdaptiveQualityEnabled(adaptiveQualityToggle.checked);
+  });
 
   previewButton.addEventListener('click', () => {
     reopenPreviewWindow();

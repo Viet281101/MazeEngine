@@ -4,6 +4,8 @@ import type { MazeAppBridge } from '../../../types/maze';
 interface InitialSettingsValues {
   meshReductionEnabled: boolean;
   meshReductionThreshold: number;
+  hideEdgesDuringInteractionEnabled: boolean;
+  adaptiveQualityEnabled: boolean;
 }
 
 function getMazeAppBridge(): MazeAppBridge | null {
@@ -29,6 +31,14 @@ export function getInitialSettingsValues(): InitialSettingsValues {
       app && typeof app.getMeshReductionThreshold === 'function'
         ? app.getMeshReductionThreshold()
         : MESH_REDUCTION.DEFAULT_THRESHOLD,
+    hideEdgesDuringInteractionEnabled:
+      app && typeof app.isHideEdgesDuringInteractionEnabled === 'function'
+        ? app.isHideEdgesDuringInteractionEnabled()
+        : false,
+    adaptiveQualityEnabled:
+      app && typeof app.isAdaptiveQualityEnabled === 'function'
+        ? app.isAdaptiveQualityEnabled()
+        : true,
   };
 }
 
@@ -63,4 +73,18 @@ export function applyMeshReductionThreshold(rawValue: number): number {
     app.setMeshReductionThreshold(clamped);
   }
   return clamped;
+}
+
+export function setHideEdgesDuringInteractionEnabled(enabled: boolean): void {
+  const app = getMazeAppBridge();
+  if (app && typeof app.setHideEdgesDuringInteractionEnabled === 'function') {
+    app.setHideEdgesDuringInteractionEnabled(enabled);
+  }
+}
+
+export function setAdaptiveQualityEnabled(enabled: boolean): void {
+  const app = getMazeAppBridge();
+  if (app && typeof app.setAdaptiveQualityEnabled === 'function') {
+    app.setAdaptiveQualityEnabled(enabled);
+  }
 }

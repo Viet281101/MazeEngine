@@ -27,6 +27,10 @@ export interface MazeAppBridge {
   getMeshReductionThreshold(): number;
   setMeshReductionEnabled(enabled: boolean): void;
   isMeshReductionEnabled(): boolean;
+  setHideEdgesDuringInteractionEnabled(enabled: boolean): void;
+  isHideEdgesDuringInteractionEnabled(): boolean;
+  setAdaptiveQualityEnabled(enabled: boolean): void;
+  isAdaptiveQualityEnabled(): boolean;
   reopenPreviewWindow(): void;
   canOpenNewPreviewWindow(): boolean;
 }
