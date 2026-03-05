@@ -1,13 +1,15 @@
-type TooltipTarget = 'mesh' | 'threshold' | 'hideEdges' | 'adaptive';
+type TooltipTarget = 'mesh' | 'threshold' | 'hideEdges' | 'adaptive' | 'floorGrid';
 
 interface TooltipBindings {
   meshHelpIcon: HTMLImageElement;
   thresholdHelpIcon: HTMLImageElement;
   hideEdgesHelpIcon: HTMLImageElement;
+  floorGridHelpIcon: HTMLImageElement;
   adaptiveHelpIcon: HTMLImageElement;
   meshTooltip: HTMLDivElement;
   thresholdTooltip: HTMLDivElement;
   hideEdgesTooltip: HTMLDivElement;
+  floorGridTooltip: HTMLDivElement;
   adaptiveTooltip: HTMLDivElement;
 }
 
@@ -16,10 +18,12 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     meshHelpIcon,
     thresholdHelpIcon,
     hideEdgesHelpIcon,
+    floorGridHelpIcon,
     adaptiveHelpIcon,
     meshTooltip,
     thresholdTooltip,
     hideEdgesTooltip,
+    floorGridTooltip,
     adaptiveTooltip,
   } = bindings;
   let pinnedTooltip: TooltipTarget | null = null;
@@ -28,6 +32,7 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     if (target === 'mesh') return meshTooltip;
     if (target === 'threshold') return thresholdTooltip;
     if (target === 'hideEdges') return hideEdgesTooltip;
+    if (target === 'floorGrid') return floorGridTooltip;
     return adaptiveTooltip;
   };
 
@@ -35,6 +40,7 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     if (target === 'mesh') return meshHelpIcon;
     if (target === 'threshold') return thresholdHelpIcon;
     if (target === 'hideEdges') return hideEdgesHelpIcon;
+    if (target === 'floorGrid') return floorGridHelpIcon;
     return adaptiveHelpIcon;
   };
 
@@ -56,6 +62,7 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     meshTooltip.style.display = target === 'mesh' ? 'block' : 'none';
     thresholdTooltip.style.display = target === 'threshold' ? 'block' : 'none';
     hideEdgesTooltip.style.display = target === 'hideEdges' ? 'block' : 'none';
+    floorGridTooltip.style.display = target === 'floorGrid' ? 'block' : 'none';
     adaptiveTooltip.style.display = target === 'adaptive' ? 'block' : 'none';
   };
 
@@ -63,6 +70,7 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     meshTooltip.style.display = 'none';
     thresholdTooltip.style.display = 'none';
     hideEdgesTooltip.style.display = 'none';
+    floorGridTooltip.style.display = 'none';
     adaptiveTooltip.style.display = 'none';
   };
 
@@ -92,10 +100,12 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
       meshHelpIcon.contains(target) ||
       thresholdHelpIcon.contains(target) ||
       hideEdgesHelpIcon.contains(target) ||
+      floorGridHelpIcon.contains(target) ||
       adaptiveHelpIcon.contains(target) ||
       meshTooltip.contains(target) ||
       thresholdTooltip.contains(target) ||
       hideEdgesTooltip.contains(target) ||
+      floorGridTooltip.contains(target) ||
       adaptiveTooltip.contains(target)
     ) {
       return;
@@ -111,6 +121,7 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
       meshTooltip.style.display === 'none' &&
       thresholdTooltip.style.display === 'none' &&
       hideEdgesTooltip.style.display === 'none' &&
+      floorGridTooltip.style.display === 'none' &&
       adaptiveTooltip.style.display === 'none'
     ) {
       return;
@@ -157,6 +168,7 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
   const unbindMesh = bindIcon('mesh', meshHelpIcon);
   const unbindThreshold = bindIcon('threshold', thresholdHelpIcon);
   const unbindHideEdges = bindIcon('hideEdges', hideEdgesHelpIcon);
+  const unbindFloorGrid = bindIcon('floorGrid', floorGridHelpIcon);
   const unbindAdaptive = bindIcon('adaptive', adaptiveHelpIcon);
 
   document.addEventListener('mousedown', handleDocumentPointerDown, true);
@@ -167,6 +179,7 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     unbindMesh();
     unbindThreshold();
     unbindHideEdges();
+    unbindFloorGrid();
     unbindAdaptive();
     document.removeEventListener('mousedown', handleDocumentPointerDown, true);
     document.removeEventListener('touchstart', handleDocumentPointerDown, true);

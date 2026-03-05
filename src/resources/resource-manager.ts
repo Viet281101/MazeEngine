@@ -39,6 +39,9 @@ export class ResourceManager {
     material.color.copy(color);
     material.opacity = opacity;
     material.transparent = opacity < 1;
+    material.polygonOffset = false;
+    material.polygonOffsetFactor = 0;
+    material.polygonOffsetUnits = 0;
 
     return material;
   }

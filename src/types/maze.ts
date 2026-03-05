@@ -29,6 +29,8 @@ export interface MazeAppBridge {
   isMeshReductionEnabled(): boolean;
   setHideEdgesDuringInteractionEnabled(enabled: boolean): void;
   isHideEdgesDuringInteractionEnabled(): boolean;
+  setFloorGridEnabled(enabled: boolean): void;
+  isFloorGridEnabled(): boolean;
   setAdaptiveQualityEnabled(enabled: boolean): void;
   isAdaptiveQualityEnabled(): boolean;
   setCameraZoomLimitEnabled(enabled: boolean): void;

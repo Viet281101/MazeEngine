@@ -52,6 +52,7 @@ export class MainApp implements MazeController, MazeAppBridge {
   private meshReductionThreshold: number = MESH_REDUCTION.DEFAULT_THRESHOLD;
   private meshReductionEnabled: boolean = MESH_REDUCTION.DEFAULT_ENABLED;
   private hideEdgesDuringInteractionEnabled: boolean = false;
+  private floorGridEnabled: boolean = false;
   private adaptiveQualityEnabled: boolean = true;
   private cameraZoomLimitEnabled: boolean = CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED;
   private cameraZoomMinDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE;
@@ -119,6 +120,7 @@ export class MainApp implements MazeController, MazeAppBridge {
       enabled: MESH_REDUCTION.DEFAULT_ENABLED,
       threshold: MESH_REDUCTION.DEFAULT_THRESHOLD,
       hideEdgesDuringInteractionEnabled: false,
+      floorGridEnabled: false,
       adaptiveQualityEnabled: true,
       cameraZoomLimitEnabled: CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED,
       cameraZoomMinDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE,
@@ -127,6 +129,7 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.meshReductionEnabled = loaded.enabled;
     this.meshReductionThreshold = loaded.threshold;
     this.hideEdgesDuringInteractionEnabled = loaded.hideEdgesDuringInteractionEnabled;
+    this.floorGridEnabled = loaded.floorGridEnabled;
     this.adaptiveQualityEnabled = loaded.adaptiveQualityEnabled;
     this.cameraZoomLimitEnabled = loaded.cameraZoomLimitEnabled;
     this.cameraZoomMinDistance = loaded.cameraZoomMinDistance;
@@ -137,6 +140,7 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.maze.setMeshMergeThreshold(this.meshReductionThreshold);
     this.maze.setMeshReductionEnabled(this.meshReductionEnabled);
     this.maze.setHideEdgesDuringInteractionEnabled(this.hideEdgesDuringInteractionEnabled);
+    this.maze.setFloorGridEnabled(this.floorGridEnabled);
     this.maze.setAdaptiveQualityEnabled(this.adaptiveQualityEnabled);
     this.maze.setCameraZoomMinDistance(this.cameraZoomMinDistance);
     this.maze.setCameraZoomMaxDistance(this.cameraZoomMaxDistance);
@@ -372,6 +376,16 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.adaptiveQualityEnabled = enabled;
     this.maze.setAdaptiveQualityEnabled(enabled);
     this.settingsStorage.saveAdaptiveQualityEnabled(enabled);
+  }
+
+  public setFloorGridEnabled(enabled: boolean): void {
+    this.floorGridEnabled = enabled;
+    this.maze.setFloorGridEnabled(enabled);
+    this.settingsStorage.saveFloorGridEnabled(enabled);
+  }
+
+  public isFloorGridEnabled(): boolean {
+    return this.floorGridEnabled;
   }
 
   public isAdaptiveQualityEnabled(): boolean {

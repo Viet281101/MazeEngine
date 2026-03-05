@@ -4,6 +4,7 @@ export interface MeshReductionSettings {
   enabled: boolean;
   threshold: number;
   hideEdgesDuringInteractionEnabled: boolean;
+  floorGridEnabled: boolean;
   adaptiveQualityEnabled: boolean;
   cameraZoomLimitEnabled: boolean;
   cameraZoomMinDistance: number;
@@ -15,6 +16,7 @@ export class MeshReductionSettingsStorage {
   private static readonly THRESHOLD_KEY = 'maze_solver_3d_mesh_reduction_threshold';
   private static readonly HIDE_EDGES_DURING_INTERACTION_KEY =
     'maze_solver_3d_hide_edges_during_interaction';
+  private static readonly FLOOR_GRID_ENABLED_KEY = 'maze_solver_3d_floor_grid_enabled';
   private static readonly ADAPTIVE_QUALITY_KEY = 'maze_solver_3d_adaptive_quality';
   private static readonly CAMERA_ZOOM_LIMIT_ENABLED_KEY =
     'maze_solver_3d_camera_zoom_limit_enabled';
@@ -27,6 +29,10 @@ export class MeshReductionSettingsStorage {
     const hideEdgesDuringInteractionEnabled = this.loadBoolean(
       MeshReductionSettingsStorage.HIDE_EDGES_DURING_INTERACTION_KEY,
       defaults.hideEdgesDuringInteractionEnabled
+    );
+    const floorGridEnabled = this.loadBoolean(
+      MeshReductionSettingsStorage.FLOOR_GRID_ENABLED_KEY,
+      defaults.floorGridEnabled
     );
     const adaptiveQualityEnabled = this.loadBoolean(
       MeshReductionSettingsStorage.ADAPTIVE_QUALITY_KEY,
@@ -44,6 +50,7 @@ export class MeshReductionSettingsStorage {
       enabled,
       threshold,
       hideEdgesDuringInteractionEnabled,
+      floorGridEnabled,
       adaptiveQualityEnabled,
       cameraZoomLimitEnabled,
       cameraZoomMinDistance,
@@ -66,6 +73,10 @@ export class MeshReductionSettingsStorage {
 
   public saveAdaptiveQualityEnabled(enabled: boolean): void {
     this.setItem(MeshReductionSettingsStorage.ADAPTIVE_QUALITY_KEY, String(enabled));
+  }
+
+  public saveFloorGridEnabled(enabled: boolean): void {
+    this.setItem(MeshReductionSettingsStorage.FLOOR_GRID_ENABLED_KEY, String(enabled));
   }
 
   public saveCameraZoomLimitEnabled(enabled: boolean): void {

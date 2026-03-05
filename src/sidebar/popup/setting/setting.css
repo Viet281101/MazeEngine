@@ -127,6 +127,10 @@
   top: 248px;
 }
 
+.settings-popup__tooltip--floor-grid {
+  top: 300px;
+}
+
 .settings-popup__tooltip-text {
   margin: 0 0 8px;
   color: #d8e7ed;

@@ -14,6 +14,7 @@ export function applySettingsTranslations(dom: SettingsPopupDom): void {
   dom.meshReductionLabel.textContent = t('settings.meshVisible');
   dom.thresholdLabel.textContent = t('settings.meshReductionThreshold');
   dom.hideEdgesDuringInteractionLabel.textContent = t('settings.hideEdgesDuringInteraction');
+  dom.floorGridLabel.textContent = t('settings.floorGrid');
   dom.adaptiveQualityLabel.textContent = t('settings.adaptiveQuality');
   dom.cameraZoomLimitLabel.textContent = t('settings.cameraZoomLimit');
   dom.cameraZoomMinLabel.textContent = t('settings.cameraZoomLimitMin');
@@ -25,6 +26,7 @@ export function applySettingsTranslations(dom: SettingsPopupDom): void {
   dom.hideEdgesDuringInteractionTooltipText.textContent = t(
     'settings.hideEdgesDuringInteractionTooltip'
   );
+  dom.floorGridTooltipText.textContent = t('settings.floorGridTooltip');
   dom.adaptiveQualityTooltipText.textContent = t('settings.adaptiveQualityTooltip');
   dom.meshReductionTooltipButton.textContent = `${t('settings.openTutorial')} (${t('settings.tutorialSoon')})`;
   dom.cameraZoomMinIncreaseButton.setAttribute('aria-label', t('settings.cameraZoomMinIncrease'));

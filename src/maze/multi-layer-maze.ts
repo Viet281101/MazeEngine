@@ -1,6 +1,6 @@
 import { Maze, MazeConfig } from './maze';
 import * as THREE from 'three';
-import type { StairDirection } from '../resources/mesh-factory';
+import { FLOOR_THICKNESS, type StairDirection } from '../resources/mesh-factory';
 
 /**
  * MultiLayerMaze - Maze with multiple stacked layers
@@ -22,7 +22,7 @@ export class MultiLayerMaze extends Maze {
 
     this.maze.forEach((layer, layerIndex) => {
       const mazeLayer = new THREE.Object3D();
-      const layerHeight = layerIndex * this.wallHeight;
+      const layerHeight = layerIndex * this.getLayerStride();
 
       // Create walls for this layer
       this.createWallsForLayer(layer, layerHeight, mazeLayer);
@@ -177,7 +177,7 @@ export class MultiLayerMaze extends Maze {
   ): void {
     const previousLayer = this.maze[layerIndex - 1];
     const previousLayerObject = this.mazeLayers[layerIndex - 1];
-    const connectorBaseHeight = (layerIndex - 1) * this.wallHeight;
+    const connectorBaseHeight = (layerIndex - 1) * this.getLayerStride();
 
     for (let rowIndex = 0; rowIndex < layer.length; rowIndex += 1) {
       const row = layer[rowIndex];
@@ -206,7 +206,7 @@ export class MultiLayerMaze extends Maze {
           y: connectorBaseHeight,
           z,
           cellSize: this.cellSize,
-          riseHeight: this.wallHeight,
+          riseHeight: this.getLayerStride(),
           stepCount: MultiLayerMaze.STAIR_STEP_COUNT,
           direction:
             directionFromCell ??
@@ -263,13 +263,18 @@ export class MultiLayerMaze extends Maze {
 
     const floor = this.meshFactory.createFloor({
       x: floorWidth / 2 - this.cellSize / 2,
-      y: -this.wallThickness / 2,
+      y: 0,
       z: -(floorHeight / 2) + this.cellSize / 2,
       width: floorWidth,
       height: floorHeight,
     });
 
     mazeLayer.add(floor);
+
+    const grid = this.createFloorGridOverlay(layer.length, layer[0].length, 0);
+    if (grid) {
+      mazeLayer.add(grid);
+    }
   }
 
   /**
@@ -282,5 +287,13 @@ export class MultiLayerMaze extends Maze {
     const distance = this.maze.length * this.cellSize;
 
     this.positionCamera(mazeCenterX, mazeCenterZ, distance);
+  }
+
+  private getLayerStride(): number {
+    return this.wallHeight + FLOOR_THICKNESS;
+  }
+
+  protected getLayerBaseY(layerIndex: number): number {
+    return layerIndex * this.getLayerStride();
   }
 }

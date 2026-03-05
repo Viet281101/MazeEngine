@@ -46,6 +46,7 @@ export abstract class Maze {
   private static readonly ADAPTIVE_QUALITY_LOW_FRAME_TIME_MS = 16;
   private static readonly ADAPTIVE_QUALITY_UPDATE_COOLDOWN_MS = 280;
   private static readonly ADAPTIVE_QUALITY_EMA_ALPHA = 0.18;
+  private static readonly FLOOR_GRID_Y_OFFSET = 0.001;
 
   // Three.js core
   protected canvas: HTMLCanvasElement;
@@ -70,6 +71,7 @@ export abstract class Maze {
   protected wallOpacity: number;
   protected floorOpacity: number;
   protected showEdges: boolean;
+  protected showFloorGrid: boolean;
   protected meshReductionEnabled: boolean;
   protected meshMergeThreshold: number;
   protected cameraZoomLimitEnabled: boolean;
@@ -91,6 +93,7 @@ export abstract class Maze {
   private currentInteractionMode: boolean = false;
   private renderListeners: Set<() => void> = new Set();
   private edgeObjects: THREE.LineSegments[] = [];
+  private floorGridObjects: THREE.LineSegments[] = [];
   private edgesTemporarilyHidden: boolean = false;
   private hideEdgesDuringInteractionEnabled: boolean = false;
   private adaptiveQualityEnabled: boolean = true;
@@ -121,6 +124,7 @@ export abstract class Maze {
     this.wallOpacity = 1.0;
     this.floorOpacity = 1.0;
     this.showEdges = true;
+    this.showFloorGrid = false;
     this.meshReductionEnabled = MESH_REDUCTION.DEFAULT_ENABLED;
     this.meshMergeThreshold = MESH_REDUCTION.DEFAULT_THRESHOLD;
     this.cameraZoomLimitEnabled = CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED;
@@ -167,7 +171,8 @@ export abstract class Maze {
       this.floorColor,
       this.wallOpacity,
       this.floorOpacity,
-      this.showEdges
+      this.showEdges,
+      this.showFloorGrid
     );
 
     this.init();
@@ -191,6 +196,7 @@ export abstract class Maze {
 
     this.createMaze();
     this.refreshEdgeObjectCache();
+    this.refreshFloorGridObjectCache();
     this.requestRender();
   }
 
@@ -213,6 +219,7 @@ export abstract class Maze {
     }
     this.createMaze();
     this.refreshEdgeObjectCache();
+    this.refreshFloorGridObjectCache();
     this.requestRender();
   }
 
@@ -296,6 +303,7 @@ export abstract class Maze {
     });
     this.mazeLayers = [];
     this.edgeObjects = [];
+    this.floorGridObjects = [];
     this.edgesTemporarilyHidden = false;
   }
 
@@ -420,6 +428,20 @@ export abstract class Maze {
     this.requestRender();
   }
 
+  public setFloorGridEnabled(enabled: boolean): void {
+    if (this.showFloorGrid === enabled) {
+      return;
+    }
+
+    this.showFloorGrid = enabled;
+    this.meshFactory.updateSettings({ showFloorGrid: enabled });
+    this.rebuildEdges();
+  }
+
+  public isFloorGridEnabled(): boolean {
+    return this.showFloorGrid;
+  }
+
   public setMeshReductionEnabled(enabled: boolean): void {
     if (this.meshReductionEnabled === enabled) return;
     const shouldRebuild = this.shouldRebuildForMeshConfig(enabled, this.meshMergeThreshold);
@@ -449,6 +471,10 @@ export abstract class Maze {
 
   public getMeshMergeThreshold(): number {
     return this.meshMergeThreshold;
+  }
+
+  protected getLayerBaseY(layerIndex: number): number {
+    return layerIndex * this.wallHeight;
   }
 
   protected shouldMergeWalls(rows: number, cols: number): boolean {
@@ -589,7 +615,7 @@ export abstract class Maze {
         return;
       }
       const x = cell.col * this.cellSize;
-      const y = 0.04 + layerIndex * this.wallHeight;
+      const y = 0.04 + this.getLayerBaseY(layerIndex);
       const z = -cell.row * this.cellSize;
       points.push(new THREE.Vector3(x, y, z));
     });
@@ -668,6 +694,7 @@ export abstract class Maze {
       this.preserveCameraOnRebuild = false;
     }
     this.refreshEdgeObjectCache();
+    this.refreshFloorGridObjectCache();
     this.requestRender();
   }
 
@@ -828,9 +855,13 @@ export abstract class Maze {
           DisposalHelper.disposeEdgesFromGroup(child);
 
           // Add new edges if needed
-          if (this.showEdges) {
+          if (this.showEdges || this.showFloorGrid) {
             child.children.forEach(obj => {
               if (obj instanceof THREE.Mesh) {
+                const isFloorSurface = obj.userData.surfaceType === 'floor';
+                if (isFloorSurface ? !this.showFloorGrid : !this.showEdges) {
+                  return;
+                }
                 const edges = this.resourceManager.getEdgesGeometry(obj.geometry);
                 const material = this.resourceManager.getEdgeMaterial();
                 const line = new THREE.LineSegments(edges, material);
@@ -838,6 +869,7 @@ export abstract class Maze {
                 line.position.copy(obj.position);
                 line.rotation.copy(obj.rotation);
                 line.renderOrder = 1;
+                line.userData.isFloorGrid = isFloorSurface;
                 line.userData.sharedGeometry = true;
                 line.userData.sharedMaterial = true;
 
@@ -849,6 +881,8 @@ export abstract class Maze {
       });
     });
 
+    this.refreshEdgeObjectCache();
+    this.refreshFloorGridObjectCache();
     this.requestRender();
   }
 
@@ -856,12 +890,71 @@ export abstract class Maze {
     const lines: THREE.LineSegments[] = [];
     this.mazeLayers.forEach(layer => {
       layer.traverse(object => {
-        if (object instanceof THREE.LineSegments) {
+        if (object instanceof THREE.LineSegments && object.userData.isFloorGrid !== true) {
           lines.push(object);
         }
       });
     });
     this.edgeObjects = lines;
+  }
+
+  private refreshFloorGridObjectCache(): void {
+    const lines: THREE.LineSegments[] = [];
+    this.mazeLayers.forEach(layer => {
+      layer.traverse(object => {
+        if (object instanceof THREE.LineSegments && object.userData.isFloorGrid === true) {
+          lines.push(object);
+        }
+      });
+    });
+    this.floorGridObjects = lines;
+    this.setFloorGridVisibility(this.showFloorGrid);
+  }
+
+  private setFloorGridVisibility(visible: boolean): void {
+    this.floorGridObjects.forEach(line => {
+      line.visible = visible;
+    });
+  }
+
+  protected createFloorGridOverlay(
+    rows: number,
+    cols: number,
+    floorTopY: number
+  ): THREE.LineSegments | null {
+    if (rows <= 0 || cols <= 0) {
+      return null;
+    }
+
+    const points: THREE.Vector3[] = [];
+    const xMin = -this.cellSize / 2;
+    const xMax = (cols - 0.5) * this.cellSize;
+    const zMax = this.cellSize / 2;
+    const zMin = -(rows - 0.5) * this.cellSize;
+    const y = floorTopY + Maze.FLOOR_GRID_Y_OFFSET;
+
+    for (let col = 0; col <= cols; col += 1) {
+      const x = xMin + col * this.cellSize;
+      points.push(new THREE.Vector3(x, y, zMin), new THREE.Vector3(x, y, zMax));
+    }
+
+    for (let row = 0; row <= rows; row += 1) {
+      const z = zMax - row * this.cellSize;
+      points.push(new THREE.Vector3(xMin, y, z), new THREE.Vector3(xMax, y, z));
+    }
+
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = new THREE.LineBasicMaterial({
+      color: 0x000000,
+      transparent: true,
+      opacity: 0.28,
+      depthTest: true,
+      depthWrite: false,
+    });
+    const grid = new THREE.LineSegments(geometry, material);
+    grid.userData.isFloorGrid = true;
+    grid.visible = this.showFloorGrid;
+    return grid;
   }
 
   private setEdgeVisibility(visible: boolean): void {

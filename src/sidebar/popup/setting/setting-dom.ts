@@ -11,6 +11,7 @@ export interface SettingsPopupDom {
   meshReductionLabel: HTMLSpanElement;
   thresholdLabel: HTMLSpanElement;
   hideEdgesDuringInteractionLabel: HTMLSpanElement;
+  floorGridLabel: HTMLSpanElement;
   adaptiveQualityLabel: HTMLSpanElement;
   cameraZoomLimitLabel: HTMLSpanElement;
   cameraZoomMinLabel: HTMLSpanElement;
@@ -20,6 +21,7 @@ export interface SettingsPopupDom {
   meshReductionToggle: HTMLInputElement;
   thresholdInput: HTMLInputElement;
   hideEdgesDuringInteractionToggle: HTMLInputElement;
+  floorGridToggle: HTMLInputElement;
   adaptiveQualityToggle: HTMLInputElement;
   cameraZoomLimitToggle: HTMLInputElement;
   cameraZoomMinInput: HTMLInputElement;
@@ -33,14 +35,17 @@ export interface SettingsPopupDom {
   meshReductionHelpIcon: HTMLImageElement;
   thresholdHelpIcon: HTMLImageElement;
   hideEdgesDuringInteractionHelpIcon: HTMLImageElement;
+  floorGridHelpIcon: HTMLImageElement;
   adaptiveQualityHelpIcon: HTMLImageElement;
   meshReductionTooltip: HTMLDivElement;
   thresholdTooltip: HTMLDivElement;
   hideEdgesDuringInteractionTooltip: HTMLDivElement;
+  floorGridTooltip: HTMLDivElement;
   adaptiveQualityTooltip: HTMLDivElement;
   meshReductionTooltipText: HTMLParagraphElement;
   thresholdTooltipText: HTMLParagraphElement;
   hideEdgesDuringInteractionTooltipText: HTMLParagraphElement;
+  floorGridTooltipText: HTMLParagraphElement;
   adaptiveQualityTooltipText: HTMLParagraphElement;
   meshReductionTooltipButton: HTMLButtonElement;
 }
@@ -79,6 +84,7 @@ export function createSettingsPopupDom(
   initialMeshEnabled: boolean,
   initialThreshold: number,
   initialHideEdgesDuringInteractionEnabled: boolean,
+  initialFloorGridEnabled: boolean,
   initialAdaptiveQualityEnabled: boolean,
   initialCameraZoomLimitEnabled: boolean,
   initialCameraZoomMinDistance: number,
@@ -182,6 +188,23 @@ export function createSettingsPopupDom(
   adaptiveQualityRow.appendChild(adaptiveQualityLabelWrap);
   adaptiveQualityRow.appendChild(adaptiveQualityToggle);
   content.appendChild(adaptiveQualityRow);
+
+  const floorGridRow = document.createElement('label');
+  floorGridRow.className = 'settings-popup__row';
+  const floorGridLabelWrap = document.createElement('span');
+  floorGridLabelWrap.className = 'settings-popup__label settings-popup__label--with-help';
+  const floorGridLabel = document.createElement('span');
+  floorGridLabel.className = 'settings-popup__label-text';
+  const floorGridHelpIcon = createHelpIcon();
+  floorGridLabelWrap.appendChild(floorGridLabel);
+  floorGridLabelWrap.appendChild(floorGridHelpIcon);
+  const floorGridToggle = document.createElement('input');
+  floorGridToggle.type = 'checkbox';
+  floorGridToggle.className = 'settings-popup__checkbox';
+  floorGridToggle.checked = initialFloorGridEnabled;
+  floorGridRow.appendChild(floorGridLabelWrap);
+  floorGridRow.appendChild(floorGridToggle);
+  content.appendChild(floorGridRow);
 
   const cameraZoomLimitRow = document.createElement('label');
   cameraZoomLimitRow.className = 'settings-popup__row';
@@ -305,6 +328,14 @@ export function createSettingsPopupDom(
   adaptiveQualityTooltip.appendChild(adaptiveQualityTooltipText);
   content.appendChild(adaptiveQualityTooltip);
 
+  const floorGridTooltip = document.createElement('div');
+  floorGridTooltip.className = 'settings-popup__tooltip settings-popup__tooltip--floor-grid';
+  floorGridTooltip.style.display = 'none';
+  const floorGridTooltipText = document.createElement('p');
+  floorGridTooltipText.className = 'settings-popup__tooltip-text';
+  floorGridTooltip.appendChild(floorGridTooltipText);
+  content.appendChild(floorGridTooltip);
+
   return {
     content,
     select,
@@ -313,6 +344,7 @@ export function createSettingsPopupDom(
     meshReductionLabel,
     thresholdLabel,
     hideEdgesDuringInteractionLabel,
+    floorGridLabel,
     adaptiveQualityLabel,
     cameraZoomLimitLabel,
     cameraZoomMinLabel,
@@ -322,6 +354,7 @@ export function createSettingsPopupDom(
     meshReductionToggle,
     thresholdInput,
     hideEdgesDuringInteractionToggle,
+    floorGridToggle,
     adaptiveQualityToggle,
     cameraZoomLimitToggle,
     cameraZoomMinInput,
@@ -335,14 +368,17 @@ export function createSettingsPopupDom(
     meshReductionHelpIcon,
     thresholdHelpIcon,
     hideEdgesDuringInteractionHelpIcon,
+    floorGridHelpIcon,
     adaptiveQualityHelpIcon,
     meshReductionTooltip,
     thresholdTooltip,
     hideEdgesDuringInteractionTooltip,
+    floorGridTooltip,
     adaptiveQualityTooltip,
     meshReductionTooltipText,
     thresholdTooltipText,
     hideEdgesDuringInteractionTooltipText,
+    floorGridTooltipText,
     adaptiveQualityTooltipText,
     meshReductionTooltipButton,
   };

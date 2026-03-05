@@ -11,6 +11,7 @@ import {
   reopenPreviewWindow,
   setAdaptiveQualityEnabled,
   setCameraZoomLimitEnabled,
+  setFloorGridEnabled,
   setHideEdgesDuringInteractionEnabled,
   setMeshReductionEnabled,
 } from './setting-app-bridge';
@@ -29,6 +30,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     initialValues.meshReductionEnabled,
     initialValues.meshReductionThreshold,
     initialValues.hideEdgesDuringInteractionEnabled,
+    initialValues.floorGridEnabled,
     initialValues.adaptiveQualityEnabled,
     initialValues.cameraZoomLimitEnabled,
     initialValues.cameraZoomMinDistance,
@@ -41,6 +43,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     meshReductionToggle,
     thresholdInput,
     hideEdgesDuringInteractionToggle,
+    floorGridToggle,
     adaptiveQualityToggle,
     cameraZoomLimitToggle,
     cameraZoomMinInput,
@@ -50,10 +53,12 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     meshReductionHelpIcon,
     thresholdHelpIcon,
     hideEdgesDuringInteractionHelpIcon,
+    floorGridHelpIcon,
     adaptiveQualityHelpIcon,
     meshReductionTooltip,
     thresholdTooltip,
     hideEdgesDuringInteractionTooltip,
+    floorGridTooltip,
     adaptiveQualityTooltip,
   } = dom;
 
@@ -103,10 +108,12 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     meshHelpIcon: meshReductionHelpIcon,
     thresholdHelpIcon: thresholdHelpIcon,
     hideEdgesHelpIcon: hideEdgesDuringInteractionHelpIcon,
+    floorGridHelpIcon: floorGridHelpIcon,
     adaptiveHelpIcon: adaptiveQualityHelpIcon,
     meshTooltip: meshReductionTooltip,
     thresholdTooltip: thresholdTooltip,
     hideEdgesTooltip: hideEdgesDuringInteractionTooltip,
+    floorGridTooltip: floorGridTooltip,
     adaptiveTooltip: adaptiveQualityTooltip,
   });
 
@@ -136,6 +143,9 @@ export function showSettingsPopup(toolbar: Toolbar): void {
   thresholdInput.addEventListener('blur', applyThreshold);
   hideEdgesDuringInteractionToggle.addEventListener('change', () => {
     setHideEdgesDuringInteractionEnabled(hideEdgesDuringInteractionToggle.checked);
+  });
+  floorGridToggle.addEventListener('change', () => {
+    setFloorGridEnabled(floorGridToggle.checked);
   });
   adaptiveQualityToggle.addEventListener('change', () => {
     setAdaptiveQualityEnabled(adaptiveQualityToggle.checked);

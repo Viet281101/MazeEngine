@@ -5,6 +5,7 @@ interface InitialSettingsValues {
   meshReductionEnabled: boolean;
   meshReductionThreshold: number;
   hideEdgesDuringInteractionEnabled: boolean;
+  floorGridEnabled: boolean;
   adaptiveQualityEnabled: boolean;
   cameraZoomLimitEnabled: boolean;
   cameraZoomMinDistance: number;
@@ -56,6 +57,8 @@ export function getInitialSettingsValues(): InitialSettingsValues {
       app && typeof app.isHideEdgesDuringInteractionEnabled === 'function'
         ? app.isHideEdgesDuringInteractionEnabled()
         : false,
+    floorGridEnabled:
+      app && typeof app.isFloorGridEnabled === 'function' ? app.isFloorGridEnabled() : false,
     adaptiveQualityEnabled:
       app && typeof app.isAdaptiveQualityEnabled === 'function'
         ? app.isAdaptiveQualityEnabled()
@@ -119,6 +122,13 @@ export function setAdaptiveQualityEnabled(enabled: boolean): void {
   const app = getMazeAppBridge();
   if (app && typeof app.setAdaptiveQualityEnabled === 'function') {
     app.setAdaptiveQualityEnabled(enabled);
+  }
+}
+
+export function setFloorGridEnabled(enabled: boolean): void {
+  const app = getMazeAppBridge();
+  if (app && typeof app.setFloorGridEnabled === 'function') {
+    app.setFloorGridEnabled(enabled);
   }
 }
 

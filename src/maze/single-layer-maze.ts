@@ -154,13 +154,18 @@ export class SingleLayerMaze extends Maze {
 
     const floor = this.meshFactory.createFloor({
       x: floorWidth / 2 - this.cellSize / 2,
-      y: -this.wallThickness / 2,
+      y: 0,
       z: -(floorHeight / 2) + this.cellSize / 2,
       width: floorWidth,
       height: floorHeight,
     });
 
     mazeLayer.add(floor);
+
+    const grid = this.createFloorGridOverlay(layer.length, layer[0].length, 0);
+    if (grid) {
+      mazeLayer.add(grid);
+    }
   }
 
   /**

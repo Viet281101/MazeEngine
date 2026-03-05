@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { ResourceManager } from './resource-manager';
 
+export const FLOOR_THICKNESS = 0.06;
+
 export interface WallParams {
   x: number;
   y: number;
@@ -16,7 +18,7 @@ export interface FloorParams {
   z: number;
   width: number;
   height: number;
-  rotationX?: number;
+  materialKey?: string;
 }
 
 export interface StairConnectorParams {
@@ -44,7 +46,8 @@ export class MeshFactory {
     private floorColor: THREE.Color,
     private wallOpacity: number,
     private floorOpacity: number,
-    private showEdges: boolean
+    private showEdges: boolean,
+    private showFloorGrid: boolean
   ) {}
 
   /**
@@ -63,6 +66,7 @@ export class MeshFactory {
 
     const wall = new THREE.Mesh(geometry, material);
     wall.position.set(x, y, z);
+    wall.userData.surfaceType = 'wall';
     wall.userData.sharedGeometry = true;
     wall.userData.sharedMaterial = true;
 
@@ -80,27 +84,28 @@ export class MeshFactory {
    * Create floor mesh with edges (if enabled)
    */
   createFloor(params: FloorParams): THREE.Group {
-    const { x, y, z, width, height, rotationX = -Math.PI / 2 } = params;
+    const { x, y, z, width, height, materialKey = 'floor' } = params;
 
-    const geometry = this.resourceManager.getPlaneGeometry(width, height);
+    const geometry = this.resourceManager.getBoxGeometry(width, FLOOR_THICKNESS, height);
     const material = this.resourceManager.getMaterial(
-      'floor',
+      materialKey,
       'floor',
       this.floorColor,
       this.floorOpacity
     );
 
     const floor = new THREE.Mesh(geometry, material);
-    floor.rotation.x = rotationX;
-    floor.position.set(x, y, z);
+    // "y" is the top surface elevation of the floor slab.
+    floor.position.set(x, y - FLOOR_THICKNESS / 2, z);
+    floor.userData.surfaceType = 'floor';
     floor.userData.sharedGeometry = true;
     floor.userData.sharedMaterial = true;
 
     const group = new THREE.Group();
     group.add(floor);
 
-    if (this.showEdges) {
-      this.addEdgesToGroup(group, geometry, x, y, z, rotationX);
+    if (this.showEdges && this.showFloorGrid && materialKey === 'floor-interlayer') {
+      this.addEdgesToGroup(group, geometry, x, y - FLOOR_THICKNESS / 2, z);
     }
 
     return group;
@@ -116,7 +121,7 @@ export class MeshFactory {
       z,
       width: size,
       height: size,
-      rotationX: -Math.PI / 2,
+      materialKey: 'floor-interlayer',
     });
   }
 
@@ -148,6 +153,7 @@ export class MeshFactory {
     );
     const stairs = new THREE.Mesh(geometry, material);
     stairs.rotation.y = this.getStairRotationY(direction);
+    stairs.userData.surfaceType = 'wall';
     stairs.userData.sharedGeometry = true;
     stairs.userData.sharedMaterial = true;
     group.add(stairs);
@@ -248,11 +254,13 @@ export class MeshFactory {
     wallOpacity?: number;
     floorOpacity?: number;
     showEdges?: boolean;
+    showFloorGrid?: boolean;
   }): void {
     if (settings.wallColor) this.wallColor = settings.wallColor;
     if (settings.floorColor) this.floorColor = settings.floorColor;
     if (settings.wallOpacity !== undefined) this.wallOpacity = settings.wallOpacity;
     if (settings.floorOpacity !== undefined) this.floorOpacity = settings.floorOpacity;
     if (settings.showEdges !== undefined) this.showEdges = settings.showEdges;
+    if (settings.showFloorGrid !== undefined) this.showFloorGrid = settings.showFloorGrid;
   }
 }
