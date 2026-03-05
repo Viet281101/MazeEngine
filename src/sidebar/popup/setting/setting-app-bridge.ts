@@ -162,6 +162,14 @@ export function isPreviewVisible(): boolean {
   return true;
 }
 
+export function isPreviewSupported(): boolean {
+  const app = getMazeAppBridge();
+  if (app && typeof app.isPreviewSupported === 'function') {
+    return app.isPreviewSupported();
+  }
+  return true;
+}
+
 export function setFloorGridEnabled(enabled: boolean): void {
   const app = getMazeAppBridge();
   if (app && typeof app.setFloorGridEnabled === 'function') {

@@ -39,6 +39,7 @@ export interface MazeAppBridge {
   isDebugOverlayVisible(): boolean;
   setPreviewVisible(visible: boolean): void;
   isPreviewVisible(): boolean;
+  isPreviewSupported(): boolean;
   setCameraZoomLimitEnabled(enabled: boolean): void;
   isCameraZoomLimitEnabled(): boolean;
   setCameraZoomMinDistance(distance: number): void;

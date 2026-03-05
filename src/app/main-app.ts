@@ -43,6 +43,7 @@ export class MainApp implements MazeController, MazeAppBridge {
   private readonly settingsStorage: MeshReductionSettingsStorage;
   private readonly resizeHandler: () => void;
   private readonly keydownHandler: (event: KeyboardEvent) => void;
+  private previewWindowManagerReady: boolean = false;
 
   private previewMarkers: MazeMarkers | null = null;
   private solutionPath: SolutionPath = [];
@@ -83,8 +84,9 @@ export class MainApp implements MazeController, MazeAppBridge {
         onVisibilityChanged: visible => this.handlePreviewVisibilityChanged(visible),
         onClosed: () => this.handlePreviewClosed(),
       },
-      this.previewVisible
+      this.previewVisible && this.isPreviewSupported()
     );
+    this.previewWindowManagerReady = true;
     this.subscribeToLanguageChanges();
 
     this.debugOverlay = new DebugOverlay({
@@ -195,16 +197,14 @@ export class MainApp implements MazeController, MazeAppBridge {
     const nextDebugVisible = !isMobile;
     const nextPreviewVisible = !isMobile;
     const effectivePreviewVisible =
-      nextPreviewVisible && !this.previewWindowManager.isWindowClosed();
+      this.isPreviewSupported() && nextPreviewVisible && !this.previewWindowManager.isWindowClosed();
 
     if (this.debugOverlayVisible !== nextDebugVisible) {
       this.setDebugOverlayVisible(nextDebugVisible);
-      this.guiController.updateSetting('showDebug', nextDebugVisible);
     }
 
     if (this.previewVisible !== effectivePreviewVisible) {
       this.setPreviewVisible(effectivePreviewVisible);
-      this.guiController.updateSetting('showPreview', effectivePreviewVisible);
     }
   }
 
@@ -296,6 +296,10 @@ export class MainApp implements MazeController, MazeAppBridge {
    * Update preview window with current maze data
    */
   private updatePreview(): void {
+    if (!this.isPreviewSupported()) {
+      return;
+    }
+
     const mazeData = this.maze.getMazeData();
     if (mazeData.length === 0) {
       return;
@@ -529,6 +533,16 @@ export class MainApp implements MazeController, MazeAppBridge {
   }
 
   public setPreviewVisible(visible: boolean): void {
+    if (!this.isPreviewSupported()) {
+      this.previewVisible = false;
+      this.guiController.updateSetting('showPreview', false);
+      if (this.previewWindowManagerReady && !this.previewWindowManager.isWindowClosed()) {
+        this.previewWindowManager.setVisible(false);
+      }
+      this.emitPreviewWindowStatusChanged();
+      return;
+    }
+
     this.previewVisible = visible;
     this.guiController.updateSetting('showPreview', visible);
     if (this.previewWindowManager.isWindowClosed()) {
@@ -540,11 +554,17 @@ export class MainApp implements MazeController, MazeAppBridge {
       return;
     }
     this.previewWindowManager.setVisible(visible);
-    this.emitPreviewWindowStatusChanged();
+    if (visible) {
+      this.emitPreviewWindowStatusChanged();
+    }
   }
 
   public isPreviewVisible(): boolean {
     return this.previewVisible;
+  }
+
+  public isPreviewSupported(): boolean {
+    return this.maze instanceof SingleLayerMaze || this.maze instanceof MultiLayerMaze;
   }
 
   private handlePreviewVisibilityChanged(visible: boolean): void {
@@ -561,6 +581,13 @@ export class MainApp implements MazeController, MazeAppBridge {
   }
 
   public reopenPreviewWindow(): void {
+    if (!this.isPreviewSupported()) {
+      this.previewVisible = false;
+      this.guiController.updateSetting('showPreview', false);
+      this.emitPreviewWindowStatusChanged();
+      return;
+    }
+
     this.previewWindowManager.reopen();
     this.previewVisible = true;
     this.guiController.updateSetting('showPreview', true);
@@ -570,6 +597,9 @@ export class MainApp implements MazeController, MazeAppBridge {
   }
 
   public canOpenNewPreviewWindow(): boolean {
+    if (!this.previewWindowManagerReady || !this.isPreviewSupported()) {
+      return false;
+    }
     return this.previewWindowManager.canOpenNewWindow();
   }
 
@@ -584,6 +614,9 @@ export class MainApp implements MazeController, MazeAppBridge {
   }
 
   private emitPreviewWindowStatusChanged(): void {
+    if (!this.previewWindowManagerReady) {
+      return;
+    }
     window.dispatchEvent(
       new CustomEvent(PREVIEW_WINDOW_STATUS_CHANGED_EVENT, {
         detail: { canOpenNewPreviewWindow: this.canOpenNewPreviewWindow() },
