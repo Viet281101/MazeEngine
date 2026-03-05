@@ -1,7 +1,7 @@
 import { DEBUG_OVERLAY } from '../constants/debug';
 
 export interface DebugOverlayOptions {
-  getMazeData: () => number[][][];
+  getMazeLayerCount: () => number;
   getRenderQualityInfo?: () => {
     pixelRatio: number;
     adaptiveScale: number;
@@ -118,8 +118,7 @@ export class DebugOverlay {
   }
 
   private getMazeTypeLabel(): string {
-    const mazeData = this.options.getMazeData();
-    const layerCount = Array.isArray(mazeData) ? mazeData.length : 0;
+    const layerCount = this.options.getMazeLayerCount();
 
     if (layerCount <= 0) {
       return 'Unknown';

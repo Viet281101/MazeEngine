@@ -14,12 +14,16 @@ export function clampMazeSize(value: number): number {
 
 export function loadCurrentMazeIntoState(state: MazePopupState): LoadedMazeSize | null {
   const mazeApp = window.mazeApp;
-  if (!mazeApp || typeof mazeApp.getMazeData !== 'function') {
-    console.warn('mazeApp.getMazeData not available');
+  if (
+    !mazeApp ||
+    (typeof mazeApp.getMazeDataRef !== 'function' && typeof mazeApp.getMazeData !== 'function')
+  ) {
+    console.warn('mazeApp.getMazeDataRef/getMazeData not available');
     return null;
   }
 
-  const data = mazeApp.getMazeData();
+  const data =
+    typeof mazeApp.getMazeDataRef === 'function' ? mazeApp.getMazeDataRef() : mazeApp.getMazeData();
   const markers =
     mazeApp && typeof mazeApp.getMazeMarkers === 'function' ? mazeApp.getMazeMarkers() : null;
   if (!Array.isArray(data) || data.length === 0 || !Array.isArray(data[0])) {
@@ -116,11 +120,15 @@ function isSameAsCurrentMaze(
   nextStart: { row: number; col: number } | null,
   nextEnd: { row: number; col: number } | null
 ): boolean {
-  if (!mazeApp || typeof mazeApp.getMazeData !== 'function') {
+  if (
+    !mazeApp ||
+    (typeof mazeApp.getMazeDataRef !== 'function' && typeof mazeApp.getMazeData !== 'function')
+  ) {
     return false;
   }
 
-  const currentMazeData = mazeApp.getMazeData();
+  const currentMazeData =
+    typeof mazeApp.getMazeDataRef === 'function' ? mazeApp.getMazeDataRef() : mazeApp.getMazeData();
   if (!Array.isArray(currentMazeData) || currentMazeData.length !== 1) {
     return false;
   }

@@ -3,8 +3,29 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { ResourceManager } from '../resources/resource-manager';
 import { DisposalHelper } from '../resources/disposal-helper';
 import { MeshFactory } from '../resources/mesh-factory';
-import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION } from '../constants/maze';
+import {
+  ADAPTIVE_QUALITY_DEFAULT_SCALE,
+  CAMERA_ZOOM_LIMIT,
+  MAZE_RENDER_TIMING,
+  MESH_REDUCTION,
+} from '../constants/maze';
 import type { SolutionPath } from '../types/maze';
+import {
+  calculateRendererSize,
+  computeAdaptiveQualityUpdate,
+  createAdaptiveQualityResetState,
+} from './maze-render-quality';
+import {
+  collectEdgeObjects,
+  collectFloorGridObjects,
+  createFloorGridOverlay as createFloorGridOverlayMesh,
+  rebuildEdgesOnLayers,
+  setLineSegmentsVisibility,
+} from './maze-edge-utils';
+import { createSolutionPathLine, disposeSolutionPathLine } from './maze-solution-path';
+import { normalizeCameraZoomMaxDistance, normalizeCameraZoomMinDistance } from './maze-camera-zoom';
+import { buildMainFloorForLayer, buildWallsForLayer } from './maze-layer-builders';
+import { shouldMergeWallsForConfig, shouldRebuildForMeshConfig } from './maze-mesh-config';
 
 export interface MazeConfig {
   wallHeight?: number;
@@ -33,21 +54,6 @@ interface RenderQualityInfo {
  * Refactored with proper memory management
  */
 export abstract class Maze {
-  private static readonly STABLE_PIXEL_RATIO_CAP = 1.25;
-  private static readonly INTERACTION_PIXEL_RATIO_CAP = 0.85;
-  private static readonly MIN_PIXEL_RATIO = 0.5;
-  private static readonly INTERACTION_END_DELAY_MS = 120;
-  private static readonly INITIAL_QUALITY_UPGRADE_DELAY_MS = 300;
-  private static readonly ADAPTIVE_QUALITY_MIN_SCALE = 0.6;
-  private static readonly ADAPTIVE_QUALITY_MAX_SCALE = 1.0;
-  private static readonly ADAPTIVE_QUALITY_DECREASE_STEP = 0.08;
-  private static readonly ADAPTIVE_QUALITY_INCREASE_STEP = 0.04;
-  private static readonly ADAPTIVE_QUALITY_HIGH_FRAME_TIME_MS = 26;
-  private static readonly ADAPTIVE_QUALITY_LOW_FRAME_TIME_MS = 16;
-  private static readonly ADAPTIVE_QUALITY_UPDATE_COOLDOWN_MS = 280;
-  private static readonly ADAPTIVE_QUALITY_EMA_ALPHA = 0.18;
-  private static readonly FLOOR_GRID_Y_OFFSET = 0.001;
-
   // Three.js core
   protected canvas: HTMLCanvasElement;
   protected scene: THREE.Scene;
@@ -100,7 +106,7 @@ export abstract class Maze {
   private currentRenderWidth: number = 0;
   private currentRenderHeight: number = 0;
   private currentRenderPixelRatio: number = 0;
-  private adaptiveQualityScale: number = Maze.ADAPTIVE_QUALITY_MAX_SCALE;
+  private adaptiveQualityScale: number = ADAPTIVE_QUALITY_DEFAULT_SCALE;
   private frameTimeEmaMs: number | null = null;
   private lastRenderTimestampMs: number | null = null;
   private lastAdaptiveAdjustmentMs: number = 0;
@@ -352,6 +358,18 @@ export abstract class Maze {
     return this.maze.map(layer => layer.map(row => row.slice()));
   }
 
+  /**
+   * Internal fast path that returns the current maze data by reference.
+   * Do not mutate the returned value outside controlled update flows.
+   */
+  public getMazeDataRef(): number[][][] {
+    return this.maze;
+  }
+
+  public getMazeLayerCount(): number {
+    return this.maze.length;
+  }
+
   public getCameraState(): CameraState {
     return {
       position: this.camera.position.clone(),
@@ -444,7 +462,13 @@ export abstract class Maze {
 
   public setMeshReductionEnabled(enabled: boolean): void {
     if (this.meshReductionEnabled === enabled) return;
-    const shouldRebuild = this.shouldRebuildForMeshConfig(enabled, this.meshMergeThreshold);
+    const shouldRebuild = shouldRebuildForMeshConfig(
+      this.maze,
+      this.meshReductionEnabled,
+      this.meshMergeThreshold,
+      enabled,
+      this.meshMergeThreshold
+    );
     this.meshReductionEnabled = enabled;
     if (shouldRebuild) {
       this.rebuildMazePreservingCamera();
@@ -460,7 +484,13 @@ export abstract class Maze {
   public setMeshMergeThreshold(threshold: number): void {
     const nextThreshold = Math.max(MESH_REDUCTION.MIN_THRESHOLD, Math.floor(threshold));
     if (this.meshMergeThreshold === nextThreshold) return;
-    const shouldRebuild = this.shouldRebuildForMeshConfig(this.meshReductionEnabled, nextThreshold);
+    const shouldRebuild = shouldRebuildForMeshConfig(
+      this.maze,
+      this.meshReductionEnabled,
+      this.meshMergeThreshold,
+      this.meshReductionEnabled,
+      nextThreshold
+    );
     this.meshMergeThreshold = nextThreshold;
     if (shouldRebuild) {
       this.rebuildMazePreservingCamera();
@@ -478,10 +508,46 @@ export abstract class Maze {
   }
 
   protected shouldMergeWalls(rows: number, cols: number): boolean {
-    if (!this.meshReductionEnabled) {
-      return false;
-    }
-    return rows >= this.meshMergeThreshold || cols >= this.meshMergeThreshold;
+    return shouldMergeWallsForConfig(
+      rows,
+      cols,
+      this.meshReductionEnabled,
+      this.meshMergeThreshold
+    );
+  }
+
+  protected createWallsForLayer(
+    layer: number[][],
+    layerHeight: number,
+    mazeLayer: THREE.Object3D
+  ): void {
+    const rowCount = layer.length;
+    const colCount = layer[0]?.length ?? 0;
+    buildWallsForLayer({
+      layer,
+      layerHeight,
+      mazeLayer,
+      shouldMerge: this.shouldMergeWalls(rowCount, colCount),
+      cellSize: this.cellSize,
+      wallHeight: this.wallHeight,
+      wallThickness: this.wallThickness,
+      meshFactory: this.meshFactory,
+    });
+  }
+
+  protected createMainFloorForLayer(
+    layer: number[][],
+    mazeLayer: THREE.Object3D,
+    floorTopY: number = 0
+  ): void {
+    buildMainFloorForLayer({
+      layer,
+      mazeLayer,
+      floorTopY,
+      cellSize: this.cellSize,
+      meshFactory: this.meshFactory,
+      createGridOverlay: (rows, cols, y) => this.createFloorGridOverlay(rows, cols, y),
+    });
   }
 
   public addRenderListener(listener: () => void): void {
@@ -544,7 +610,7 @@ export abstract class Maze {
   }
 
   public setCameraZoomMinDistance(distance: number): void {
-    const normalizedMin = this.normalizeCameraZoomMinDistance(distance);
+    const normalizedMin = normalizeCameraZoomMinDistance(distance);
     if (Math.abs(this.cameraZoomMinDistance - normalizedMin) < 0.001) {
       return;
     }
@@ -562,7 +628,7 @@ export abstract class Maze {
   }
 
   public setCameraZoomMaxDistance(distance: number): void {
-    const normalizedMax = this.normalizeCameraZoomMaxDistance(distance);
+    const normalizedMax = normalizeCameraZoomMaxDistance(distance);
     if (Math.abs(this.cameraZoomMaxDistance - normalizedMax) < 0.001) {
       return;
     }
@@ -606,35 +672,17 @@ export abstract class Maze {
       return;
     }
 
-    const points: THREE.Vector3[] = [];
-    const rows = targetLayer.length;
-    const cols = targetLayer[0]?.length ?? 0;
-
-    path.forEach(cell => {
-      if (cell.row < 0 || cell.row >= rows || cell.col < 0 || cell.col >= cols) {
-        return;
-      }
-      const x = cell.col * this.cellSize;
-      const y = 0.04 + this.getLayerBaseY(layerIndex);
-      const z = -cell.row * this.cellSize;
-      points.push(new THREE.Vector3(x, y, z));
-    });
-
-    if (points.length < 2) {
+    const line = createSolutionPathLine(
+      path,
+      targetLayer,
+      this.cellSize,
+      this.getLayerBaseY(layerIndex)
+    );
+    if (!line) {
       this.requestRender();
       return;
     }
-
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const material = new THREE.LineBasicMaterial({
-      color: 0xff3b30,
-      linewidth: 3,
-      transparent: true,
-      opacity: 0.95,
-      depthTest: false,
-    });
-    this.solutionPathLine = new THREE.Line(geometry, material);
-    this.solutionPathLine.renderOrder = 2;
+    this.solutionPathLine = line;
     this.scene.add(this.solutionPathLine);
     this.requestRender();
   }
@@ -644,46 +692,9 @@ export abstract class Maze {
       return;
     }
 
-    this.scene.remove(this.solutionPathLine);
-    this.solutionPathLine.geometry.dispose();
-    const material = this.solutionPathLine.material;
-    if (Array.isArray(material)) {
-      material.forEach(item => item.dispose());
-    } else {
-      material.dispose();
-    }
+    disposeSolutionPathLine(this.scene, this.solutionPathLine);
     this.solutionPathLine = null;
     this.requestRender();
-  }
-
-  private shouldMergeWallsForConfig(
-    rows: number,
-    cols: number,
-    enabled: boolean,
-    threshold: number
-  ): boolean {
-    if (!enabled) {
-      return false;
-    }
-    return rows >= threshold || cols >= threshold;
-  }
-
-  private shouldRebuildForMeshConfig(nextEnabled: boolean, nextThreshold: number): boolean {
-    const currentEnabled = this.meshReductionEnabled;
-    const currentThreshold = this.meshMergeThreshold;
-
-    return this.maze.some(layer => {
-      const rows = layer.length;
-      const cols = layer[0]?.length ?? 0;
-      const currentMerge = this.shouldMergeWallsForConfig(
-        rows,
-        cols,
-        currentEnabled,
-        currentThreshold
-      );
-      const nextMerge = this.shouldMergeWallsForConfig(rows, cols, nextEnabled, nextThreshold);
-      return currentMerge !== nextMerge;
-    });
   }
 
   private rebuildMazePreservingCamera(): void {
@@ -719,7 +730,7 @@ export abstract class Maze {
       this.edgesTemporarilyHidden = false;
       this.applyRendererSizeForMode(false);
       this.requestRender();
-    }, Maze.INTERACTION_END_DELAY_MS);
+    }, MAZE_RENDER_TIMING.INTERACTION_END_DELAY_MS);
   }
 
   private clearInteractionRestoreTimer(): void {
@@ -739,7 +750,7 @@ export abstract class Maze {
       }
       this.applyRendererSizeForMode(false);
       this.requestRender();
-    }, Maze.INITIAL_QUALITY_UPGRADE_DELAY_MS);
+    }, MAZE_RENDER_TIMING.INITIAL_QUALITY_UPGRADE_DELAY_MS);
   }
 
   private configureCameraZoomLimits(): void {
@@ -749,10 +760,10 @@ export abstract class Maze {
       return;
     }
 
-    const minDistance = this.normalizeCameraZoomMinDistance(this.cameraZoomMinDistance);
+    const minDistance = normalizeCameraZoomMinDistance(this.cameraZoomMinDistance);
     const maxDistance = Math.max(
       minDistance,
-      this.normalizeCameraZoomMaxDistance(this.cameraZoomMaxDistance)
+      normalizeCameraZoomMaxDistance(this.cameraZoomMaxDistance)
     );
 
     this.cameraZoomMinDistance = minDistance;
@@ -761,79 +772,32 @@ export abstract class Maze {
     this.controls.maxDistance = maxDistance;
   }
 
-  private normalizeCameraZoomMinDistance(value: number): number {
-    if (!Number.isFinite(value)) {
-      return CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE;
-    }
-    const clamped = Math.max(CAMERA_ZOOM_LIMIT.MIN_DISTANCE_MIN, value);
-    return Math.min(CAMERA_ZOOM_LIMIT.MAX_DISTANCE_MAX, clamped);
-  }
-
-  private normalizeCameraZoomMaxDistance(value: number): number {
-    if (!Number.isFinite(value)) {
-      return CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE;
-    }
-    return Math.min(
-      CAMERA_ZOOM_LIMIT.MAX_DISTANCE_MAX,
-      Math.max(CAMERA_ZOOM_LIMIT.MIN_DISTANCE_MIN, value)
-    );
-  }
-
   private updateAdaptiveQuality(nowMs: number): void {
-    if (!this.adaptiveQualityEnabled) {
-      return;
-    }
+    const next = computeAdaptiveQualityUpdate({
+      adaptiveEnabled: this.adaptiveQualityEnabled,
+      nowMs,
+      lastRenderTimestampMs: this.lastRenderTimestampMs,
+      frameTimeEmaMs: this.frameTimeEmaMs,
+      lastAdaptiveAdjustmentMs: this.lastAdaptiveAdjustmentMs,
+      adaptiveQualityScale: this.adaptiveQualityScale,
+    });
+    this.lastRenderTimestampMs = next.lastRenderTimestampMs;
+    this.frameTimeEmaMs = next.frameTimeEmaMs;
+    this.lastAdaptiveAdjustmentMs = next.lastAdaptiveAdjustmentMs;
+    this.adaptiveQualityScale = next.adaptiveQualityScale;
 
-    if (this.lastRenderTimestampMs === null) {
-      this.lastRenderTimestampMs = nowMs;
-      return;
+    if (next.shouldApplyRendererSize) {
+      this.applyRendererSizeForMode(this.currentInteractionMode);
+      this.needsRender = true;
     }
-
-    const deltaMs = nowMs - this.lastRenderTimestampMs;
-    this.lastRenderTimestampMs = nowMs;
-    if (!Number.isFinite(deltaMs) || deltaMs <= 0 || deltaMs > 200) {
-      return;
-    }
-
-    if (this.frameTimeEmaMs === null) {
-      this.frameTimeEmaMs = deltaMs;
-    } else {
-      this.frameTimeEmaMs =
-        this.frameTimeEmaMs + (deltaMs - this.frameTimeEmaMs) * Maze.ADAPTIVE_QUALITY_EMA_ALPHA;
-    }
-
-    if (nowMs - this.lastAdaptiveAdjustmentMs < Maze.ADAPTIVE_QUALITY_UPDATE_COOLDOWN_MS) {
-      return;
-    }
-
-    let nextScale = this.adaptiveQualityScale;
-    if (this.frameTimeEmaMs > Maze.ADAPTIVE_QUALITY_HIGH_FRAME_TIME_MS) {
-      nextScale = Math.max(
-        Maze.ADAPTIVE_QUALITY_MIN_SCALE,
-        this.adaptiveQualityScale - Maze.ADAPTIVE_QUALITY_DECREASE_STEP
-      );
-    } else if (this.frameTimeEmaMs < Maze.ADAPTIVE_QUALITY_LOW_FRAME_TIME_MS) {
-      nextScale = Math.min(
-        Maze.ADAPTIVE_QUALITY_MAX_SCALE,
-        this.adaptiveQualityScale + Maze.ADAPTIVE_QUALITY_INCREASE_STEP
-      );
-    }
-
-    if (Math.abs(nextScale - this.adaptiveQualityScale) < 0.001) {
-      return;
-    }
-
-    this.adaptiveQualityScale = nextScale;
-    this.lastAdaptiveAdjustmentMs = nowMs;
-    this.applyRendererSizeForMode(this.currentInteractionMode);
-    this.needsRender = true;
   }
 
   private resetAdaptiveQualityMetrics(): void {
-    this.frameTimeEmaMs = null;
-    this.lastRenderTimestampMs = null;
-    this.lastAdaptiveAdjustmentMs = 0;
-    this.adaptiveQualityScale = Maze.ADAPTIVE_QUALITY_MAX_SCALE;
+    const resetState = createAdaptiveQualityResetState();
+    this.frameTimeEmaMs = resetState.frameTimeEmaMs;
+    this.lastRenderTimestampMs = resetState.lastRenderTimestampMs;
+    this.lastAdaptiveAdjustmentMs = resetState.lastAdaptiveAdjustmentMs;
+    this.adaptiveQualityScale = resetState.adaptiveQualityScale;
   }
 
   private clearInitialQualityUpgradeTimer(): void {
@@ -848,38 +812,7 @@ export abstract class Maze {
    * Rebuild edges on all maze layers
    */
   private rebuildEdges(): void {
-    this.mazeLayers.forEach(layer => {
-      layer.children.forEach(child => {
-        if (child instanceof THREE.Group) {
-          // Remove old edges
-          DisposalHelper.disposeEdgesFromGroup(child);
-
-          // Add new edges if needed
-          if (this.showEdges || this.showFloorGrid) {
-            child.children.forEach(obj => {
-              if (obj instanceof THREE.Mesh) {
-                const isFloorSurface = obj.userData.surfaceType === 'floor';
-                if (isFloorSurface ? !this.showFloorGrid : !this.showEdges) {
-                  return;
-                }
-                const edges = this.resourceManager.getEdgesGeometry(obj.geometry);
-                const material = this.resourceManager.getEdgeMaterial();
-                const line = new THREE.LineSegments(edges, material);
-
-                line.position.copy(obj.position);
-                line.rotation.copy(obj.rotation);
-                line.renderOrder = 1;
-                line.userData.isFloorGrid = isFloorSurface;
-                line.userData.sharedGeometry = true;
-                line.userData.sharedMaterial = true;
-
-                child.add(line);
-              }
-            });
-          }
-        }
-      });
-    });
+    rebuildEdgesOnLayers(this.mazeLayers, this.showEdges, this.showFloorGrid, this.resourceManager);
 
     this.refreshEdgeObjectCache();
     this.refreshFloorGridObjectCache();
@@ -887,34 +820,16 @@ export abstract class Maze {
   }
 
   private refreshEdgeObjectCache(): void {
-    const lines: THREE.LineSegments[] = [];
-    this.mazeLayers.forEach(layer => {
-      layer.traverse(object => {
-        if (object instanceof THREE.LineSegments && object.userData.isFloorGrid !== true) {
-          lines.push(object);
-        }
-      });
-    });
-    this.edgeObjects = lines;
+    this.edgeObjects = collectEdgeObjects(this.mazeLayers);
   }
 
   private refreshFloorGridObjectCache(): void {
-    const lines: THREE.LineSegments[] = [];
-    this.mazeLayers.forEach(layer => {
-      layer.traverse(object => {
-        if (object instanceof THREE.LineSegments && object.userData.isFloorGrid === true) {
-          lines.push(object);
-        }
-      });
-    });
-    this.floorGridObjects = lines;
+    this.floorGridObjects = collectFloorGridObjects(this.mazeLayers);
     this.setFloorGridVisibility(this.showFloorGrid);
   }
 
   private setFloorGridVisibility(visible: boolean): void {
-    this.floorGridObjects.forEach(line => {
-      line.visible = visible;
-    });
+    setLineSegmentsVisibility(this.floorGridObjects, visible);
   }
 
   protected createFloorGridOverlay(
@@ -922,50 +837,24 @@ export abstract class Maze {
     cols: number,
     floorTopY: number
   ): THREE.LineSegments | null {
-    if (rows <= 0 || cols <= 0) {
-      return null;
-    }
-
-    const points: THREE.Vector3[] = [];
-    const xMin = -this.cellSize / 2;
-    const xMax = (cols - 0.5) * this.cellSize;
-    const zMax = this.cellSize / 2;
-    const zMin = -(rows - 0.5) * this.cellSize;
-    const y = floorTopY + Maze.FLOOR_GRID_Y_OFFSET;
-
-    for (let col = 0; col <= cols; col += 1) {
-      const x = xMin + col * this.cellSize;
-      points.push(new THREE.Vector3(x, y, zMin), new THREE.Vector3(x, y, zMax));
-    }
-
-    for (let row = 0; row <= rows; row += 1) {
-      const z = zMax - row * this.cellSize;
-      points.push(new THREE.Vector3(xMin, y, z), new THREE.Vector3(xMax, y, z));
-    }
-
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const material = new THREE.LineBasicMaterial({
-      color: 0x000000,
-      transparent: true,
-      opacity: 0.28,
-      depthTest: true,
-      depthWrite: false,
-    });
-    const grid = new THREE.LineSegments(geometry, material);
-    grid.userData.isFloorGrid = true;
-    grid.visible = this.showFloorGrid;
-    return grid;
+    return createFloorGridOverlayMesh(rows, cols, this.cellSize, floorTopY, this.showFloorGrid);
   }
 
   private setEdgeVisibility(visible: boolean): void {
-    this.edgeObjects.forEach(edge => {
-      edge.visible = visible;
-    });
+    setLineSegmentsVisibility(this.edgeObjects, visible);
   }
 
   private applyRendererSizeForMode(isInteraction: boolean): void {
     this.currentInteractionMode = isInteraction;
-    const { width, height, pixelRatio } = this.getRendererSize(isInteraction);
+    const { width, height, pixelRatio } = calculateRendererSize({
+      isInteraction,
+      adaptiveEnabled: this.adaptiveQualityEnabled,
+      adaptiveScale: this.adaptiveQualityScale,
+      devicePixelRatio: window.devicePixelRatio,
+      maxTextureSize: this.renderer.capabilities.maxTextureSize,
+      canvasClientWidth: this.canvas.clientWidth,
+      canvasClientHeight: this.canvas.clientHeight,
+    });
     if (
       width === this.currentRenderWidth &&
       height === this.currentRenderHeight &&
@@ -978,28 +867,5 @@ export abstract class Maze {
     this.currentRenderPixelRatio = pixelRatio;
     this.renderer.setPixelRatio(pixelRatio);
     this.renderer.setSize(width, height, false);
-  }
-
-  private getRendererSize(isInteraction: boolean = false): {
-    width: number;
-    height: number;
-    pixelRatio: number;
-  } {
-    const dynamicCap = isInteraction
-      ? Maze.INTERACTION_PIXEL_RATIO_CAP
-      : Maze.STABLE_PIXEL_RATIO_CAP;
-    const adaptiveScale = this.adaptiveQualityEnabled ? this.adaptiveQualityScale : 1;
-    const adaptiveCap = dynamicCap * adaptiveScale;
-    const pixelRatio = Math.max(
-      Maze.MIN_PIXEL_RATIO,
-      Math.min(window.devicePixelRatio, adaptiveCap)
-    );
-    const maxSize = this.renderer.capabilities.maxTextureSize;
-    const maxDimension = Math.floor(maxSize / pixelRatio);
-    const canvasWidth = Math.max(Math.floor(this.canvas.clientWidth), 1);
-    const canvasHeight = Math.max(Math.floor(this.canvas.clientHeight), 1);
-    const width = Math.min(canvasWidth, maxDimension);
-    const height = Math.min(canvasHeight, maxDimension);
-    return { width, height, pixelRatio };
   }
 }

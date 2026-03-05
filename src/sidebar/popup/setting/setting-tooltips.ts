@@ -28,46 +28,28 @@ interface TooltipBindings {
 }
 
 export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
-  const {
-    meshHelpIcon,
-    thresholdHelpIcon,
-    hideEdgesHelpIcon,
-    floorGridHelpIcon,
-    adaptiveHelpIcon,
-    showEdgesHelpIcon,
-    showDebugHelpIcon,
-    showPreviewHelpIcon,
-    meshTooltip,
-    thresholdTooltip,
-    hideEdgesTooltip,
-    floorGridTooltip,
-    adaptiveTooltip,
-    showEdgesTooltip,
-    showDebugTooltip,
-    showPreviewTooltip,
-  } = bindings;
+  const bindingByTarget: Record<
+    TooltipTarget,
+    { icon: HTMLImageElement; tooltip: HTMLDivElement }
+  > = {
+    mesh: { icon: bindings.meshHelpIcon, tooltip: bindings.meshTooltip },
+    threshold: { icon: bindings.thresholdHelpIcon, tooltip: bindings.thresholdTooltip },
+    hideEdges: { icon: bindings.hideEdgesHelpIcon, tooltip: bindings.hideEdgesTooltip },
+    floorGrid: { icon: bindings.floorGridHelpIcon, tooltip: bindings.floorGridTooltip },
+    adaptive: { icon: bindings.adaptiveHelpIcon, tooltip: bindings.adaptiveTooltip },
+    showEdges: { icon: bindings.showEdgesHelpIcon, tooltip: bindings.showEdgesTooltip },
+    showDebug: { icon: bindings.showDebugHelpIcon, tooltip: bindings.showDebugTooltip },
+    showPreview: { icon: bindings.showPreviewHelpIcon, tooltip: bindings.showPreviewTooltip },
+  };
+  const targets = Object.keys(bindingByTarget) as TooltipTarget[];
   let pinnedTooltip: TooltipTarget | null = null;
 
   const getTooltipByTarget = (target: TooltipTarget): HTMLDivElement => {
-    if (target === 'mesh') return meshTooltip;
-    if (target === 'threshold') return thresholdTooltip;
-    if (target === 'hideEdges') return hideEdgesTooltip;
-    if (target === 'floorGrid') return floorGridTooltip;
-    if (target === 'adaptive') return adaptiveTooltip;
-    if (target === 'showEdges') return showEdgesTooltip;
-    if (target === 'showDebug') return showDebugTooltip;
-    return showPreviewTooltip;
+    return bindingByTarget[target].tooltip;
   };
 
   const getIconByTarget = (target: TooltipTarget): HTMLImageElement => {
-    if (target === 'mesh') return meshHelpIcon;
-    if (target === 'threshold') return thresholdHelpIcon;
-    if (target === 'hideEdges') return hideEdgesHelpIcon;
-    if (target === 'floorGrid') return floorGridHelpIcon;
-    if (target === 'adaptive') return adaptiveHelpIcon;
-    if (target === 'showEdges') return showEdgesHelpIcon;
-    if (target === 'showDebug') return showDebugHelpIcon;
-    return showPreviewHelpIcon;
+    return bindingByTarget[target].icon;
   };
 
   const positionTooltip = (target: TooltipTarget) => {
@@ -85,25 +67,26 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
 
   const showTooltip = (target: TooltipTarget) => {
     positionTooltip(target);
-    meshTooltip.style.display = target === 'mesh' ? 'block' : 'none';
-    thresholdTooltip.style.display = target === 'threshold' ? 'block' : 'none';
-    hideEdgesTooltip.style.display = target === 'hideEdges' ? 'block' : 'none';
-    floorGridTooltip.style.display = target === 'floorGrid' ? 'block' : 'none';
-    adaptiveTooltip.style.display = target === 'adaptive' ? 'block' : 'none';
-    showEdgesTooltip.style.display = target === 'showEdges' ? 'block' : 'none';
-    showDebugTooltip.style.display = target === 'showDebug' ? 'block' : 'none';
-    showPreviewTooltip.style.display = target === 'showPreview' ? 'block' : 'none';
+    targets.forEach(currentTarget => {
+      getTooltipByTarget(currentTarget).style.display = currentTarget === target ? 'block' : 'none';
+    });
   };
 
   const hideAllTooltips = () => {
-    meshTooltip.style.display = 'none';
-    thresholdTooltip.style.display = 'none';
-    hideEdgesTooltip.style.display = 'none';
-    floorGridTooltip.style.display = 'none';
-    adaptiveTooltip.style.display = 'none';
-    showEdgesTooltip.style.display = 'none';
-    showDebugTooltip.style.display = 'none';
-    showPreviewTooltip.style.display = 'none';
+    targets.forEach(target => {
+      getTooltipByTarget(target).style.display = 'none';
+    });
+  };
+
+  const hasVisibleTooltip = (): boolean => {
+    return targets.some(target => getTooltipByTarget(target).style.display !== 'none');
+  };
+
+  const isTargetWithinBoundElements = (targetNode: Node): boolean => {
+    return targets.some(target => {
+      const { icon, tooltip } = bindingByTarget[target];
+      return icon.contains(targetNode) || tooltip.contains(targetNode);
+    });
   };
 
   const unpinAndHideTooltip = () => {
@@ -128,24 +111,7 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     if (!target) {
       return;
     }
-    if (
-      meshHelpIcon.contains(target) ||
-      thresholdHelpIcon.contains(target) ||
-      hideEdgesHelpIcon.contains(target) ||
-      floorGridHelpIcon.contains(target) ||
-      adaptiveHelpIcon.contains(target) ||
-      showEdgesHelpIcon.contains(target) ||
-      showDebugHelpIcon.contains(target) ||
-      showPreviewHelpIcon.contains(target) ||
-      meshTooltip.contains(target) ||
-      thresholdTooltip.contains(target) ||
-      hideEdgesTooltip.contains(target) ||
-      floorGridTooltip.contains(target) ||
-      adaptiveTooltip.contains(target) ||
-      showEdgesTooltip.contains(target) ||
-      showDebugTooltip.contains(target) ||
-      showPreviewTooltip.contains(target)
-    ) {
+    if (isTargetWithinBoundElements(target)) {
       return;
     }
     unpinAndHideTooltip();
@@ -155,16 +121,7 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     if (event.key !== 'Escape') {
       return;
     }
-    if (
-      meshTooltip.style.display === 'none' &&
-      thresholdTooltip.style.display === 'none' &&
-      hideEdgesTooltip.style.display === 'none' &&
-      floorGridTooltip.style.display === 'none' &&
-      adaptiveTooltip.style.display === 'none' &&
-      showEdgesTooltip.style.display === 'none' &&
-      showDebugTooltip.style.display === 'none' &&
-      showPreviewTooltip.style.display === 'none'
-    ) {
+    if (!hasVisibleTooltip()) {
       return;
     }
     unpinAndHideTooltip();
@@ -206,28 +163,14 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     };
   };
 
-  const unbindMesh = bindIcon('mesh', meshHelpIcon);
-  const unbindThreshold = bindIcon('threshold', thresholdHelpIcon);
-  const unbindHideEdges = bindIcon('hideEdges', hideEdgesHelpIcon);
-  const unbindFloorGrid = bindIcon('floorGrid', floorGridHelpIcon);
-  const unbindAdaptive = bindIcon('adaptive', adaptiveHelpIcon);
-  const unbindShowEdges = bindIcon('showEdges', showEdgesHelpIcon);
-  const unbindShowDebug = bindIcon('showDebug', showDebugHelpIcon);
-  const unbindShowPreview = bindIcon('showPreview', showPreviewHelpIcon);
+  const unbindHandlers = targets.map(target => bindIcon(target, getIconByTarget(target)));
 
   document.addEventListener('mousedown', handleDocumentPointerDown, true);
   document.addEventListener('touchstart', handleDocumentPointerDown, true);
   document.addEventListener('keydown', handleDocumentKeyDown, true);
 
   return () => {
-    unbindMesh();
-    unbindThreshold();
-    unbindHideEdges();
-    unbindFloorGrid();
-    unbindAdaptive();
-    unbindShowEdges();
-    unbindShowDebug();
-    unbindShowPreview();
+    unbindHandlers.forEach(unbind => unbind());
     document.removeEventListener('mousedown', handleDocumentPointerDown, true);
     document.removeEventListener('touchstart', handleDocumentPointerDown, true);
     document.removeEventListener('keydown', handleDocumentKeyDown, true);

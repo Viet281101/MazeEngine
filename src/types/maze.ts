@@ -20,6 +20,7 @@ export interface MazeAppBridge {
     options?: UpdateMazeOptions
   ): void;
   getMazeData(): MazeData;
+  getMazeDataRef(): MazeData;
   getMazeMarkers(): MazeMarkers | null;
   setSolutionPath(path: SolutionPath): void;
   clearSolutionPath(): void;
@@ -39,7 +40,6 @@ export interface MazeAppBridge {
   isDebugOverlayVisible(): boolean;
   setPreviewVisible(visible: boolean): void;
   isPreviewVisible(): boolean;
-  isPreviewSupported(): boolean;
   setCameraZoomLimitEnabled(enabled: boolean): void;
   isCameraZoomLimitEnabled(): boolean;
   setCameraZoomMinDistance(distance: number): void;

@@ -3,7 +3,7 @@ import { MultiLayerMaze } from '../maze/multi-layer-maze';
 import { Toolbar } from '../sidebar/toolbar';
 import { GUIController } from '../gui';
 import { PreviewWindow } from '../preview/preview-window';
-import { PreviewWindowManager } from './preview-manager';
+import { PreviewController } from './preview-controller';
 import type { MazeController } from '../maze/maze-controller';
 import { computeMarkersFromLayer } from '../maze/marker-utils';
 import { subscribeLanguageChange, t } from '../sidebar/i18n';
@@ -37,19 +37,20 @@ export class MainApp implements MazeController, MazeAppBridge {
   private readonly toolbar: Toolbar;
   private maze: MazeInstance;
   private readonly guiController: GUIController;
-  private readonly previewWindowManager: PreviewWindowManager;
+  private readonly previewController: PreviewController;
   private readonly debugOverlay: DebugOverlay;
   private readonly renderListener: () => void;
   private readonly settingsStorage: MeshReductionSettingsStorage;
   private readonly resizeHandler: () => void;
   private readonly keydownHandler: (event: KeyboardEvent) => void;
-  private previewWindowManagerReady: boolean = false;
 
   private previewMarkers: MazeMarkers | null = null;
   private solutionPath: SolutionPath = [];
   private edgesVisible: boolean = true;
   private debugOverlayVisible: boolean = true;
-  private previewVisible: boolean = true;
+  private previewVisibleByViewport: boolean = true;
+  private debugVisibilityOverriddenByUser: boolean = false;
+  private previewVisibilityOverriddenByUser: boolean = false;
   private readonly mobileBreakpoint: number = UI_BREAKPOINTS.MOBILE;
   private meshReductionThreshold: number = MESH_REDUCTION.DEFAULT_THRESHOLD;
   private meshReductionEnabled: boolean = MESH_REDUCTION.DEFAULT_ENABLED;
@@ -69,7 +70,7 @@ export class MainApp implements MazeController, MazeAppBridge {
 
     this.maze = this.createInitialMaze();
     this.applyMeshReductionSettingsToMaze();
-    this.previewMarkers = computeMarkersFromLayer(this.maze.getMazeData()?.[0]);
+    this.previewMarkers = computeMarkersFromLayer(this.maze.getMazeDataRef()?.[0]);
 
     this.guiController = new GUIController(this, {
       scale: 1.4,
@@ -77,34 +78,36 @@ export class MainApp implements MazeController, MazeAppBridge {
       autoHide: true,
     });
     this.initializeVisibilityByViewport();
-
-    this.previewWindowManager = new PreviewWindowManager(
-      {
-        createWindow: ({ onHide, onClose }) => this.createPreviewWindow(onHide, onClose),
-        onVisibilityChanged: visible => this.handlePreviewVisibilityChanged(visible),
-        onClosed: () => this.handlePreviewClosed(),
-      },
-      this.previewVisible && this.isPreviewSupported()
-    );
-    this.previewWindowManagerReady = true;
+    this.previewController = new PreviewController({
+      initialVisible: this.previewVisibleByViewport,
+      createWindow: ({ onHide, onClose }) => this.createPreviewWindow(onHide, onClose),
+      updatePreviewVisibilitySetting: visible =>
+        this.guiController.updateSetting('showPreview', visible),
+      setPreviewControllerEnabled: (enabled, tooltip) =>
+        this.guiController.setControllerEnabled('showPreview', enabled, tooltip),
+      getPreviewClosedTooltip: () => t('gui.previewClosedTooltip'),
+      requestPreviewRefresh: () => this.updatePreview(),
+      emitStatusChanged: canOpenNewPreviewWindow =>
+        this.emitPreviewWindowStatusChanged(canOpenNewPreviewWindow),
+    });
     this.subscribeToLanguageChanges();
 
     this.debugOverlay = new DebugOverlay({
-      getMazeData: () => this.maze.getMazeData(),
+      getMazeLayerCount: () => this.maze.getMazeLayerCount(),
       getRenderQualityInfo: () => this.maze.getRenderQualityInfo(),
     });
     this.renderListener = () => this.debugOverlay.recordRender();
     this.maze.addRenderListener(this.renderListener);
 
-    this.setDebugOverlayVisible(this.debugOverlayVisible);
-    this.setPreviewVisible(this.previewVisible);
+    this.applyDebugOverlayVisible(this.debugOverlayVisible);
+    this.applyPreviewVisible(this.previewVisibleByViewport);
     this.maze.setBackgroundColor(this.guiController.settings.backgroundColor);
     this.updatePreview();
 
     this.resizeHandler = () => this.onWindowResize();
     this.keydownHandler = event => {
       if (event.key === 'p' || event.key === 'P') {
-        this.setPreviewVisible(!this.previewVisible);
+        this.setPreviewVisible(!this.previewController.isVisible());
       }
     };
     this.registerGlobalListeners();
@@ -153,20 +156,14 @@ export class MainApp implements MazeController, MazeAppBridge {
   private initializeVisibilityByViewport(): void {
     const isMobile = window.innerWidth <= this.mobileBreakpoint;
     this.debugOverlayVisible = !isMobile;
-    this.previewVisible = !isMobile;
+    this.previewVisibleByViewport = !isMobile;
     this.guiController.updateSetting('showDebug', this.debugOverlayVisible);
-    this.guiController.updateSetting('showPreview', this.previewVisible);
+    this.guiController.updateSetting('showPreview', this.previewVisibleByViewport);
   }
 
   private subscribeToLanguageChanges(): void {
     this.unsubscribeLanguageChange = subscribeLanguageChange(() => {
-      if (this.previewWindowManager.isWindowClosed()) {
-        this.guiController.setControllerEnabled(
-          'showPreview',
-          false,
-          t('gui.previewClosedTooltip')
-        );
-      }
+      this.previewController.handleLanguageChange();
     });
   }
 
@@ -191,20 +188,22 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.toolbar.resizeToolbar();
     this.maze.resize();
     this.guiController.checkWindowSize();
-    this.previewWindowManager.handleWindowResize();
+    this.previewController.handleWindowResize();
 
     const isMobile = window.innerWidth <= this.mobileBreakpoint;
     const nextDebugVisible = !isMobile;
     const nextPreviewVisible = !isMobile;
-    const effectivePreviewVisible =
-      this.isPreviewSupported() && nextPreviewVisible && !this.previewWindowManager.isWindowClosed();
+    const effectivePreviewVisible = nextPreviewVisible && !this.previewController.isWindowClosed();
 
-    if (this.debugOverlayVisible !== nextDebugVisible) {
-      this.setDebugOverlayVisible(nextDebugVisible);
+    if (!this.debugVisibilityOverriddenByUser && this.debugOverlayVisible !== nextDebugVisible) {
+      this.applyDebugOverlayVisible(nextDebugVisible);
     }
 
-    if (this.previewVisible !== effectivePreviewVisible) {
-      this.setPreviewVisible(effectivePreviewVisible);
+    if (
+      !this.previewVisibilityOverriddenByUser &&
+      this.previewController.isVisible() !== effectivePreviewVisible
+    ) {
+      this.applyPreviewVisible(effectivePreviewVisible);
     }
   }
 
@@ -288,7 +287,7 @@ export class MainApp implements MazeController, MazeAppBridge {
       return;
     }
 
-    const currentData = this.maze.getMazeData();
+    const currentData = this.maze.getMazeDataRef();
     this.previewMarkers = computeMarkersFromLayer(currentData?.[0]);
   }
 
@@ -296,21 +295,17 @@ export class MainApp implements MazeController, MazeAppBridge {
    * Update preview window with current maze data
    */
   private updatePreview(): void {
-    if (!this.isPreviewSupported()) {
-      return;
-    }
-
-    const mazeData = this.maze.getMazeData();
+    const mazeData = this.maze.getMazeDataRef();
     if (mazeData.length === 0) {
       return;
     }
 
     if (this.previewMarkers) {
-      this.previewWindowManager.updateMaze(mazeData[0], this.previewMarkers, this.solutionPath);
+      this.previewController.updateMaze(mazeData[0], this.previewMarkers, this.solutionPath);
       return;
     }
 
-    this.previewWindowManager.updateMaze(mazeData[0], undefined, this.solutionPath);
+    this.previewController.updateMaze(mazeData[0], undefined, this.solutionPath);
   }
 
   /**
@@ -339,7 +334,7 @@ export class MainApp implements MazeController, MazeAppBridge {
    * Toggle preview window visibility
    */
   public togglePreview(): void {
-    this.setPreviewVisible(!this.previewVisible);
+    this.setPreviewVisible(!this.previewController.isVisible());
   }
 
   public setMeshReductionThreshold(threshold: number): void {
@@ -450,8 +445,16 @@ export class MainApp implements MazeController, MazeAppBridge {
     return this.maze.getRenderer();
   }
 
+  public setBackgroundColor(color: string): void {
+    this.maze.setBackgroundColor(color);
+  }
+
   public getMazeData(): number[][][] {
     return this.maze.getMazeData();
+  }
+
+  public getMazeDataRef(): number[][][] {
+    return this.maze.getMazeDataRef();
   }
 
   public getMazeMarkers(): MazeMarkers | null {
@@ -513,7 +516,7 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.toolbar.destroy();
     this.maze.destroy();
     this.guiController.destroy();
-    this.previewWindowManager.destroy();
+    this.previewController.destroy();
     if (this.unsubscribeLanguageChange) {
       this.unsubscribeLanguageChange();
       this.unsubscribeLanguageChange = null;
@@ -522,10 +525,19 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.debugOverlay.destroy();
   }
 
-  public setDebugOverlayVisible(visible: boolean): void {
+  private applyDebugOverlayVisible(visible: boolean): void {
     this.debugOverlayVisible = visible;
     this.guiController.updateSetting('showDebug', visible);
     this.debugOverlay.setVisible(visible);
+  }
+
+  private applyPreviewVisible(visible: boolean): void {
+    this.previewController.setVisible(visible);
+  }
+
+  public setDebugOverlayVisible(visible: boolean): void {
+    this.debugVisibilityOverriddenByUser = true;
+    this.applyDebugOverlayVisible(visible);
   }
 
   public isDebugOverlayVisible(): boolean {
@@ -533,74 +545,20 @@ export class MainApp implements MazeController, MazeAppBridge {
   }
 
   public setPreviewVisible(visible: boolean): void {
-    if (!this.isPreviewSupported()) {
-      this.previewVisible = false;
-      this.guiController.updateSetting('showPreview', false);
-      if (this.previewWindowManagerReady && !this.previewWindowManager.isWindowClosed()) {
-        this.previewWindowManager.setVisible(false);
-      }
-      this.emitPreviewWindowStatusChanged();
-      return;
-    }
-
-    this.previewVisible = visible;
-    this.guiController.updateSetting('showPreview', visible);
-    if (this.previewWindowManager.isWindowClosed()) {
-      if (visible) {
-        this.previewVisible = false;
-        this.guiController.updateSetting('showPreview', false);
-      }
-      this.emitPreviewWindowStatusChanged();
-      return;
-    }
-    this.previewWindowManager.setVisible(visible);
-    if (visible) {
-      this.emitPreviewWindowStatusChanged();
-    }
+    this.previewVisibilityOverriddenByUser = true;
+    this.applyPreviewVisible(visible);
   }
 
   public isPreviewVisible(): boolean {
-    return this.previewVisible;
-  }
-
-  public isPreviewSupported(): boolean {
-    return this.maze instanceof SingleLayerMaze || this.maze instanceof MultiLayerMaze;
-  }
-
-  private handlePreviewVisibilityChanged(visible: boolean): void {
-    this.previewVisible = visible;
-    this.guiController.updateSetting('showPreview', visible);
-    this.emitPreviewWindowStatusChanged();
-  }
-
-  private handlePreviewClosed(): void {
-    this.previewVisible = false;
-    this.guiController.updateSetting('showPreview', false);
-    this.guiController.setControllerEnabled('showPreview', false, t('gui.previewClosedTooltip'));
-    this.emitPreviewWindowStatusChanged();
+    return this.previewController.isVisible();
   }
 
   public reopenPreviewWindow(): void {
-    if (!this.isPreviewSupported()) {
-      this.previewVisible = false;
-      this.guiController.updateSetting('showPreview', false);
-      this.emitPreviewWindowStatusChanged();
-      return;
-    }
-
-    this.previewWindowManager.reopen();
-    this.previewVisible = true;
-    this.guiController.updateSetting('showPreview', true);
-    this.guiController.setControllerEnabled('showPreview', true);
-    this.updatePreview();
-    this.emitPreviewWindowStatusChanged();
+    this.previewController.reopen();
   }
 
   public canOpenNewPreviewWindow(): boolean {
-    if (!this.previewWindowManagerReady || !this.isPreviewSupported()) {
-      return false;
-    }
-    return this.previewWindowManager.canOpenNewWindow();
+    return this.previewController.canOpenNewWindow();
   }
 
   private createPreviewWindow(onHide: () => void, onClose: () => void): PreviewWindow {
@@ -613,13 +571,10 @@ export class MainApp implements MazeController, MazeAppBridge {
     });
   }
 
-  private emitPreviewWindowStatusChanged(): void {
-    if (!this.previewWindowManagerReady) {
-      return;
-    }
+  private emitPreviewWindowStatusChanged(canOpenNewPreviewWindow: boolean): void {
     window.dispatchEvent(
       new CustomEvent(PREVIEW_WINDOW_STATUS_CHANGED_EVENT, {
-        detail: { canOpenNewPreviewWindow: this.canOpenNewPreviewWindow() },
+        detail: { canOpenNewPreviewWindow },
       })
     );
   }

@@ -122,7 +122,11 @@ class SolvePopup {
   private refreshMazeInfo(): void {
     const mazeApp = getMazeAppBridge();
     const mazeData =
-      mazeApp && typeof mazeApp.getMazeData === 'function' ? mazeApp.getMazeData() : [];
+      mazeApp && typeof mazeApp.getMazeDataRef === 'function'
+        ? mazeApp.getMazeDataRef()
+        : mazeApp && typeof mazeApp.getMazeData === 'function'
+          ? mazeApp.getMazeData()
+          : [];
     const markers =
       mazeApp && typeof mazeApp.getMazeMarkers === 'function' ? mazeApp.getMazeMarkers() : null;
 

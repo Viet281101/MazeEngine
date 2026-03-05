@@ -1,5 +1,10 @@
 import './preview-window.css';
 import { PREVIEW_COLORS } from './preview-constants';
+import {
+  computePreviewLayout,
+  renderPreviewMaze,
+  type PreviewLayout,
+} from './preview-canvas-renderer';
 import { computeMarkersFromLayer } from '../maze/marker-utils';
 import { subscribeLanguageChange, t } from '../sidebar/i18n';
 import type { SolutionPath } from '../types/maze';
@@ -56,17 +61,12 @@ export class PreviewWindow {
   private readonly hideTransitionMs: number = 350;
   private mazeData: number[][] | null = null;
   private solutionPath: SolutionPath = [];
-  private layout: {
-    rows: number;
-    cols: number;
-    cellSize: number;
-    offsetX: number;
-    offsetY: number;
-  } | null = null;
+  private layout: PreviewLayout | null = null;
 
   private onMouseMoveHandler: (e: MouseEvent) => void;
   private onMouseUpHandler: () => void;
   private onMouseDownHandler: (e: MouseEvent) => void;
+  private dragListenersAttached: boolean = false;
   private unsubscribeLanguageChange: (() => void) | null = null;
 
   constructor(config: PreviewWindowConfig = {}) {
@@ -221,11 +221,27 @@ export class PreviewWindow {
 
     // Dragging
     this.titleBar.addEventListener('mousedown', this.onMouseDownHandler);
-    document.addEventListener('mousemove', this.onMouseMoveHandler);
-    document.addEventListener('mouseup', this.onMouseUpHandler);
 
     // Prevent text selection while dragging
     this.titleBar.addEventListener('selectstart', e => e.preventDefault());
+  }
+
+  private attachDragListeners(): void {
+    if (this.dragListenersAttached) {
+      return;
+    }
+    document.addEventListener('mousemove', this.onMouseMoveHandler);
+    document.addEventListener('mouseup', this.onMouseUpHandler);
+    this.dragListenersAttached = true;
+  }
+
+  private detachDragListeners(): void {
+    if (!this.dragListenersAttached) {
+      return;
+    }
+    document.removeEventListener('mousemove', this.onMouseMoveHandler);
+    document.removeEventListener('mouseup', this.onMouseUpHandler);
+    this.dragListenersAttached = false;
   }
 
   private createLegendItem(
@@ -269,6 +285,7 @@ export class PreviewWindow {
     this.dragStartX = e.clientX - this.windowX;
     this.dragStartY = e.clientY - this.windowY;
     this.container.classList.add('dragging');
+    this.attachDragListeners();
   }
 
   /**
@@ -292,8 +309,13 @@ export class PreviewWindow {
    * Mouse up handler - stop dragging
    */
   private onMouseUp(): void {
+    if (!this.isDragging) {
+      this.detachDragListeners();
+      return;
+    }
     this.isDragging = false;
     this.container.classList.remove('dragging');
+    this.detachDragListeners();
   }
 
   /**
@@ -319,7 +341,7 @@ export class PreviewWindow {
       this.startCell = start;
       this.endCell = end;
     }
-    this.layout = this.computeLayout(mazeData);
+    this.layout = computePreviewLayout(mazeData, this.canvasWidth, this.canvasHeight);
     this.render();
   }
 
@@ -327,140 +349,30 @@ export class PreviewWindow {
    * Render 2D maze on canvas
    */
   private render(): void {
-    this.ctx.fillStyle = PREVIEW_COLORS.background;
-    this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
-
     if (!this.mazeData || this.mazeData.length === 0) {
+      this.ctx.fillStyle = PREVIEW_COLORS.background;
+      this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
       return;
     }
 
     if (!this.layout) {
-      this.layout = this.computeLayout(this.mazeData);
+      this.layout = computePreviewLayout(this.mazeData, this.canvasWidth, this.canvasHeight);
     }
     if (!this.layout) {
       return;
     }
 
-    const { rows, cols, cellSize, offsetX, offsetY } = this.layout;
-    const mazeData = this.mazeData;
-
-    // Draw cells
-    const fillPad = this.showGrid ? 0 : 0.5;
-    let currentFill: string | null = null;
-    if (this.showGrid) {
-      this.ctx.strokeStyle = PREVIEW_COLORS.grid;
-      this.ctx.lineWidth = 1;
-    }
-    for (let row = 0; row < rows; row++) {
-      const mazeRow = mazeData[row];
-      for (let col = 0; col < cols; col++) {
-        const x = offsetX + col * cellSize;
-        const y = offsetY + (rows - 1 - row) * cellSize;
-
-        const nextFill = mazeRow[col] === 1 ? PREVIEW_COLORS.wall : PREVIEW_COLORS.path;
-        if (currentFill !== nextFill) {
-          currentFill = nextFill;
-          this.ctx.fillStyle = currentFill;
-        }
-
-        this.ctx.fillRect(x - fillPad, y - fillPad, cellSize + fillPad * 2, cellSize + fillPad * 2);
-
-        // Draw grid lines
-        if (this.showGrid) {
-          this.ctx.strokeRect(x, y, cellSize, cellSize);
-        }
-      }
-    }
-
-    this.drawSolutionPath(rows, cellSize, offsetX, offsetY);
-
-    const hasSameCell =
-      this.startCell &&
-      this.endCell &&
-      this.startCell.row === this.endCell.row &&
-      this.startCell.col === this.endCell.col;
-
-    if (hasSameCell && this.startCell) {
-      this.drawMarker(this.startCell, rows, cellSize, offsetX, offsetY, PREVIEW_COLORS.markerBoth);
-    } else {
-      if (this.startCell) {
-        this.drawMarker(
-          this.startCell,
-          rows,
-          cellSize,
-          offsetX,
-          offsetY,
-          PREVIEW_COLORS.markerStart
-        );
-      }
-      if (this.endCell) {
-        this.drawMarker(this.endCell, rows, cellSize, offsetX, offsetY, PREVIEW_COLORS.markerEnd);
-      }
-    }
-  }
-
-  private computeLayout(mazeData: number[][]): {
-    rows: number;
-    cols: number;
-    cellSize: number;
-    offsetX: number;
-    offsetY: number;
-  } | null {
-    const rows = mazeData.length;
-    if (rows === 0) {
-      return null;
-    }
-    const cols = mazeData[0].length;
-
-    const cellWidth = this.canvasWidth / cols;
-    const cellHeight = this.canvasHeight / rows;
-    const cellSize = Math.min(cellWidth, cellHeight);
-
-    const offsetX = (this.canvasWidth - cellSize * cols) / 2;
-    const offsetY = (this.canvasHeight - cellSize * rows) / 2;
-
-    return { rows, cols, cellSize, offsetX, offsetY };
-  }
-
-  private drawMarker(
-    cell: { row: number; col: number },
-    rows: number,
-    cellSize: number,
-    offsetX: number,
-    offsetY: number,
-    color: string
-  ): void {
-    const x = offsetX + cell.col * cellSize;
-    const y = offsetY + (rows - 1 - cell.row) * cellSize;
-
-    this.ctx.fillStyle = color;
-    this.ctx.fillRect(x, y, cellSize, cellSize);
-  }
-
-  private drawSolutionPath(rows: number, cellSize: number, offsetX: number, offsetY: number): void {
-    if (this.solutionPath.length < 2) {
-      return;
-    }
-
-    this.ctx.save();
-    this.ctx.beginPath();
-    this.ctx.strokeStyle = PREVIEW_COLORS.solutionPath;
-    this.ctx.lineWidth = Math.max(2, cellSize * 0.35);
-    this.ctx.lineCap = 'round';
-    this.ctx.lineJoin = 'round';
-
-    this.solutionPath.forEach((cell, index) => {
-      const centerX = offsetX + cell.col * cellSize + cellSize / 2;
-      const centerY = offsetY + (rows - 1 - cell.row) * cellSize + cellSize / 2;
-      if (index === 0) {
-        this.ctx.moveTo(centerX, centerY);
-      } else {
-        this.ctx.lineTo(centerX, centerY);
-      }
+    renderPreviewMaze({
+      ctx: this.ctx,
+      canvasWidth: this.canvasWidth,
+      canvasHeight: this.canvasHeight,
+      mazeData: this.mazeData,
+      layout: this.layout,
+      showGrid: this.showGrid,
+      startCell: this.startCell,
+      endCell: this.endCell,
+      solutionPath: this.solutionPath,
     });
-
-    this.ctx.stroke();
-    this.ctx.restore();
   }
 
   /**
@@ -559,8 +471,7 @@ export class PreviewWindow {
    */
   public destroy(): void {
     this.titleBar.removeEventListener('mousedown', this.onMouseDownHandler);
-    document.removeEventListener('mousemove', this.onMouseMoveHandler);
-    document.removeEventListener('mouseup', this.onMouseUpHandler);
+    this.detachDragListeners();
     if (this.hideTimeoutId !== null) {
       window.clearTimeout(this.hideTimeoutId);
       this.hideTimeoutId = null;

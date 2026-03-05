@@ -103,11 +103,7 @@ export class GUIController {
     const bgController = this.gui.addColor(this.settings, 'backgroundColor');
     this.setControllerLabel(bgController, 'gui.backgroundColor');
     bgController.onChange((value: string) => {
-      const renderer = this.mazeController.getRenderer();
-      if (renderer) {
-        renderer.setClearColor(value);
-        this.mazeController.requestRender();
-      }
+      this.mazeController.setBackgroundColor(value);
     });
     this.controllers.set('backgroundColor', bgController);
     this.controllerLabelKeys.backgroundColor = 'gui.backgroundColor';

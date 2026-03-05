@@ -16,8 +16,15 @@ function isInBounds(row: number, col: number, rows: number, cols: number): boole
   return row >= 0 && row < rows && col >= 0 && col < cols;
 }
 
-function toKey(row: number, col: number): string {
-  return `${row},${col}`;
+function toCellId(row: number, col: number, cols: number): number {
+  return row * cols + col;
+}
+
+function fromCellId(cellId: number, cols: number): Cell {
+  return {
+    row: Math.floor(cellId / cols),
+    col: cellId % cols,
+  };
 }
 
 export function solveSingleLayerMazeWithBfs(
@@ -43,24 +50,23 @@ export function solveSingleLayerMazeWithBfs(
   }
 
   const queue: Cell[] = [{ row: start.row, col: start.col }];
-  const visited = new Set<string>([toKey(start.row, start.col)]);
-  const previous = new Map<string, string | null>();
-  previous.set(toKey(start.row, start.col), null);
+  let queueHead = 0;
+  const startId = toCellId(start.row, start.col, cols);
+  const endId = toCellId(end.row, end.col, cols);
+  const visited = new Set<number>([startId]);
+  const previous = new Map<number, number>();
 
-  while (queue.length > 0) {
-    const current = queue.shift();
-    if (!current) {
-      break;
-    }
+  while (queueHead < queue.length) {
+    const current = queue[queueHead] as Cell;
+    queueHead += 1;
 
     if (current.row === end.row && current.col === end.col) {
       const path: SolutionPath = [];
-      let cursorKey: string | null = toKey(end.row, end.col);
+      let cursorId: number | null = endId;
 
-      while (cursorKey) {
-        const [rowToken, colToken] = cursorKey.split(',');
-        path.push({ row: Number(rowToken), col: Number(colToken) });
-        cursorKey = previous.get(cursorKey) ?? null;
+      while (cursorId !== null) {
+        path.push(fromCellId(cursorId, cols));
+        cursorId = previous.has(cursorId) ? (previous.get(cursorId) as number) : null;
       }
 
       path.reverse();
@@ -70,7 +76,6 @@ export function solveSingleLayerMazeWithBfs(
     for (const direction of DIRECTIONS) {
       const nextRow = current.row + direction.row;
       const nextCol = current.col + direction.col;
-      const nextKey = toKey(nextRow, nextCol);
 
       if (!isInBounds(nextRow, nextCol, rows, cols)) {
         continue;
@@ -78,12 +83,13 @@ export function solveSingleLayerMazeWithBfs(
       if (mazeLayer[nextRow][nextCol] !== 0) {
         continue;
       }
-      if (visited.has(nextKey)) {
+      const nextId = toCellId(nextRow, nextCol, cols);
+      if (visited.has(nextId)) {
         continue;
       }
 
-      visited.add(nextKey);
-      previous.set(nextKey, toKey(current.row, current.col));
+      visited.add(nextId);
+      previous.set(nextId, toCellId(current.row, current.col, cols));
       queue.push({ row: nextRow, col: nextCol });
     }
   }

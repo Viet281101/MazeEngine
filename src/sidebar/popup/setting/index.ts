@@ -8,7 +8,6 @@ import {
   applyMeshReductionThreshold,
   canOpenPreviewWindow,
   getInitialSettingsValues,
-  isPreviewSupported,
   isPreviewVisible,
   reopenPreviewWindow,
   setDebugVisible,
@@ -83,14 +82,9 @@ export function showSettingsPopup(toolbar: Toolbar): void {
 
   const updatePreviewWindowControlsState = () => {
     const canOpenNewPreviewWindow = canOpenPreviewWindow();
-    const previewSupported = isPreviewSupported();
     previewButton.disabled = !canOpenNewPreviewWindow;
     showPreviewToggle.checked = isPreviewVisible();
-    showPreviewToggle.disabled = !previewSupported || canOpenNewPreviewWindow;
-    if (!previewSupported) {
-      previewButton.disabled = true;
-      showPreviewToggle.checked = false;
-    }
+    showPreviewToggle.disabled = canOpenNewPreviewWindow;
   };
 
   const applyThreshold = () => {

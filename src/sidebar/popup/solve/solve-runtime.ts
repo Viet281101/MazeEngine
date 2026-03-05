@@ -39,7 +39,8 @@ export function runSingleLayerSolve(selectedAlgorithmId: string): SolveRunResult
     return { status: 'appUnavailable' };
   }
 
-  const mazeData = mazeApp.getMazeData();
+  const mazeData =
+    typeof mazeApp.getMazeDataRef === 'function' ? mazeApp.getMazeDataRef() : mazeApp.getMazeData();
   const markers = mazeApp.getMazeMarkers();
   const topology = detectTopology(mazeData);
   if (topology !== 'singleLayerRect') {
