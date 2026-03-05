@@ -7,6 +7,9 @@ interface InitialSettingsValues {
   hideEdgesDuringInteractionEnabled: boolean;
   floorGridEnabled: boolean;
   adaptiveQualityEnabled: boolean;
+  edgesVisible: boolean;
+  debugVisible: boolean;
+  previewVisible: boolean;
   cameraZoomLimitEnabled: boolean;
   cameraZoomMinDistance: number;
   cameraZoomMaxDistance: number;
@@ -63,6 +66,11 @@ export function getInitialSettingsValues(): InitialSettingsValues {
       app && typeof app.isAdaptiveQualityEnabled === 'function'
         ? app.isAdaptiveQualityEnabled()
         : true,
+    edgesVisible: app && typeof app.isEdgesVisible === 'function' ? app.isEdgesVisible() : true,
+    debugVisible:
+      app && typeof app.isDebugOverlayVisible === 'function' ? app.isDebugOverlayVisible() : true,
+    previewVisible:
+      app && typeof app.isPreviewVisible === 'function' ? app.isPreviewVisible() : true,
     cameraZoomLimitEnabled:
       app && typeof app.isCameraZoomLimitEnabled === 'function'
         ? app.isCameraZoomLimitEnabled()
@@ -123,6 +131,35 @@ export function setAdaptiveQualityEnabled(enabled: boolean): void {
   if (app && typeof app.setAdaptiveQualityEnabled === 'function') {
     app.setAdaptiveQualityEnabled(enabled);
   }
+}
+
+export function setEdgesVisible(enabled: boolean): void {
+  const app = getMazeAppBridge();
+  if (app && typeof app.setEdgesVisible === 'function') {
+    app.setEdgesVisible(enabled);
+  }
+}
+
+export function setDebugVisible(enabled: boolean): void {
+  const app = getMazeAppBridge();
+  if (app && typeof app.setDebugOverlayVisible === 'function') {
+    app.setDebugOverlayVisible(enabled);
+  }
+}
+
+export function setPreviewVisible(enabled: boolean): void {
+  const app = getMazeAppBridge();
+  if (app && typeof app.setPreviewVisible === 'function') {
+    app.setPreviewVisible(enabled);
+  }
+}
+
+export function isPreviewVisible(): boolean {
+  const app = getMazeAppBridge();
+  if (app && typeof app.isPreviewVisible === 'function') {
+    return app.isPreviewVisible();
+  }
+  return true;
 }
 
 export function setFloorGridEnabled(enabled: boolean): void {

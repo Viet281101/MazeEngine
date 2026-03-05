@@ -13,6 +13,9 @@ export interface SettingsPopupDom {
   hideEdgesDuringInteractionLabel: HTMLSpanElement;
   floorGridLabel: HTMLSpanElement;
   adaptiveQualityLabel: HTMLSpanElement;
+  showEdgesLabel: HTMLSpanElement;
+  showDebugLabel: HTMLSpanElement;
+  showPreviewLabel: HTMLSpanElement;
   cameraZoomLimitLabel: HTMLSpanElement;
   cameraZoomMinLabel: HTMLSpanElement;
   cameraZoomMaxLabel: HTMLSpanElement;
@@ -23,6 +26,9 @@ export interface SettingsPopupDom {
   hideEdgesDuringInteractionToggle: HTMLInputElement;
   floorGridToggle: HTMLInputElement;
   adaptiveQualityToggle: HTMLInputElement;
+  showEdgesToggle: HTMLInputElement;
+  showDebugToggle: HTMLInputElement;
+  showPreviewToggle: HTMLInputElement;
   cameraZoomLimitToggle: HTMLInputElement;
   cameraZoomMinInput: HTMLInputElement;
   cameraZoomMaxInput: HTMLInputElement;
@@ -37,16 +43,25 @@ export interface SettingsPopupDom {
   hideEdgesDuringInteractionHelpIcon: HTMLImageElement;
   floorGridHelpIcon: HTMLImageElement;
   adaptiveQualityHelpIcon: HTMLImageElement;
+  showEdgesHelpIcon: HTMLImageElement;
+  showDebugHelpIcon: HTMLImageElement;
+  showPreviewHelpIcon: HTMLImageElement;
   meshReductionTooltip: HTMLDivElement;
   thresholdTooltip: HTMLDivElement;
   hideEdgesDuringInteractionTooltip: HTMLDivElement;
   floorGridTooltip: HTMLDivElement;
   adaptiveQualityTooltip: HTMLDivElement;
+  showEdgesTooltip: HTMLDivElement;
+  showDebugTooltip: HTMLDivElement;
+  showPreviewTooltip: HTMLDivElement;
   meshReductionTooltipText: HTMLParagraphElement;
   thresholdTooltipText: HTMLParagraphElement;
   hideEdgesDuringInteractionTooltipText: HTMLParagraphElement;
   floorGridTooltipText: HTMLParagraphElement;
   adaptiveQualityTooltipText: HTMLParagraphElement;
+  showEdgesTooltipText: HTMLParagraphElement;
+  showDebugTooltipText: HTMLParagraphElement;
+  showPreviewTooltipText: HTMLParagraphElement;
   meshReductionTooltipButton: HTMLButtonElement;
 }
 
@@ -86,6 +101,9 @@ export function createSettingsPopupDom(
   initialHideEdgesDuringInteractionEnabled: boolean,
   initialFloorGridEnabled: boolean,
   initialAdaptiveQualityEnabled: boolean,
+  initialShowEdgesEnabled: boolean,
+  initialShowDebugEnabled: boolean,
+  initialShowPreviewEnabled: boolean,
   initialCameraZoomLimitEnabled: boolean,
   initialCameraZoomMinDistance: number,
   initialCameraZoomMaxDistance: number
@@ -188,6 +206,57 @@ export function createSettingsPopupDom(
   adaptiveQualityRow.appendChild(adaptiveQualityLabelWrap);
   adaptiveQualityRow.appendChild(adaptiveQualityToggle);
   content.appendChild(adaptiveQualityRow);
+
+  const showEdgesRow = document.createElement('label');
+  showEdgesRow.className = 'settings-popup__row';
+  const showEdgesLabelWrap = document.createElement('span');
+  showEdgesLabelWrap.className = 'settings-popup__label settings-popup__label--with-help';
+  const showEdgesLabel = document.createElement('span');
+  showEdgesLabel.className = 'settings-popup__label-text';
+  const showEdgesHelpIcon = createHelpIcon();
+  showEdgesLabelWrap.appendChild(showEdgesLabel);
+  showEdgesLabelWrap.appendChild(showEdgesHelpIcon);
+  const showEdgesToggle = document.createElement('input');
+  showEdgesToggle.type = 'checkbox';
+  showEdgesToggle.className = 'settings-popup__checkbox';
+  showEdgesToggle.checked = initialShowEdgesEnabled;
+  showEdgesRow.appendChild(showEdgesLabelWrap);
+  showEdgesRow.appendChild(showEdgesToggle);
+  content.appendChild(showEdgesRow);
+
+  const showDebugRow = document.createElement('label');
+  showDebugRow.className = 'settings-popup__row';
+  const showDebugLabelWrap = document.createElement('span');
+  showDebugLabelWrap.className = 'settings-popup__label settings-popup__label--with-help';
+  const showDebugLabel = document.createElement('span');
+  showDebugLabel.className = 'settings-popup__label-text';
+  const showDebugHelpIcon = createHelpIcon();
+  showDebugLabelWrap.appendChild(showDebugLabel);
+  showDebugLabelWrap.appendChild(showDebugHelpIcon);
+  const showDebugToggle = document.createElement('input');
+  showDebugToggle.type = 'checkbox';
+  showDebugToggle.className = 'settings-popup__checkbox';
+  showDebugToggle.checked = initialShowDebugEnabled;
+  showDebugRow.appendChild(showDebugLabelWrap);
+  showDebugRow.appendChild(showDebugToggle);
+  content.appendChild(showDebugRow);
+
+  const showPreviewRow = document.createElement('label');
+  showPreviewRow.className = 'settings-popup__row';
+  const showPreviewLabelWrap = document.createElement('span');
+  showPreviewLabelWrap.className = 'settings-popup__label settings-popup__label--with-help';
+  const showPreviewLabel = document.createElement('span');
+  showPreviewLabel.className = 'settings-popup__label-text';
+  const showPreviewHelpIcon = createHelpIcon();
+  showPreviewLabelWrap.appendChild(showPreviewLabel);
+  showPreviewLabelWrap.appendChild(showPreviewHelpIcon);
+  const showPreviewToggle = document.createElement('input');
+  showPreviewToggle.type = 'checkbox';
+  showPreviewToggle.className = 'settings-popup__checkbox';
+  showPreviewToggle.checked = initialShowPreviewEnabled;
+  showPreviewRow.appendChild(showPreviewLabelWrap);
+  showPreviewRow.appendChild(showPreviewToggle);
+  content.appendChild(showPreviewRow);
 
   const floorGridRow = document.createElement('label');
   floorGridRow.className = 'settings-popup__row';
@@ -336,6 +405,30 @@ export function createSettingsPopupDom(
   floorGridTooltip.appendChild(floorGridTooltipText);
   content.appendChild(floorGridTooltip);
 
+  const showEdgesTooltip = document.createElement('div');
+  showEdgesTooltip.className = 'settings-popup__tooltip settings-popup__tooltip--show-edges';
+  showEdgesTooltip.style.display = 'none';
+  const showEdgesTooltipText = document.createElement('p');
+  showEdgesTooltipText.className = 'settings-popup__tooltip-text';
+  showEdgesTooltip.appendChild(showEdgesTooltipText);
+  content.appendChild(showEdgesTooltip);
+
+  const showDebugTooltip = document.createElement('div');
+  showDebugTooltip.className = 'settings-popup__tooltip settings-popup__tooltip--show-debug';
+  showDebugTooltip.style.display = 'none';
+  const showDebugTooltipText = document.createElement('p');
+  showDebugTooltipText.className = 'settings-popup__tooltip-text';
+  showDebugTooltip.appendChild(showDebugTooltipText);
+  content.appendChild(showDebugTooltip);
+
+  const showPreviewTooltip = document.createElement('div');
+  showPreviewTooltip.className = 'settings-popup__tooltip settings-popup__tooltip--show-preview';
+  showPreviewTooltip.style.display = 'none';
+  const showPreviewTooltipText = document.createElement('p');
+  showPreviewTooltipText.className = 'settings-popup__tooltip-text';
+  showPreviewTooltip.appendChild(showPreviewTooltipText);
+  content.appendChild(showPreviewTooltip);
+
   return {
     content,
     select,
@@ -346,6 +439,9 @@ export function createSettingsPopupDom(
     hideEdgesDuringInteractionLabel,
     floorGridLabel,
     adaptiveQualityLabel,
+    showEdgesLabel,
+    showDebugLabel,
+    showPreviewLabel,
     cameraZoomLimitLabel,
     cameraZoomMinLabel,
     cameraZoomMaxLabel,
@@ -356,6 +452,9 @@ export function createSettingsPopupDom(
     hideEdgesDuringInteractionToggle,
     floorGridToggle,
     adaptiveQualityToggle,
+    showEdgesToggle,
+    showDebugToggle,
+    showPreviewToggle,
     cameraZoomLimitToggle,
     cameraZoomMinInput,
     cameraZoomMaxInput,
@@ -370,16 +469,25 @@ export function createSettingsPopupDom(
     hideEdgesDuringInteractionHelpIcon,
     floorGridHelpIcon,
     adaptiveQualityHelpIcon,
+    showEdgesHelpIcon,
+    showDebugHelpIcon,
+    showPreviewHelpIcon,
     meshReductionTooltip,
     thresholdTooltip,
     hideEdgesDuringInteractionTooltip,
     floorGridTooltip,
     adaptiveQualityTooltip,
+    showEdgesTooltip,
+    showDebugTooltip,
+    showPreviewTooltip,
     meshReductionTooltipText,
     thresholdTooltipText,
     hideEdgesDuringInteractionTooltipText,
     floorGridTooltipText,
     adaptiveQualityTooltipText,
+    showEdgesTooltipText,
+    showDebugTooltipText,
+    showPreviewTooltipText,
     meshReductionTooltipButton,
   };
 }

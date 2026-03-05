@@ -46,8 +46,9 @@ export class MainApp implements MazeController, MazeAppBridge {
 
   private previewMarkers: MazeMarkers | null = null;
   private solutionPath: SolutionPath = [];
-  private isDebugOverlayVisible: boolean = true;
-  private isPreviewVisible: boolean = true;
+  private edgesVisible: boolean = true;
+  private debugOverlayVisible: boolean = true;
+  private previewVisible: boolean = true;
   private readonly mobileBreakpoint: number = UI_BREAKPOINTS.MOBILE;
   private meshReductionThreshold: number = MESH_REDUCTION.DEFAULT_THRESHOLD;
   private meshReductionEnabled: boolean = MESH_REDUCTION.DEFAULT_ENABLED;
@@ -82,7 +83,7 @@ export class MainApp implements MazeController, MazeAppBridge {
         onVisibilityChanged: visible => this.handlePreviewVisibilityChanged(visible),
         onClosed: () => this.handlePreviewClosed(),
       },
-      this.isPreviewVisible
+      this.previewVisible
     );
     this.subscribeToLanguageChanges();
 
@@ -93,15 +94,15 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.renderListener = () => this.debugOverlay.recordRender();
     this.maze.addRenderListener(this.renderListener);
 
-    this.setDebugOverlayVisible(this.isDebugOverlayVisible);
-    this.setPreviewVisible(this.isPreviewVisible);
+    this.setDebugOverlayVisible(this.debugOverlayVisible);
+    this.setPreviewVisible(this.previewVisible);
     this.maze.setBackgroundColor(this.guiController.settings.backgroundColor);
     this.updatePreview();
 
     this.resizeHandler = () => this.onWindowResize();
     this.keydownHandler = event => {
       if (event.key === 'p' || event.key === 'P') {
-        this.setPreviewVisible(!this.isPreviewVisible);
+        this.setPreviewVisible(!this.previewVisible);
       }
     };
     this.registerGlobalListeners();
@@ -149,10 +150,10 @@ export class MainApp implements MazeController, MazeAppBridge {
 
   private initializeVisibilityByViewport(): void {
     const isMobile = window.innerWidth <= this.mobileBreakpoint;
-    this.isDebugOverlayVisible = !isMobile;
-    this.isPreviewVisible = !isMobile;
-    this.guiController.updateSetting('showDebug', this.isDebugOverlayVisible);
-    this.guiController.updateSetting('showPreview', this.isPreviewVisible);
+    this.debugOverlayVisible = !isMobile;
+    this.previewVisible = !isMobile;
+    this.guiController.updateSetting('showDebug', this.debugOverlayVisible);
+    this.guiController.updateSetting('showPreview', this.previewVisible);
   }
 
   private subscribeToLanguageChanges(): void {
@@ -196,12 +197,12 @@ export class MainApp implements MazeController, MazeAppBridge {
     const effectivePreviewVisible =
       nextPreviewVisible && !this.previewWindowManager.isWindowClosed();
 
-    if (this.isDebugOverlayVisible !== nextDebugVisible) {
+    if (this.debugOverlayVisible !== nextDebugVisible) {
       this.setDebugOverlayVisible(nextDebugVisible);
       this.guiController.updateSetting('showDebug', nextDebugVisible);
     }
 
-    if (this.isPreviewVisible !== effectivePreviewVisible) {
+    if (this.previewVisible !== effectivePreviewVisible) {
       this.setPreviewVisible(effectivePreviewVisible);
       this.guiController.updateSetting('showPreview', effectivePreviewVisible);
     }
@@ -313,6 +314,7 @@ export class MainApp implements MazeController, MazeAppBridge {
    */
   private applyGUISettings(): void {
     this.maze.setBackgroundColor(this.guiController.settings.backgroundColor);
+    this.maze.toggleEdges(this.edgesVisible);
   }
 
   /**
@@ -333,7 +335,7 @@ export class MainApp implements MazeController, MazeAppBridge {
    * Toggle preview window visibility
    */
   public togglePreview(): void {
-    this.setPreviewVisible(!this.isPreviewVisible);
+    this.setPreviewVisible(!this.previewVisible);
   }
 
   public setMeshReductionThreshold(threshold: number): void {
@@ -481,7 +483,17 @@ export class MainApp implements MazeController, MazeAppBridge {
   }
 
   public toggleEdges(showEdges: boolean): void {
+    this.edgesVisible = showEdges;
+    this.guiController.updateSetting('showEdges', showEdges);
     this.maze.toggleEdges(showEdges);
+  }
+
+  public setEdgesVisible(enabled: boolean): void {
+    this.toggleEdges(enabled);
+  }
+
+  public isEdgesVisible(): boolean {
+    return this.edgesVisible;
   }
 
   public requestRender(): void {
@@ -507,29 +519,42 @@ export class MainApp implements MazeController, MazeAppBridge {
   }
 
   public setDebugOverlayVisible(visible: boolean): void {
-    this.isDebugOverlayVisible = visible;
+    this.debugOverlayVisible = visible;
+    this.guiController.updateSetting('showDebug', visible);
     this.debugOverlay.setVisible(visible);
   }
 
+  public isDebugOverlayVisible(): boolean {
+    return this.debugOverlayVisible;
+  }
+
   public setPreviewVisible(visible: boolean): void {
-    this.isPreviewVisible = visible;
+    this.previewVisible = visible;
+    this.guiController.updateSetting('showPreview', visible);
     if (this.previewWindowManager.isWindowClosed()) {
       if (visible) {
-        this.isPreviewVisible = false;
+        this.previewVisible = false;
         this.guiController.updateSetting('showPreview', false);
       }
+      this.emitPreviewWindowStatusChanged();
       return;
     }
     this.previewWindowManager.setVisible(visible);
+    this.emitPreviewWindowStatusChanged();
+  }
+
+  public isPreviewVisible(): boolean {
+    return this.previewVisible;
   }
 
   private handlePreviewVisibilityChanged(visible: boolean): void {
-    this.isPreviewVisible = visible;
+    this.previewVisible = visible;
     this.guiController.updateSetting('showPreview', visible);
+    this.emitPreviewWindowStatusChanged();
   }
 
   private handlePreviewClosed(): void {
-    this.isPreviewVisible = false;
+    this.previewVisible = false;
     this.guiController.updateSetting('showPreview', false);
     this.guiController.setControllerEnabled('showPreview', false, t('gui.previewClosedTooltip'));
     this.emitPreviewWindowStatusChanged();
@@ -537,7 +562,7 @@ export class MainApp implements MazeController, MazeAppBridge {
 
   public reopenPreviewWindow(): void {
     this.previewWindowManager.reopen();
-    this.isPreviewVisible = true;
+    this.previewVisible = true;
     this.guiController.updateSetting('showPreview', true);
     this.guiController.setControllerEnabled('showPreview', true);
     this.updatePreview();

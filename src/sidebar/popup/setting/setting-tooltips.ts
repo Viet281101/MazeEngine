@@ -1,4 +1,12 @@
-type TooltipTarget = 'mesh' | 'threshold' | 'hideEdges' | 'adaptive' | 'floorGrid';
+type TooltipTarget =
+  | 'mesh'
+  | 'threshold'
+  | 'hideEdges'
+  | 'adaptive'
+  | 'floorGrid'
+  | 'showEdges'
+  | 'showDebug'
+  | 'showPreview';
 
 interface TooltipBindings {
   meshHelpIcon: HTMLImageElement;
@@ -6,11 +14,17 @@ interface TooltipBindings {
   hideEdgesHelpIcon: HTMLImageElement;
   floorGridHelpIcon: HTMLImageElement;
   adaptiveHelpIcon: HTMLImageElement;
+  showEdgesHelpIcon: HTMLImageElement;
+  showDebugHelpIcon: HTMLImageElement;
+  showPreviewHelpIcon: HTMLImageElement;
   meshTooltip: HTMLDivElement;
   thresholdTooltip: HTMLDivElement;
   hideEdgesTooltip: HTMLDivElement;
   floorGridTooltip: HTMLDivElement;
   adaptiveTooltip: HTMLDivElement;
+  showEdgesTooltip: HTMLDivElement;
+  showDebugTooltip: HTMLDivElement;
+  showPreviewTooltip: HTMLDivElement;
 }
 
 export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
@@ -20,11 +34,17 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     hideEdgesHelpIcon,
     floorGridHelpIcon,
     adaptiveHelpIcon,
+    showEdgesHelpIcon,
+    showDebugHelpIcon,
+    showPreviewHelpIcon,
     meshTooltip,
     thresholdTooltip,
     hideEdgesTooltip,
     floorGridTooltip,
     adaptiveTooltip,
+    showEdgesTooltip,
+    showDebugTooltip,
+    showPreviewTooltip,
   } = bindings;
   let pinnedTooltip: TooltipTarget | null = null;
 
@@ -33,7 +53,10 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     if (target === 'threshold') return thresholdTooltip;
     if (target === 'hideEdges') return hideEdgesTooltip;
     if (target === 'floorGrid') return floorGridTooltip;
-    return adaptiveTooltip;
+    if (target === 'adaptive') return adaptiveTooltip;
+    if (target === 'showEdges') return showEdgesTooltip;
+    if (target === 'showDebug') return showDebugTooltip;
+    return showPreviewTooltip;
   };
 
   const getIconByTarget = (target: TooltipTarget): HTMLImageElement => {
@@ -41,7 +64,10 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     if (target === 'threshold') return thresholdHelpIcon;
     if (target === 'hideEdges') return hideEdgesHelpIcon;
     if (target === 'floorGrid') return floorGridHelpIcon;
-    return adaptiveHelpIcon;
+    if (target === 'adaptive') return adaptiveHelpIcon;
+    if (target === 'showEdges') return showEdgesHelpIcon;
+    if (target === 'showDebug') return showDebugHelpIcon;
+    return showPreviewHelpIcon;
   };
 
   const positionTooltip = (target: TooltipTarget) => {
@@ -64,6 +90,9 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     hideEdgesTooltip.style.display = target === 'hideEdges' ? 'block' : 'none';
     floorGridTooltip.style.display = target === 'floorGrid' ? 'block' : 'none';
     adaptiveTooltip.style.display = target === 'adaptive' ? 'block' : 'none';
+    showEdgesTooltip.style.display = target === 'showEdges' ? 'block' : 'none';
+    showDebugTooltip.style.display = target === 'showDebug' ? 'block' : 'none';
+    showPreviewTooltip.style.display = target === 'showPreview' ? 'block' : 'none';
   };
 
   const hideAllTooltips = () => {
@@ -72,6 +101,9 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     hideEdgesTooltip.style.display = 'none';
     floorGridTooltip.style.display = 'none';
     adaptiveTooltip.style.display = 'none';
+    showEdgesTooltip.style.display = 'none';
+    showDebugTooltip.style.display = 'none';
+    showPreviewTooltip.style.display = 'none';
   };
 
   const unpinAndHideTooltip = () => {
@@ -102,11 +134,17 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
       hideEdgesHelpIcon.contains(target) ||
       floorGridHelpIcon.contains(target) ||
       adaptiveHelpIcon.contains(target) ||
+      showEdgesHelpIcon.contains(target) ||
+      showDebugHelpIcon.contains(target) ||
+      showPreviewHelpIcon.contains(target) ||
       meshTooltip.contains(target) ||
       thresholdTooltip.contains(target) ||
       hideEdgesTooltip.contains(target) ||
       floorGridTooltip.contains(target) ||
-      adaptiveTooltip.contains(target)
+      adaptiveTooltip.contains(target) ||
+      showEdgesTooltip.contains(target) ||
+      showDebugTooltip.contains(target) ||
+      showPreviewTooltip.contains(target)
     ) {
       return;
     }
@@ -122,7 +160,10 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
       thresholdTooltip.style.display === 'none' &&
       hideEdgesTooltip.style.display === 'none' &&
       floorGridTooltip.style.display === 'none' &&
-      adaptiveTooltip.style.display === 'none'
+      adaptiveTooltip.style.display === 'none' &&
+      showEdgesTooltip.style.display === 'none' &&
+      showDebugTooltip.style.display === 'none' &&
+      showPreviewTooltip.style.display === 'none'
     ) {
       return;
     }
@@ -170,6 +211,9 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
   const unbindHideEdges = bindIcon('hideEdges', hideEdgesHelpIcon);
   const unbindFloorGrid = bindIcon('floorGrid', floorGridHelpIcon);
   const unbindAdaptive = bindIcon('adaptive', adaptiveHelpIcon);
+  const unbindShowEdges = bindIcon('showEdges', showEdgesHelpIcon);
+  const unbindShowDebug = bindIcon('showDebug', showDebugHelpIcon);
+  const unbindShowPreview = bindIcon('showPreview', showPreviewHelpIcon);
 
   document.addEventListener('mousedown', handleDocumentPointerDown, true);
   document.addEventListener('touchstart', handleDocumentPointerDown, true);
@@ -181,6 +225,9 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     unbindHideEdges();
     unbindFloorGrid();
     unbindAdaptive();
+    unbindShowEdges();
+    unbindShowDebug();
+    unbindShowPreview();
     document.removeEventListener('mousedown', handleDocumentPointerDown, true);
     document.removeEventListener('touchstart', handleDocumentPointerDown, true);
     document.removeEventListener('keydown', handleDocumentKeyDown, true);

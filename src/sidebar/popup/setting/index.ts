@@ -8,12 +8,16 @@ import {
   applyMeshReductionThreshold,
   canOpenPreviewWindow,
   getInitialSettingsValues,
+  isPreviewVisible,
   reopenPreviewWindow,
+  setDebugVisible,
+  setEdgesVisible,
   setAdaptiveQualityEnabled,
   setCameraZoomLimitEnabled,
   setFloorGridEnabled,
   setHideEdgesDuringInteractionEnabled,
   setMeshReductionEnabled,
+  setPreviewVisible,
 } from './setting-app-bridge';
 import { createSettingsPopupDom } from './setting-dom';
 import { setupLanguagePrefetch, setupLanguageTranslations } from './setting-i18n';
@@ -32,6 +36,9 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     initialValues.hideEdgesDuringInteractionEnabled,
     initialValues.floorGridEnabled,
     initialValues.adaptiveQualityEnabled,
+    initialValues.edgesVisible,
+    initialValues.debugVisible,
+    initialValues.previewVisible,
     initialValues.cameraZoomLimitEnabled,
     initialValues.cameraZoomMinDistance,
     initialValues.cameraZoomMaxDistance
@@ -45,6 +52,9 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     hideEdgesDuringInteractionToggle,
     floorGridToggle,
     adaptiveQualityToggle,
+    showEdgesToggle,
+    showDebugToggle,
+    showPreviewToggle,
     cameraZoomLimitToggle,
     cameraZoomMinInput,
     cameraZoomMaxInput,
@@ -55,17 +65,26 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     hideEdgesDuringInteractionHelpIcon,
     floorGridHelpIcon,
     adaptiveQualityHelpIcon,
+    showEdgesHelpIcon,
+    showDebugHelpIcon,
+    showPreviewHelpIcon,
     meshReductionTooltip,
     thresholdTooltip,
     hideEdgesDuringInteractionTooltip,
     floorGridTooltip,
     adaptiveQualityTooltip,
+    showEdgesTooltip,
+    showDebugTooltip,
+    showPreviewTooltip,
   } = dom;
 
   popupContainer.insertBefore(content, popupContainer.firstChild);
 
-  const updatePreviewButtonState = () => {
-    previewButton.disabled = !canOpenPreviewWindow();
+  const updatePreviewWindowControlsState = () => {
+    const canOpenNewPreviewWindow = canOpenPreviewWindow();
+    previewButton.disabled = !canOpenNewPreviewWindow;
+    showPreviewToggle.checked = isPreviewVisible();
+    showPreviewToggle.disabled = canOpenNewPreviewWindow;
   };
 
   const applyThreshold = () => {
@@ -99,7 +118,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     cameraZoomMaxInput.value = String(clamped);
   };
 
-  updatePreviewButtonState();
+  updatePreviewWindowControlsState();
   syncCameraZoomRowsVisibility();
 
   const unsubscribeLanguageChange = setupLanguageTranslations(dom);
@@ -110,15 +129,21 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     hideEdgesHelpIcon: hideEdgesDuringInteractionHelpIcon,
     floorGridHelpIcon: floorGridHelpIcon,
     adaptiveHelpIcon: adaptiveQualityHelpIcon,
+    showEdgesHelpIcon: showEdgesHelpIcon,
+    showDebugHelpIcon: showDebugHelpIcon,
+    showPreviewHelpIcon: showPreviewHelpIcon,
     meshTooltip: meshReductionTooltip,
     thresholdTooltip: thresholdTooltip,
     hideEdgesTooltip: hideEdgesDuringInteractionTooltip,
     floorGridTooltip: floorGridTooltip,
     adaptiveTooltip: adaptiveQualityTooltip,
+    showEdgesTooltip: showEdgesTooltip,
+    showDebugTooltip: showDebugTooltip,
+    showPreviewTooltip: showPreviewTooltip,
   });
 
   const handlePreviewStatusChanged = () => {
-    updatePreviewButtonState();
+    updatePreviewWindowControlsState();
   };
 
   watchContainerRemoval(popupContainer, () => {
@@ -150,6 +175,16 @@ export function showSettingsPopup(toolbar: Toolbar): void {
   adaptiveQualityToggle.addEventListener('change', () => {
     setAdaptiveQualityEnabled(adaptiveQualityToggle.checked);
   });
+  showEdgesToggle.addEventListener('change', () => {
+    setEdgesVisible(showEdgesToggle.checked);
+  });
+  showDebugToggle.addEventListener('change', () => {
+    setDebugVisible(showDebugToggle.checked);
+  });
+  showPreviewToggle.addEventListener('change', () => {
+    setPreviewVisible(showPreviewToggle.checked);
+    updatePreviewWindowControlsState();
+  });
   cameraZoomLimitToggle.addEventListener('change', () => {
     setCameraZoomLimitEnabled(cameraZoomLimitToggle.checked);
     syncCameraZoomRowsVisibility();
@@ -161,6 +196,6 @@ export function showSettingsPopup(toolbar: Toolbar): void {
 
   previewButton.addEventListener('click', () => {
     reopenPreviewWindow();
-    updatePreviewButtonState();
+    updatePreviewWindowControlsState();
   });
 }

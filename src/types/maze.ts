@@ -33,6 +33,12 @@ export interface MazeAppBridge {
   isFloorGridEnabled(): boolean;
   setAdaptiveQualityEnabled(enabled: boolean): void;
   isAdaptiveQualityEnabled(): boolean;
+  setEdgesVisible(enabled: boolean): void;
+  isEdgesVisible(): boolean;
+  setDebugOverlayVisible(visible: boolean): void;
+  isDebugOverlayVisible(): boolean;
+  setPreviewVisible(visible: boolean): void;
+  isPreviewVisible(): boolean;
   setCameraZoomLimitEnabled(enabled: boolean): void;
   isCameraZoomLimitEnabled(): boolean;
   setCameraZoomMinDistance(distance: number): void;
