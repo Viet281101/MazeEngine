@@ -1,4 +1,4 @@
-import { MESH_REDUCTION } from '../../../constants/maze';
+import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION } from '../../../constants/maze';
 import type { MazeAppBridge } from '../../../types/maze';
 
 interface InitialSettingsValues {
@@ -6,6 +6,9 @@ interface InitialSettingsValues {
   meshReductionThreshold: number;
   hideEdgesDuringInteractionEnabled: boolean;
   adaptiveQualityEnabled: boolean;
+  cameraZoomLimitEnabled: boolean;
+  cameraZoomMinDistance: number;
+  cameraZoomMaxDistance: number;
 }
 
 function getMazeAppBridge(): MazeAppBridge | null {
@@ -19,6 +22,24 @@ function clampThreshold(value: number): number {
       MESH_REDUCTION.MAX_THRESHOLD,
       Number.isFinite(value) ? Math.floor(value) : MESH_REDUCTION.DEFAULT_THRESHOLD
     )
+  );
+}
+
+function clampZoomMinDistance(value: number): number {
+  if (!Number.isFinite(value)) {
+    return CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE;
+  }
+  const clamped = Math.max(CAMERA_ZOOM_LIMIT.MIN_DISTANCE_MIN, value);
+  return Math.min(CAMERA_ZOOM_LIMIT.MAX_DISTANCE_MAX, clamped);
+}
+
+function clampZoomMaxDistance(value: number): number {
+  if (!Number.isFinite(value)) {
+    return CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE;
+  }
+  return Math.min(
+    CAMERA_ZOOM_LIMIT.MAX_DISTANCE_MAX,
+    Math.max(CAMERA_ZOOM_LIMIT.MIN_DISTANCE_MIN, value)
   );
 }
 
@@ -39,6 +60,18 @@ export function getInitialSettingsValues(): InitialSettingsValues {
       app && typeof app.isAdaptiveQualityEnabled === 'function'
         ? app.isAdaptiveQualityEnabled()
         : true,
+    cameraZoomLimitEnabled:
+      app && typeof app.isCameraZoomLimitEnabled === 'function'
+        ? app.isCameraZoomLimitEnabled()
+        : CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED,
+    cameraZoomMinDistance:
+      app && typeof app.getCameraZoomMinDistance === 'function'
+        ? app.getCameraZoomMinDistance()
+        : CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE,
+    cameraZoomMaxDistance:
+      app && typeof app.getCameraZoomMaxDistance === 'function'
+        ? app.getCameraZoomMaxDistance()
+        : CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE,
   };
 }
 
@@ -87,4 +120,29 @@ export function setAdaptiveQualityEnabled(enabled: boolean): void {
   if (app && typeof app.setAdaptiveQualityEnabled === 'function') {
     app.setAdaptiveQualityEnabled(enabled);
   }
+}
+
+export function setCameraZoomLimitEnabled(enabled: boolean): void {
+  const app = getMazeAppBridge();
+  if (app && typeof app.setCameraZoomLimitEnabled === 'function') {
+    app.setCameraZoomLimitEnabled(enabled);
+  }
+}
+
+export function applyCameraZoomMinDistance(rawValue: number): number {
+  const clamped = clampZoomMinDistance(rawValue);
+  const app = getMazeAppBridge();
+  if (app && typeof app.setCameraZoomMinDistance === 'function') {
+    app.setCameraZoomMinDistance(clamped);
+  }
+  return clamped;
+}
+
+export function applyCameraZoomMaxDistance(rawValue: number): number {
+  const clamped = clampZoomMaxDistance(rawValue);
+  const app = getMazeAppBridge();
+  if (app && typeof app.setCameraZoomMaxDistance === 'function') {
+    app.setCameraZoomMaxDistance(clamped);
+  }
+  return clamped;
 }

@@ -31,6 +31,12 @@ export interface MazeAppBridge {
   isHideEdgesDuringInteractionEnabled(): boolean;
   setAdaptiveQualityEnabled(enabled: boolean): void;
   isAdaptiveQualityEnabled(): boolean;
+  setCameraZoomLimitEnabled(enabled: boolean): void;
+  isCameraZoomLimitEnabled(): boolean;
+  setCameraZoomMinDistance(distance: number): void;
+  getCameraZoomMinDistance(): number;
+  setCameraZoomMaxDistance(distance: number): void;
+  getCameraZoomMaxDistance(): number;
   reopenPreviewWindow(): void;
   canOpenNewPreviewWindow(): boolean;
 }

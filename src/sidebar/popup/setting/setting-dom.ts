@@ -12,12 +12,24 @@ export interface SettingsPopupDom {
   thresholdLabel: HTMLSpanElement;
   hideEdgesDuringInteractionLabel: HTMLSpanElement;
   adaptiveQualityLabel: HTMLSpanElement;
+  cameraZoomLimitLabel: HTMLSpanElement;
+  cameraZoomMinLabel: HTMLSpanElement;
+  cameraZoomMaxLabel: HTMLSpanElement;
   previewLabel: HTMLSpanElement;
   previewButton: HTMLButtonElement;
   meshReductionToggle: HTMLInputElement;
   thresholdInput: HTMLInputElement;
   hideEdgesDuringInteractionToggle: HTMLInputElement;
   adaptiveQualityToggle: HTMLInputElement;
+  cameraZoomLimitToggle: HTMLInputElement;
+  cameraZoomMinInput: HTMLInputElement;
+  cameraZoomMaxInput: HTMLInputElement;
+  cameraZoomMinRow: HTMLLabelElement;
+  cameraZoomMaxRow: HTMLLabelElement;
+  cameraZoomMinIncreaseButton: HTMLButtonElement;
+  cameraZoomMinDecreaseButton: HTMLButtonElement;
+  cameraZoomMaxIncreaseButton: HTMLButtonElement;
+  cameraZoomMaxDecreaseButton: HTMLButtonElement;
   meshReductionHelpIcon: HTMLImageElement;
   thresholdHelpIcon: HTMLImageElement;
   hideEdgesDuringInteractionHelpIcon: HTMLImageElement;
@@ -51,11 +63,26 @@ function createHelpIcon(): HTMLImageElement {
   return icon;
 }
 
+function getStepperButtonOrThrow(
+  field: HTMLDivElement,
+  selector: string,
+  context: string
+): HTMLButtonElement {
+  const button = field.querySelector(selector);
+  if (!(button instanceof HTMLButtonElement)) {
+    throw new Error(`Missing stepper button "${selector}" for ${context}`);
+  }
+  return button;
+}
+
 export function createSettingsPopupDom(
   initialMeshEnabled: boolean,
   initialThreshold: number,
   initialHideEdgesDuringInteractionEnabled: boolean,
-  initialAdaptiveQualityEnabled: boolean
+  initialAdaptiveQualityEnabled: boolean,
+  initialCameraZoomLimitEnabled: boolean,
+  initialCameraZoomMinDistance: number,
+  initialCameraZoomMaxDistance: number
 ): SettingsPopupDom {
   const content = document.createElement('div');
   content.className = 'settings-popup__content';
@@ -156,6 +183,78 @@ export function createSettingsPopupDom(
   adaptiveQualityRow.appendChild(adaptiveQualityToggle);
   content.appendChild(adaptiveQualityRow);
 
+  const cameraZoomLimitRow = document.createElement('label');
+  cameraZoomLimitRow.className = 'settings-popup__row';
+  const cameraZoomLimitLabel = document.createElement('span');
+  cameraZoomLimitLabel.className = 'settings-popup__label';
+  const cameraZoomLimitToggle = document.createElement('input');
+  cameraZoomLimitToggle.type = 'checkbox';
+  cameraZoomLimitToggle.className = 'settings-popup__checkbox';
+  cameraZoomLimitToggle.checked = initialCameraZoomLimitEnabled;
+  cameraZoomLimitRow.appendChild(cameraZoomLimitLabel);
+  cameraZoomLimitRow.appendChild(cameraZoomLimitToggle);
+  content.appendChild(cameraZoomLimitRow);
+
+  const cameraZoomMinRow = document.createElement('label');
+  cameraZoomMinRow.className = 'settings-popup__row';
+  const cameraZoomMinLabel = document.createElement('span');
+  cameraZoomMinLabel.className = 'settings-popup__label';
+  const cameraZoomMinInput = document.createElement('input');
+  cameraZoomMinInput.type = 'number';
+  cameraZoomMinInput.className = 'settings-popup__input';
+  cameraZoomMinInput.min = '0.5';
+  cameraZoomMinInput.max = '5000';
+  cameraZoomMinInput.step = '0.5';
+  cameraZoomMinInput.value = String(initialCameraZoomMinDistance);
+  const cameraZoomMinField = createNumberStepperField(cameraZoomMinInput, {
+    increaseLabel: 'Increase camera min zoom limit',
+    decreaseLabel: 'Decrease camera min zoom limit',
+  });
+  const cameraZoomMinIncreaseButton = getStepperButtonOrThrow(
+    cameraZoomMinField,
+    '.popup-number-step-btn--up',
+    'camera zoom min'
+  );
+  const cameraZoomMinDecreaseButton = getStepperButtonOrThrow(
+    cameraZoomMinField,
+    '.popup-number-step-btn--down',
+    'camera zoom min'
+  );
+  cameraZoomMinField.classList.add('settings-popup__number-field');
+  cameraZoomMinRow.appendChild(cameraZoomMinLabel);
+  cameraZoomMinRow.appendChild(cameraZoomMinField);
+  content.appendChild(cameraZoomMinRow);
+
+  const cameraZoomMaxRow = document.createElement('label');
+  cameraZoomMaxRow.className = 'settings-popup__row';
+  const cameraZoomMaxLabel = document.createElement('span');
+  cameraZoomMaxLabel.className = 'settings-popup__label';
+  const cameraZoomMaxInput = document.createElement('input');
+  cameraZoomMaxInput.type = 'number';
+  cameraZoomMaxInput.className = 'settings-popup__input';
+  cameraZoomMaxInput.min = '0.5';
+  cameraZoomMaxInput.max = '5000';
+  cameraZoomMaxInput.step = '1';
+  cameraZoomMaxInput.value = String(initialCameraZoomMaxDistance);
+  const cameraZoomMaxField = createNumberStepperField(cameraZoomMaxInput, {
+    increaseLabel: 'Increase camera max zoom limit',
+    decreaseLabel: 'Decrease camera max zoom limit',
+  });
+  const cameraZoomMaxIncreaseButton = getStepperButtonOrThrow(
+    cameraZoomMaxField,
+    '.popup-number-step-btn--up',
+    'camera zoom max'
+  );
+  const cameraZoomMaxDecreaseButton = getStepperButtonOrThrow(
+    cameraZoomMaxField,
+    '.popup-number-step-btn--down',
+    'camera zoom max'
+  );
+  cameraZoomMaxField.classList.add('settings-popup__number-field');
+  cameraZoomMaxRow.appendChild(cameraZoomMaxLabel);
+  cameraZoomMaxRow.appendChild(cameraZoomMaxField);
+  content.appendChild(cameraZoomMaxRow);
+
   const previewRow = document.createElement('div');
   previewRow.className = 'settings-popup__row';
   const previewLabel = document.createElement('span');
@@ -215,12 +314,24 @@ export function createSettingsPopupDom(
     thresholdLabel,
     hideEdgesDuringInteractionLabel,
     adaptiveQualityLabel,
+    cameraZoomLimitLabel,
+    cameraZoomMinLabel,
+    cameraZoomMaxLabel,
     previewLabel,
     previewButton,
     meshReductionToggle,
     thresholdInput,
     hideEdgesDuringInteractionToggle,
     adaptiveQualityToggle,
+    cameraZoomLimitToggle,
+    cameraZoomMinInput,
+    cameraZoomMaxInput,
+    cameraZoomMinRow,
+    cameraZoomMaxRow,
+    cameraZoomMinIncreaseButton,
+    cameraZoomMinDecreaseButton,
+    cameraZoomMaxIncreaseButton,
+    cameraZoomMaxDecreaseButton,
     meshReductionHelpIcon,
     thresholdHelpIcon,
     hideEdgesDuringInteractionHelpIcon,

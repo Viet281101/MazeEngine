@@ -3,11 +3,14 @@ import { Toolbar } from '../../toolbar';
 import { PREVIEW_WINDOW_STATUS_CHANGED_EVENT } from '../../../constants/events';
 import { watchContainerRemoval } from '../popup-lifecycle';
 import {
+  applyCameraZoomMaxDistance,
+  applyCameraZoomMinDistance,
   applyMeshReductionThreshold,
   canOpenPreviewWindow,
   getInitialSettingsValues,
   reopenPreviewWindow,
   setAdaptiveQualityEnabled,
+  setCameraZoomLimitEnabled,
   setHideEdgesDuringInteractionEnabled,
   setMeshReductionEnabled,
 } from './setting-app-bridge';
@@ -26,7 +29,10 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     initialValues.meshReductionEnabled,
     initialValues.meshReductionThreshold,
     initialValues.hideEdgesDuringInteractionEnabled,
-    initialValues.adaptiveQualityEnabled
+    initialValues.adaptiveQualityEnabled,
+    initialValues.cameraZoomLimitEnabled,
+    initialValues.cameraZoomMinDistance,
+    initialValues.cameraZoomMaxDistance
   );
   const {
     content,
@@ -36,6 +42,11 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     thresholdInput,
     hideEdgesDuringInteractionToggle,
     adaptiveQualityToggle,
+    cameraZoomLimitToggle,
+    cameraZoomMinInput,
+    cameraZoomMaxInput,
+    cameraZoomMinRow,
+    cameraZoomMaxRow,
     meshReductionHelpIcon,
     thresholdHelpIcon,
     hideEdgesDuringInteractionHelpIcon,
@@ -57,7 +68,34 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     thresholdInput.value = String(clamped);
   };
 
+  const syncCameraZoomRowsVisibility = () => {
+    const display = cameraZoomLimitToggle.checked ? 'grid' : 'none';
+    cameraZoomMinRow.style.display = display;
+    cameraZoomMaxRow.style.display = display;
+  };
+
+  const applyCameraZoomMin = () => {
+    const clamped = applyCameraZoomMinDistance(Number(cameraZoomMinInput.value));
+    const maxValue = Number(cameraZoomMaxInput.value);
+    if (maxValue < clamped) {
+      cameraZoomMaxInput.value = String(clamped);
+      applyCameraZoomMaxDistance(clamped);
+    }
+    cameraZoomMinInput.value = String(clamped);
+  };
+
+  const applyCameraZoomMax = () => {
+    const clamped = applyCameraZoomMaxDistance(Number(cameraZoomMaxInput.value));
+    const minValue = Number(cameraZoomMinInput.value);
+    if (minValue > clamped) {
+      cameraZoomMinInput.value = String(clamped);
+      applyCameraZoomMinDistance(clamped);
+    }
+    cameraZoomMaxInput.value = String(clamped);
+  };
+
   updatePreviewButtonState();
+  syncCameraZoomRowsVisibility();
 
   const unsubscribeLanguageChange = setupLanguageTranslations(dom);
   const cleanupLanguagePrefetch = setupLanguagePrefetch(select);
@@ -102,6 +140,14 @@ export function showSettingsPopup(toolbar: Toolbar): void {
   adaptiveQualityToggle.addEventListener('change', () => {
     setAdaptiveQualityEnabled(adaptiveQualityToggle.checked);
   });
+  cameraZoomLimitToggle.addEventListener('change', () => {
+    setCameraZoomLimitEnabled(cameraZoomLimitToggle.checked);
+    syncCameraZoomRowsVisibility();
+  });
+  cameraZoomMinInput.addEventListener('change', applyCameraZoomMin);
+  cameraZoomMinInput.addEventListener('blur', applyCameraZoomMin);
+  cameraZoomMaxInput.addEventListener('change', applyCameraZoomMax);
+  cameraZoomMaxInput.addEventListener('blur', applyCameraZoomMax);
 
   previewButton.addEventListener('click', () => {
     reopenPreviewWindow();

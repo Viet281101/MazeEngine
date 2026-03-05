@@ -1,11 +1,16 @@
 import { Maze, MazeConfig } from './maze';
 import * as THREE from 'three';
+import type { StairDirection } from '../resources/mesh-factory';
 
 /**
  * MultiLayerMaze - Maze with multiple stacked layers
  */
 export class MultiLayerMaze extends Maze {
   private static readonly OPENING_CELL_VALUE = 2;
+  private static readonly OPENING_NORTH_CELL_VALUE = 3;
+  private static readonly OPENING_EAST_CELL_VALUE = 4;
+  private static readonly OPENING_SOUTH_CELL_VALUE = 5;
+  private static readonly OPENING_WEST_CELL_VALUE = 6;
   private static readonly STAIR_STEP_COUNT = 4;
 
   constructor(canvas: HTMLCanvasElement, maze: number[][][], config?: MazeConfig) {
@@ -181,7 +186,11 @@ export class MultiLayerMaze extends Maze {
         const x = colIndex * this.cellSize;
         const z = -rowIndex * this.cellSize;
 
-        if (cell !== MultiLayerMaze.OPENING_CELL_VALUE) {
+        const directionFromCell = this.getDirectionFromConnectorCellValue(cell);
+        const isConnectorCell =
+          cell === MultiLayerMaze.OPENING_CELL_VALUE || directionFromCell !== null;
+
+        if (!isConnectorCell) {
           const smallFloor = this.meshFactory.createSmallFloor(x, layerHeight, z, this.cellSize);
           mazeLayer.add(smallFloor);
           continue;
@@ -199,10 +208,50 @@ export class MultiLayerMaze extends Maze {
           cellSize: this.cellSize,
           riseHeight: this.wallHeight,
           stepCount: MultiLayerMaze.STAIR_STEP_COUNT,
+          direction:
+            directionFromCell ??
+            this.inferConnectorDirection(previousLayer, rowIndex, colIndex) ??
+            'east',
         });
         previousLayerObject.add(connector);
       }
     }
+  }
+
+  private getDirectionFromConnectorCellValue(cellValue: number): StairDirection | null {
+    if (cellValue === MultiLayerMaze.OPENING_NORTH_CELL_VALUE) {
+      return 'north';
+    }
+    if (cellValue === MultiLayerMaze.OPENING_EAST_CELL_VALUE) {
+      return 'east';
+    }
+    if (cellValue === MultiLayerMaze.OPENING_SOUTH_CELL_VALUE) {
+      return 'south';
+    }
+    if (cellValue === MultiLayerMaze.OPENING_WEST_CELL_VALUE) {
+      return 'west';
+    }
+    return null;
+  }
+
+  private inferConnectorDirection(
+    previousLayer: number[][],
+    rowIndex: number,
+    colIndex: number
+  ): StairDirection | null {
+    const candidates: Array<{ direction: StairDirection; row: number; col: number }> = [
+      { direction: 'north', row: rowIndex - 1, col: colIndex },
+      { direction: 'east', row: rowIndex, col: colIndex + 1 },
+      { direction: 'south', row: rowIndex + 1, col: colIndex },
+      { direction: 'west', row: rowIndex, col: colIndex - 1 },
+    ];
+
+    for (const candidate of candidates) {
+      if (previousLayer[candidate.row]?.[candidate.col] !== 1) {
+        return candidate.direction;
+      }
+    }
+    return null;
   }
 
   /**

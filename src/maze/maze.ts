@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { ResourceManager } from '../resources/resource-manager';
 import { DisposalHelper } from '../resources/disposal-helper';
 import { MeshFactory } from '../resources/mesh-factory';
-import { MESH_REDUCTION } from '../constants/maze';
+import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION } from '../constants/maze';
 import type { SolutionPath } from '../types/maze';
 
 export interface MazeConfig {
@@ -72,6 +72,9 @@ export abstract class Maze {
   protected showEdges: boolean;
   protected meshReductionEnabled: boolean;
   protected meshMergeThreshold: number;
+  protected cameraZoomLimitEnabled: boolean;
+  protected cameraZoomMinDistance: number;
+  protected cameraZoomMaxDistance: number;
 
   // Resource management
   protected resourceManager: ResourceManager;
@@ -120,6 +123,9 @@ export abstract class Maze {
     this.showEdges = true;
     this.meshReductionEnabled = MESH_REDUCTION.DEFAULT_ENABLED;
     this.meshMergeThreshold = MESH_REDUCTION.DEFAULT_THRESHOLD;
+    this.cameraZoomLimitEnabled = CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED;
+    this.cameraZoomMinDistance = CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE;
+    this.cameraZoomMaxDistance = CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE;
 
     // Initialize Three.js
     this.scene = new THREE.Scene();
@@ -178,6 +184,7 @@ export abstract class Maze {
     // Configure controls
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
+    this.configureCameraZoomLimits();
     this.controls.addEventListener('change', () => this.requestRender());
     this.controls.addEventListener('start', () => this.handleInteractionStart());
     this.controls.addEventListener('end', () => this.handleInteractionEnd());
@@ -198,6 +205,7 @@ export abstract class Maze {
   public updateMazeData(maze: number[][][], options: { preserveCamera?: boolean } = {}): void {
     if (this.isDisposed) return;
     this.maze = maze;
+    this.configureCameraZoomLimits();
     this.clearSolutionPath();
     if (options.preserveCamera) {
       this.rebuildMazePreservingCamera();
@@ -495,6 +503,56 @@ export abstract class Maze {
     return this.adaptiveQualityEnabled;
   }
 
+  public setCameraZoomLimitEnabled(enabled: boolean): void {
+    if (this.cameraZoomLimitEnabled === enabled) {
+      return;
+    }
+    this.cameraZoomLimitEnabled = enabled;
+    this.configureCameraZoomLimits();
+    this.controls.update();
+    this.requestRender();
+  }
+
+  public isCameraZoomLimitEnabled(): boolean {
+    return this.cameraZoomLimitEnabled;
+  }
+
+  public setCameraZoomMinDistance(distance: number): void {
+    const normalizedMin = this.normalizeCameraZoomMinDistance(distance);
+    if (Math.abs(this.cameraZoomMinDistance - normalizedMin) < 0.001) {
+      return;
+    }
+    this.cameraZoomMinDistance = normalizedMin;
+    if (this.cameraZoomMaxDistance < normalizedMin) {
+      this.cameraZoomMaxDistance = normalizedMin;
+    }
+    this.configureCameraZoomLimits();
+    this.controls.update();
+    this.requestRender();
+  }
+
+  public getCameraZoomMinDistance(): number {
+    return this.cameraZoomMinDistance;
+  }
+
+  public setCameraZoomMaxDistance(distance: number): void {
+    const normalizedMax = this.normalizeCameraZoomMaxDistance(distance);
+    if (Math.abs(this.cameraZoomMaxDistance - normalizedMax) < 0.001) {
+      return;
+    }
+    this.cameraZoomMaxDistance = normalizedMax;
+    if (this.cameraZoomMinDistance > normalizedMax) {
+      this.cameraZoomMinDistance = normalizedMax;
+    }
+    this.configureCameraZoomLimits();
+    this.controls.update();
+    this.requestRender();
+  }
+
+  public getCameraZoomMaxDistance(): number {
+    return this.cameraZoomMaxDistance;
+  }
+
   public setBackgroundColor(color: THREE.ColorRepresentation, alpha: number = 1): void {
     const nextAlpha = Number.isFinite(alpha) ? Math.min(1, Math.max(0, alpha)) : 1;
     const previousHex = this.backgroundColor.getHex();
@@ -655,6 +713,43 @@ export abstract class Maze {
       this.applyRendererSizeForMode(false);
       this.requestRender();
     }, Maze.INITIAL_QUALITY_UPGRADE_DELAY_MS);
+  }
+
+  private configureCameraZoomLimits(): void {
+    if (!this.cameraZoomLimitEnabled) {
+      this.controls.minDistance = 0;
+      this.controls.maxDistance = Infinity;
+      return;
+    }
+
+    const minDistance = this.normalizeCameraZoomMinDistance(this.cameraZoomMinDistance);
+    const maxDistance = Math.max(
+      minDistance,
+      this.normalizeCameraZoomMaxDistance(this.cameraZoomMaxDistance)
+    );
+
+    this.cameraZoomMinDistance = minDistance;
+    this.cameraZoomMaxDistance = maxDistance;
+    this.controls.minDistance = minDistance;
+    this.controls.maxDistance = maxDistance;
+  }
+
+  private normalizeCameraZoomMinDistance(value: number): number {
+    if (!Number.isFinite(value)) {
+      return CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE;
+    }
+    const clamped = Math.max(CAMERA_ZOOM_LIMIT.MIN_DISTANCE_MIN, value);
+    return Math.min(CAMERA_ZOOM_LIMIT.MAX_DISTANCE_MAX, clamped);
+  }
+
+  private normalizeCameraZoomMaxDistance(value: number): number {
+    if (!Number.isFinite(value)) {
+      return CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE;
+    }
+    return Math.min(
+      CAMERA_ZOOM_LIMIT.MAX_DISTANCE_MAX,
+      Math.max(CAMERA_ZOOM_LIMIT.MIN_DISTANCE_MIN, value)
+    );
   }
 
   private updateAdaptiveQuality(nowMs: number): void {

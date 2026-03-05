@@ -8,7 +8,7 @@ import type { MazeController } from '../maze/maze-controller';
 import { computeMarkersFromLayer } from '../maze/marker-utils';
 import { subscribeLanguageChange, t } from '../sidebar/i18n';
 import { DebugOverlay } from '../debug/debug-overlay';
-import { MESH_REDUCTION } from '../constants/maze';
+import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION } from '../constants/maze';
 import { PREVIEW_WINDOW, UI_BREAKPOINTS } from '../constants/ui';
 import { PREVIEW_WINDOW_STATUS_CHANGED_EVENT } from '../constants/events';
 import type { WebGLRenderer } from 'three';
@@ -53,6 +53,9 @@ export class MainApp implements MazeController, MazeAppBridge {
   private meshReductionEnabled: boolean = MESH_REDUCTION.DEFAULT_ENABLED;
   private hideEdgesDuringInteractionEnabled: boolean = false;
   private adaptiveQualityEnabled: boolean = true;
+  private cameraZoomLimitEnabled: boolean = CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED;
+  private cameraZoomMinDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE;
+  private cameraZoomMaxDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE;
   private unsubscribeLanguageChange: (() => void) | null = null;
 
   constructor() {
@@ -117,11 +120,17 @@ export class MainApp implements MazeController, MazeAppBridge {
       threshold: MESH_REDUCTION.DEFAULT_THRESHOLD,
       hideEdgesDuringInteractionEnabled: false,
       adaptiveQualityEnabled: true,
+      cameraZoomLimitEnabled: CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED,
+      cameraZoomMinDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE,
+      cameraZoomMaxDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE,
     });
     this.meshReductionEnabled = loaded.enabled;
     this.meshReductionThreshold = loaded.threshold;
     this.hideEdgesDuringInteractionEnabled = loaded.hideEdgesDuringInteractionEnabled;
     this.adaptiveQualityEnabled = loaded.adaptiveQualityEnabled;
+    this.cameraZoomLimitEnabled = loaded.cameraZoomLimitEnabled;
+    this.cameraZoomMinDistance = loaded.cameraZoomMinDistance;
+    this.cameraZoomMaxDistance = loaded.cameraZoomMaxDistance;
   }
 
   private applyMeshReductionSettingsToMaze(): void {
@@ -129,6 +138,9 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.maze.setMeshReductionEnabled(this.meshReductionEnabled);
     this.maze.setHideEdgesDuringInteractionEnabled(this.hideEdgesDuringInteractionEnabled);
     this.maze.setAdaptiveQualityEnabled(this.adaptiveQualityEnabled);
+    this.maze.setCameraZoomMinDistance(this.cameraZoomMinDistance);
+    this.maze.setCameraZoomMaxDistance(this.cameraZoomMaxDistance);
+    this.maze.setCameraZoomLimitEnabled(this.cameraZoomLimitEnabled);
   }
 
   private initializeVisibilityByViewport(): void {
@@ -364,6 +376,52 @@ export class MainApp implements MazeController, MazeAppBridge {
 
   public isAdaptiveQualityEnabled(): boolean {
     return this.adaptiveQualityEnabled;
+  }
+
+  public setCameraZoomLimitEnabled(enabled: boolean): void {
+    this.cameraZoomLimitEnabled = enabled;
+    this.maze.setCameraZoomLimitEnabled(enabled);
+    this.settingsStorage.saveCameraZoomLimitEnabled(enabled);
+  }
+
+  public isCameraZoomLimitEnabled(): boolean {
+    return this.cameraZoomLimitEnabled;
+  }
+
+  public setCameraZoomMinDistance(distance: number): void {
+    const normalized = Math.min(
+      CAMERA_ZOOM_LIMIT.MAX_DISTANCE_MAX,
+      Math.max(CAMERA_ZOOM_LIMIT.MIN_DISTANCE_MIN, distance)
+    );
+    this.cameraZoomMinDistance = normalized;
+    if (this.cameraZoomMaxDistance < normalized) {
+      this.cameraZoomMaxDistance = normalized;
+      this.settingsStorage.saveCameraZoomMaxDistance(normalized);
+    }
+    this.maze.setCameraZoomMinDistance(normalized);
+    this.settingsStorage.saveCameraZoomMinDistance(normalized);
+  }
+
+  public getCameraZoomMinDistance(): number {
+    return this.cameraZoomMinDistance;
+  }
+
+  public setCameraZoomMaxDistance(distance: number): void {
+    const normalized = Math.min(
+      CAMERA_ZOOM_LIMIT.MAX_DISTANCE_MAX,
+      Math.max(CAMERA_ZOOM_LIMIT.MIN_DISTANCE_MIN, distance)
+    );
+    this.cameraZoomMaxDistance = normalized;
+    if (this.cameraZoomMinDistance > normalized) {
+      this.cameraZoomMinDistance = normalized;
+      this.settingsStorage.saveCameraZoomMinDistance(normalized);
+    }
+    this.maze.setCameraZoomMaxDistance(normalized);
+    this.settingsStorage.saveCameraZoomMaxDistance(normalized);
+  }
+
+  public getCameraZoomMaxDistance(): number {
+    return this.cameraZoomMaxDistance;
   }
 
   // ========== MazeController Interface Implementation ==========

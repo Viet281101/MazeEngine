@@ -26,7 +26,10 @@ export interface StairConnectorParams {
   cellSize: number;
   riseHeight: number;
   stepCount?: number;
+  direction?: StairDirection;
 }
+
+export type StairDirection = 'north' | 'east' | 'south' | 'west';
 
 /**
  * MeshFactory - Factory pattern to create meshes
@@ -128,6 +131,7 @@ export class MeshFactory {
       cellSize,
       riseHeight,
       stepCount = MeshFactory.DEFAULT_STAIR_STEP_COUNT,
+      direction = 'east',
     } = params;
     const steps = Math.max(1, Math.floor(stepCount));
 
@@ -143,7 +147,7 @@ export class MeshFactory {
       this.wallOpacity
     );
     const stairs = new THREE.Mesh(geometry, material);
-    stairs.position.set(0, 0, -cellSize / 2);
+    stairs.rotation.y = this.getStairRotationY(direction);
     stairs.userData.sharedGeometry = true;
     stairs.userData.sharedMaterial = true;
     group.add(stairs);
@@ -153,6 +157,7 @@ export class MeshFactory {
       const edgeMaterial = this.resourceManager.getEdgeMaterial();
       const edgeLines = new THREE.LineSegments(edges, edgeMaterial);
       edgeLines.position.copy(stairs.position);
+      edgeLines.rotation.copy(stairs.rotation);
       edgeLines.renderOrder = 1;
       edgeLines.userData.sharedGeometry = true;
       edgeLines.userData.sharedMaterial = true;
@@ -187,12 +192,27 @@ export class MeshFactory {
       profile.lineTo(halfRun, 0);
       profile.lineTo(-halfRun, 0);
 
-      return new THREE.ExtrudeGeometry(profile, {
+      const geometry = new THREE.ExtrudeGeometry(profile, {
         depth: cellSize,
         bevelEnabled: false,
         steps: 1,
       });
+      geometry.translate(0, 0, -cellSize / 2);
+      return geometry;
     }) as THREE.ExtrudeGeometry;
+  }
+
+  private getStairRotationY(direction: StairDirection): number {
+    if (direction === 'east') {
+      return 0;
+    }
+    if (direction === 'south') {
+      return Math.PI / 2;
+    }
+    if (direction === 'west') {
+      return Math.PI;
+    }
+    return -Math.PI / 2; // north
   }
 
   /**
