@@ -63,6 +63,9 @@ export class PreviewWindow {
   private height: number;
   private readonly canvasWidth: number = 256;
   private readonly canvasHeight: number = 256;
+  private readonly viewportMargin: number = 20;
+  private lastViewportWidth: number;
+  private lastViewportHeight: number;
 
   private isVisible: boolean = true;
   private isHiding: boolean = false;
@@ -88,11 +91,12 @@ export class PreviewWindow {
 
     this.width = config.width ?? 300;
     this.height = config.height ?? 320;
-    const margin = 20;
-    const defaultX = Math.max(margin, window.innerWidth - this.width - margin);
-    const defaultY = Math.max(margin, window.innerHeight - this.height - margin);
+    const defaultX = Math.max(this.viewportMargin, this.getAnchoredMaxX(window.innerWidth));
+    const defaultY = Math.max(this.viewportMargin, this.getAnchoredMaxY(window.innerHeight));
     this.windowX = config.initialX ?? defaultX;
     this.windowY = config.initialY ?? defaultY;
+    this.lastViewportWidth = window.innerWidth;
+    this.lastViewportHeight = window.innerHeight;
 
     // Create container
     this.container = document.createElement('div');
@@ -537,14 +541,31 @@ export class PreviewWindow {
    * Re-clamp window position on viewport resize
    */
   public handleWindowResize(): void {
+    const previousAnchoredX = this.getAnchoredMaxX(this.lastViewportWidth);
+    const previousAnchoredY = this.getAnchoredMaxY(this.lastViewportHeight);
+    const wasRightAligned = Math.abs(this.windowX - previousAnchoredX) <= 1;
+    const wasBottomAligned = Math.abs(this.windowY - previousAnchoredY) <= 1;
+
     const maxX = Math.max(0, window.innerWidth - this.width);
     const maxY = Math.max(0, window.innerHeight - this.height);
+    const anchoredX = this.getAnchoredMaxX(window.innerWidth);
+    const anchoredY = this.getAnchoredMaxY(window.innerHeight);
 
-    this.windowX = Math.max(0, Math.min(this.windowX, maxX));
-    this.windowY = Math.max(0, Math.min(this.windowY, maxY));
+    this.windowX = wasRightAligned ? anchoredX : Math.max(0, Math.min(this.windowX, maxX));
+    this.windowY = wasBottomAligned ? anchoredY : Math.max(0, Math.min(this.windowY, maxY));
+    this.lastViewportWidth = window.innerWidth;
+    this.lastViewportHeight = window.innerHeight;
 
     this.container.style.left = `${this.windowX}px`;
     this.container.style.top = `${this.windowY}px`;
+  }
+
+  private getAnchoredMaxX(viewportWidth: number): number {
+    return Math.max(0, viewportWidth - this.width - this.viewportMargin);
+  }
+
+  private getAnchoredMaxY(viewportHeight: number): number {
+    return Math.max(0, viewportHeight - this.height - this.viewportMargin);
   }
 
   /**
@@ -635,7 +656,10 @@ export class PreviewWindow {
     this.layerLabel.textContent = `${t('preview.layer')} ${currentLayer}/${Math.max(layerCount, 1)}`;
   }
 
-  private pickMarkerForLayer(marker: MarkerPoint | null, activeLayerIndex: number): MarkerPoint | null {
+  private pickMarkerForLayer(
+    marker: MarkerPoint | null,
+    activeLayerIndex: number
+  ): MarkerPoint | null {
     if (!marker) {
       return null;
     }

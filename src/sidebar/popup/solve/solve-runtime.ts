@@ -34,7 +34,11 @@ export function detectTopology(mazeData: number[][][]): SolveTopology {
   return isRect ? 'singleLayerRect' : 'unknown';
 }
 
-function normalizeMarkerLayerIndex(marker: { row: number; col: number; layerIndex?: number }): number {
+function normalizeMarkerLayerIndex(marker: {
+  row: number;
+  col: number;
+  layerIndex?: number;
+}): number {
   if (typeof marker.layerIndex === 'number' && Number.isInteger(marker.layerIndex)) {
     return marker.layerIndex;
   }
