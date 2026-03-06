@@ -12,6 +12,8 @@ export const GENERATOR_CATALOG: readonly GeneratorDefinition[] = [
     run: input =>
       generateBinaryTreeMaze(input.rows, input.cols, {
         northBias: input.params?.northBias,
+        layers: input.topologyParams?.layers,
+        shaftDensity: input.topologyParams?.shaftDensity,
       }),
   },
   {

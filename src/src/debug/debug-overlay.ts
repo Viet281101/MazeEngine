@@ -1,7 +1,12 @@
 import { DEBUG_OVERLAY } from '../constants/debug';
 
 export interface DebugOverlayOptions {
-  getMazeData: () => number[][][];
+  getMazeLayerCount: () => number;
+  getRenderQualityInfo?: () => {
+    pixelRatio: number;
+    adaptiveScale: number;
+    adaptiveEnabled: boolean;
+  };
   updateIntervalMs?: number;
 }
 
@@ -84,10 +89,16 @@ export class DebugOverlay {
         const frameTimeMs =
           renders > 0 && intervalSeconds > 0 ? (intervalSeconds * 1000) / renders : 0;
         const mazeType = this.getMazeTypeLabel();
+        const quality = this.options.getRenderQualityInfo?.();
+        const qualityText = quality
+          ? `\nPixel Ratio: ${quality.pixelRatio.toFixed(2)}\nAdapt FPS: ${
+              quality.adaptiveEnabled ? 'ON' : 'OFF'
+            } (${quality.adaptiveScale.toFixed(2)})`
+          : '';
 
         this.overlay.textContent = `Type: ${mazeType}\nFPS: ${fps.toFixed(1)}\nFrame: ${frameTimeMs.toFixed(
           2
-        )} ms`;
+        )} ms${qualityText}`;
 
         this.lastUpdate = now;
         this.lastRenderCount = this.renderCount;
@@ -107,8 +118,7 @@ export class DebugOverlay {
   }
 
   private getMazeTypeLabel(): string {
-    const mazeData = this.options.getMazeData();
-    const layerCount = Array.isArray(mazeData) ? mazeData.length : 0;
+    const layerCount = this.options.getMazeLayerCount();
 
     if (layerCount <= 0) {
       return 'Unknown';

@@ -39,6 +39,9 @@ export class ResourceManager {
     material.color.copy(color);
     material.opacity = opacity;
     material.transparent = opacity < 1;
+    material.polygonOffset = false;
+    material.polygonOffsetFactor = 0;
+    material.polygonOffsetUnits = 0;
 
     return material;
   }
@@ -79,6 +82,24 @@ export class ResourceManager {
     );
 
     return this.geometries.get(key) as THREE.PlaneGeometry;
+  }
+
+  /**
+   * Get or create custom geometry from a deterministic cache key.
+   */
+  getCustomGeometry<T extends THREE.BufferGeometry>(key: string, factory: () => T): T {
+    const cached = this.touchCacheEntry(this.geometries, key);
+    if (cached) {
+      return cached as T;
+    }
+
+    const geometry = factory();
+    this.geometries.set(key, geometry);
+    this.evictOldestEntries(this.geometries, ResourceManager.MAX_GEOMETRY_CACHE_ENTRIES, entry =>
+      entry.dispose()
+    );
+
+    return geometry;
   }
 
   /**

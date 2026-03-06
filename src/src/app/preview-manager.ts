@@ -1,5 +1,5 @@
 import { PreviewWindow } from '../preview/preview-window';
-import type { MarkerPoint } from '../types/maze';
+import type { MarkerPoint, MazeData, SolutionPath } from '../types/maze';
 
 interface PreviewWindowFactoryArgs {
   onHide: () => void;
@@ -12,25 +12,30 @@ interface PreviewWindowManagerConfig {
   onClosed?: () => void;
 }
 
+interface PreviewSnapshot {
+  mazeData: MazeData;
+  markers?: { start?: MarkerPoint | null; end?: MarkerPoint | null };
+  solutionPath?: SolutionPath;
+}
+
 export class PreviewWindowManager {
-  private previewWindow: PreviewWindow | null;
+  private previewWindow: PreviewWindow | null = null;
   private isVisible: boolean;
-  private isClosed: boolean;
+  private isClosed: boolean = false;
+  private latestSnapshot: PreviewSnapshot | null = null;
 
   constructor(
     private readonly config: PreviewWindowManagerConfig,
     initialVisible: boolean
   ) {
-    this.previewWindow = this.createWindow();
     this.isVisible = initialVisible;
-    this.isClosed = false;
     this.setVisible(initialVisible);
   }
 
   public setVisible(visible: boolean): void {
     this.isVisible = visible;
 
-    if (this.isClosed || !this.previewWindow) {
+    if (this.isClosed) {
       if (visible) {
         this.isVisible = false;
       }
@@ -39,17 +44,33 @@ export class PreviewWindowManager {
     }
 
     if (visible) {
-      this.previewWindow.show();
+      const previewWindow = this.ensureWindow();
+      if (!previewWindow) {
+        this.isVisible = false;
+        this.config.onVisibilityChanged?.(false);
+        return;
+      }
+      previewWindow.show();
     } else {
+      if (!this.previewWindow) {
+        this.config.onVisibilityChanged?.(false);
+        return;
+      }
       this.previewWindow.hide();
     }
   }
 
   public updateMaze(
-    mazeData: number[][],
-    markers?: { start?: MarkerPoint | null; end?: MarkerPoint | null }
+    mazeData: MazeData,
+    markers?: { start?: MarkerPoint | null; end?: MarkerPoint | null },
+    solutionPath?: SolutionPath
   ): void {
-    this.previewWindow?.updateMaze(mazeData, markers);
+    this.latestSnapshot = {
+      mazeData,
+      markers,
+      solutionPath,
+    };
+    this.previewWindow?.updateMaze(mazeData, markers, solutionPath);
   }
 
   public handleWindowResize(): void {
@@ -63,15 +84,20 @@ export class PreviewWindowManager {
       return;
     }
 
-    this.previewWindow = this.createWindow();
     this.isClosed = false;
+    const previewWindow = this.ensureWindow();
+    if (!previewWindow) {
+      this.isVisible = false;
+      this.config.onVisibilityChanged?.(false);
+      return;
+    }
+    previewWindow.show();
     this.isVisible = true;
-    this.previewWindow.show();
     this.config.onVisibilityChanged?.(true);
   }
 
   public canOpenNewWindow(): boolean {
-    return this.previewWindow === null;
+    return this.isClosed && this.previewWindow === null;
   }
 
   public isWindowClosed(): boolean {
@@ -88,6 +114,22 @@ export class PreviewWindowManager {
       onHide: () => this.handleWindowHidden(),
       onClose: () => this.handleWindowClosed(),
     });
+  }
+
+  private ensureWindow(): PreviewWindow | null {
+    if (this.previewWindow) {
+      return this.previewWindow;
+    }
+    const previewWindow = this.createWindow();
+    this.previewWindow = previewWindow;
+    if (this.latestSnapshot) {
+      previewWindow.updateMaze(
+        this.latestSnapshot.mazeData,
+        this.latestSnapshot.markers,
+        this.latestSnapshot.solutionPath
+      );
+    }
+    return previewWindow;
   }
 
   private handleWindowHidden(): void {

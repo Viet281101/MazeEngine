@@ -3,11 +3,21 @@ import { Toolbar } from '../../toolbar';
 import { PREVIEW_WINDOW_STATUS_CHANGED_EVENT } from '../../../constants/events';
 import { watchContainerRemoval } from '../popup-lifecycle';
 import {
+  applyCameraZoomMaxDistance,
+  applyCameraZoomMinDistance,
   applyMeshReductionThreshold,
   canOpenPreviewWindow,
   getInitialSettingsValues,
+  isPreviewVisible,
   reopenPreviewWindow,
+  setDebugVisible,
+  setEdgesVisible,
+  setAdaptiveQualityEnabled,
+  setCameraZoomLimitEnabled,
+  setFloorGridEnabled,
+  setHideEdgesDuringInteractionEnabled,
   setMeshReductionEnabled,
+  setPreviewVisible,
 } from './setting-app-bridge';
 import { createSettingsPopupDom } from './setting-dom';
 import { setupLanguagePrefetch, setupLanguageTranslations } from './setting-i18n';
@@ -22,7 +32,16 @@ export function showSettingsPopup(toolbar: Toolbar): void {
 
   const dom = createSettingsPopupDom(
     initialValues.meshReductionEnabled,
-    initialValues.meshReductionThreshold
+    initialValues.meshReductionThreshold,
+    initialValues.hideEdgesDuringInteractionEnabled,
+    initialValues.floorGridEnabled,
+    initialValues.adaptiveQualityEnabled,
+    initialValues.edgesVisible,
+    initialValues.debugVisible,
+    initialValues.previewVisible,
+    initialValues.cameraZoomLimitEnabled,
+    initialValues.cameraZoomMinDistance,
+    initialValues.cameraZoomMaxDistance
   );
   const {
     content,
@@ -30,16 +49,42 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     previewButton,
     meshReductionToggle,
     thresholdInput,
+    hideEdgesDuringInteractionToggle,
+    floorGridToggle,
+    adaptiveQualityToggle,
+    showEdgesToggle,
+    showDebugToggle,
+    showPreviewToggle,
+    cameraZoomLimitToggle,
+    cameraZoomMinInput,
+    cameraZoomMaxInput,
+    cameraZoomMinRow,
+    cameraZoomMaxRow,
     meshReductionHelpIcon,
     thresholdHelpIcon,
+    hideEdgesDuringInteractionHelpIcon,
+    floorGridHelpIcon,
+    adaptiveQualityHelpIcon,
+    showEdgesHelpIcon,
+    showDebugHelpIcon,
+    showPreviewHelpIcon,
     meshReductionTooltip,
     thresholdTooltip,
+    hideEdgesDuringInteractionTooltip,
+    floorGridTooltip,
+    adaptiveQualityTooltip,
+    showEdgesTooltip,
+    showDebugTooltip,
+    showPreviewTooltip,
   } = dom;
 
   popupContainer.insertBefore(content, popupContainer.firstChild);
 
-  const updatePreviewButtonState = () => {
-    previewButton.disabled = !canOpenPreviewWindow();
+  const updatePreviewWindowControlsState = () => {
+    const canOpenNewPreviewWindow = canOpenPreviewWindow();
+    previewButton.disabled = !canOpenNewPreviewWindow;
+    showPreviewToggle.checked = isPreviewVisible();
+    showPreviewToggle.disabled = canOpenNewPreviewWindow;
   };
 
   const applyThreshold = () => {
@@ -47,19 +92,58 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     thresholdInput.value = String(clamped);
   };
 
-  updatePreviewButtonState();
+  const syncCameraZoomRowsVisibility = () => {
+    const display = cameraZoomLimitToggle.checked ? 'grid' : 'none';
+    cameraZoomMinRow.style.display = display;
+    cameraZoomMaxRow.style.display = display;
+  };
+
+  const applyCameraZoomMin = () => {
+    const clamped = applyCameraZoomMinDistance(Number(cameraZoomMinInput.value));
+    const maxValue = Number(cameraZoomMaxInput.value);
+    if (maxValue < clamped) {
+      cameraZoomMaxInput.value = String(clamped);
+      applyCameraZoomMaxDistance(clamped);
+    }
+    cameraZoomMinInput.value = String(clamped);
+  };
+
+  const applyCameraZoomMax = () => {
+    const clamped = applyCameraZoomMaxDistance(Number(cameraZoomMaxInput.value));
+    const minValue = Number(cameraZoomMinInput.value);
+    if (minValue > clamped) {
+      cameraZoomMinInput.value = String(clamped);
+      applyCameraZoomMinDistance(clamped);
+    }
+    cameraZoomMaxInput.value = String(clamped);
+  };
+
+  updatePreviewWindowControlsState();
+  syncCameraZoomRowsVisibility();
 
   const unsubscribeLanguageChange = setupLanguageTranslations(dom);
   const cleanupLanguagePrefetch = setupLanguagePrefetch(select);
   const cleanupTooltips = setupSettingsTooltips({
     meshHelpIcon: meshReductionHelpIcon,
     thresholdHelpIcon: thresholdHelpIcon,
+    hideEdgesHelpIcon: hideEdgesDuringInteractionHelpIcon,
+    floorGridHelpIcon: floorGridHelpIcon,
+    adaptiveHelpIcon: adaptiveQualityHelpIcon,
+    showEdgesHelpIcon: showEdgesHelpIcon,
+    showDebugHelpIcon: showDebugHelpIcon,
+    showPreviewHelpIcon: showPreviewHelpIcon,
     meshTooltip: meshReductionTooltip,
     thresholdTooltip: thresholdTooltip,
+    hideEdgesTooltip: hideEdgesDuringInteractionTooltip,
+    floorGridTooltip: floorGridTooltip,
+    adaptiveTooltip: adaptiveQualityTooltip,
+    showEdgesTooltip: showEdgesTooltip,
+    showDebugTooltip: showDebugTooltip,
+    showPreviewTooltip: showPreviewTooltip,
   });
 
   const handlePreviewStatusChanged = () => {
-    updatePreviewButtonState();
+    updatePreviewWindowControlsState();
   };
 
   watchContainerRemoval(popupContainer, () => {
@@ -82,9 +166,36 @@ export function showSettingsPopup(toolbar: Toolbar): void {
 
   thresholdInput.addEventListener('change', applyThreshold);
   thresholdInput.addEventListener('blur', applyThreshold);
+  hideEdgesDuringInteractionToggle.addEventListener('change', () => {
+    setHideEdgesDuringInteractionEnabled(hideEdgesDuringInteractionToggle.checked);
+  });
+  floorGridToggle.addEventListener('change', () => {
+    setFloorGridEnabled(floorGridToggle.checked);
+  });
+  adaptiveQualityToggle.addEventListener('change', () => {
+    setAdaptiveQualityEnabled(adaptiveQualityToggle.checked);
+  });
+  showEdgesToggle.addEventListener('change', () => {
+    setEdgesVisible(showEdgesToggle.checked);
+  });
+  showDebugToggle.addEventListener('change', () => {
+    setDebugVisible(showDebugToggle.checked);
+  });
+  showPreviewToggle.addEventListener('change', () => {
+    setPreviewVisible(showPreviewToggle.checked);
+    updatePreviewWindowControlsState();
+  });
+  cameraZoomLimitToggle.addEventListener('change', () => {
+    setCameraZoomLimitEnabled(cameraZoomLimitToggle.checked);
+    syncCameraZoomRowsVisibility();
+  });
+  cameraZoomMinInput.addEventListener('change', applyCameraZoomMin);
+  cameraZoomMinInput.addEventListener('blur', applyCameraZoomMin);
+  cameraZoomMaxInput.addEventListener('change', applyCameraZoomMax);
+  cameraZoomMaxInput.addEventListener('blur', applyCameraZoomMax);
 
   previewButton.addEventListener('click', () => {
     reopenPreviewWindow();
-    updatePreviewButtonState();
+    updatePreviewWindowControlsState();
   });
 }

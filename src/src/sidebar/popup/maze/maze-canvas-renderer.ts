@@ -55,6 +55,26 @@ export function resetView(state: MazePopupState, canvas: HTMLCanvasElement): voi
   state.offsetY = (canvas.height - gridHeight) / 2;
 }
 
+export function fitViewToCanvas(state: MazePopupState, canvas: HTMLCanvasElement): void {
+  const gridWidth = state.cols * state.cellSize;
+  const gridHeight = state.rows * state.cellSize;
+  const padding = 24;
+  const availableWidth = Math.max(1, canvas.width - padding * 2);
+  const availableHeight = Math.max(1, canvas.height - padding * 2);
+  const fitScale = Math.min(availableWidth / gridWidth, availableHeight / gridHeight);
+  const defaultInteractiveMinScale = 0.35;
+  const autoFitMinScale = 0.05;
+  const nextScale = clamp(Math.min(1, fitScale), autoFitMinScale, state.maxScale);
+
+  // Keep existing behavior for small mazes and only auto-zoom out when needed.
+  // Auto-fit can go below default minScale so very large mazes still fit the preview.
+  // Allow wheel-zoom to return back to this overview scale after zooming in.
+  state.minScale = Math.min(defaultInteractiveMinScale, nextScale);
+  state.scale = nextScale;
+  state.offsetX = (canvas.width - gridWidth * state.scale) / 2;
+  state.offsetY = (canvas.height - gridHeight * state.scale) / 2;
+}
+
 export function drawMaze(
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,

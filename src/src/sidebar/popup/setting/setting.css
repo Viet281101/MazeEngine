@@ -119,10 +119,22 @@
   top: 144px;
 }
 
+.settings-popup__tooltip--hide-edges {
+  top: 196px;
+}
+
+.settings-popup__tooltip--adaptive {
+  top: 248px;
+}
+
+.settings-popup__tooltip--floor-grid {
+  top: 300px;
+}
+
 .settings-popup__tooltip-text {
   margin: 0 0 8px;
   color: #d8e7ed;
-  font-size: 13px;
+  font-size: 18px;
   line-height: 1.35;
 }
 
@@ -133,7 +145,7 @@
   border-radius: 4px;
   background: #182c35;
   color: #9fb6c1;
-  font-size: 12px;
+  font-size: 16px;
 }
 
 .settings-popup__tooltip-btn:disabled {

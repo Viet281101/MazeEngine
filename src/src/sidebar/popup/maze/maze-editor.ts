@@ -5,6 +5,7 @@ import {
   createStaticLayerCache,
   drawMaze,
   getCellFromEvent,
+  fitViewToCanvas,
   rebuildStaticLayer,
   resetView,
   updateStaticCell,
@@ -149,7 +150,7 @@ export class MazeEditorController {
     this.refs.rowsInput.valueAsNumber = loaded.rows;
     this.refs.colsInput.valueAsNumber = loaded.cols;
     rebuildStaticLayer(this.staticLayer, this.state);
-    resetView(this.state, this.canvas);
+    fitViewToCanvas(this.state, this.canvas);
     this.drawNow();
   }
 

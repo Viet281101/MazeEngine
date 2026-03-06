@@ -1,24 +1,25 @@
-import { SingleLayerMaze } from '../maze/single-layer-maze';
-import { MultiLayerMaze } from '../maze/multi-layer-maze';
+import { MultiLayerMaze, SingleLayerMaze } from '../maze';
 import { Toolbar } from '../sidebar/toolbar';
 import { GUIController } from '../gui';
 import { PreviewWindow } from '../preview/preview-window';
-import { PreviewWindowManager } from './preview-manager';
-import type { MazeController } from '../maze/maze-controller';
-import { computeMarkersFromLayer } from '../maze/marker-utils';
+import { PreviewController } from './preview-controller';
+import type { MazeController } from '../maze';
+import { computeMarkersFromLayer } from '../maze';
 import { subscribeLanguageChange, t } from '../sidebar/i18n';
 import { DebugOverlay } from '../debug/debug-overlay';
-import { MESH_REDUCTION } from '../constants/maze';
+import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION } from '../constants/maze';
 import { PREVIEW_WINDOW, UI_BREAKPOINTS } from '../constants/ui';
 import { PREVIEW_WINDOW_STATUS_CHANGED_EVENT } from '../constants/events';
 import type { WebGLRenderer } from 'three';
-import {
-  createInitialMazeData,
-  createSampleMultiLayerMazeData,
-  createSampleSingleLayerMazeData,
-} from './default-mazes';
+import { createSampleMultiLayerMazeData, createSampleSingleLayerMazeData } from './default-mazes';
 import { MeshReductionSettingsStorage } from './mesh-settings-store';
-import type { MarkerPoint, MazeAppBridge, MazeMarkers, UpdateMazeOptions } from '../types/maze';
+import type {
+  MarkerPoint,
+  MazeAppBridge,
+  MazeMarkers,
+  SolutionPath,
+  UpdateMazeOptions,
+} from '../types/maze';
 
 type MazeInstance = SingleLayerMaze | MultiLayerMaze;
 
@@ -35,7 +36,7 @@ export class MainApp implements MazeController, MazeAppBridge {
   private readonly toolbar: Toolbar;
   private maze: MazeInstance;
   private readonly guiController: GUIController;
-  private readonly previewWindowManager: PreviewWindowManager;
+  private readonly previewController: PreviewController;
   private readonly debugOverlay: DebugOverlay;
   private readonly renderListener: () => void;
   private readonly settingsStorage: MeshReductionSettingsStorage;
@@ -43,11 +44,21 @@ export class MainApp implements MazeController, MazeAppBridge {
   private readonly keydownHandler: (event: KeyboardEvent) => void;
 
   private previewMarkers: MazeMarkers | null = null;
-  private isDebugOverlayVisible: boolean = true;
-  private isPreviewVisible: boolean = true;
+  private solutionPath: SolutionPath = [];
+  private edgesVisible: boolean = true;
+  private debugOverlayVisible: boolean = true;
+  private previewVisibleByViewport: boolean = true;
+  private debugVisibilityOverriddenByUser: boolean = false;
+  private previewVisibilityOverriddenByUser: boolean = false;
   private readonly mobileBreakpoint: number = UI_BREAKPOINTS.MOBILE;
   private meshReductionThreshold: number = MESH_REDUCTION.DEFAULT_THRESHOLD;
   private meshReductionEnabled: boolean = MESH_REDUCTION.DEFAULT_ENABLED;
+  private hideEdgesDuringInteractionEnabled: boolean = false;
+  private floorGridEnabled: boolean = false;
+  private adaptiveQualityEnabled: boolean = true;
+  private cameraZoomLimitEnabled: boolean = CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED;
+  private cameraZoomMinDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE;
+  private cameraZoomMaxDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE;
   private unsubscribeLanguageChange: (() => void) | null = null;
 
   constructor() {
@@ -58,7 +69,7 @@ export class MainApp implements MazeController, MazeAppBridge {
 
     this.maze = this.createInitialMaze();
     this.applyMeshReductionSettingsToMaze();
-    this.previewMarkers = computeMarkersFromLayer(this.maze.getMazeData()?.[0]);
+    this.previewMarkers = computeMarkersFromLayer(this.maze.getMazeDataRef()?.[0]);
 
     this.guiController = new GUIController(this, {
       scale: 1.4,
@@ -66,32 +77,36 @@ export class MainApp implements MazeController, MazeAppBridge {
       autoHide: true,
     });
     this.initializeVisibilityByViewport();
-
-    this.previewWindowManager = new PreviewWindowManager(
-      {
-        createWindow: ({ onHide, onClose }) => this.createPreviewWindow(onHide, onClose),
-        onVisibilityChanged: visible => this.handlePreviewVisibilityChanged(visible),
-        onClosed: () => this.handlePreviewClosed(),
-      },
-      this.isPreviewVisible
-    );
+    this.previewController = new PreviewController({
+      initialVisible: this.previewVisibleByViewport,
+      createWindow: ({ onHide, onClose }) => this.createPreviewWindow(onHide, onClose),
+      updatePreviewVisibilitySetting: visible =>
+        this.guiController.updateSetting('showPreview', visible),
+      setPreviewControllerEnabled: (enabled, tooltip) =>
+        this.guiController.setControllerEnabled('showPreview', enabled, tooltip),
+      getPreviewClosedTooltip: () => t('gui.previewClosedTooltip'),
+      requestPreviewRefresh: () => this.updatePreview(),
+      emitStatusChanged: canOpenNewPreviewWindow =>
+        this.emitPreviewWindowStatusChanged(canOpenNewPreviewWindow),
+    });
     this.subscribeToLanguageChanges();
 
     this.debugOverlay = new DebugOverlay({
-      getMazeData: () => this.maze.getMazeData(),
+      getMazeLayerCount: () => this.maze.getMazeLayerCount(),
+      getRenderQualityInfo: () => this.maze.getRenderQualityInfo(),
     });
     this.renderListener = () => this.debugOverlay.recordRender();
     this.maze.addRenderListener(this.renderListener);
 
-    this.setDebugOverlayVisible(this.isDebugOverlayVisible);
-    this.setPreviewVisible(this.isPreviewVisible);
-    this.getRenderer().setClearColor(this.guiController.settings.backgroundColor);
+    this.applyDebugOverlayVisible(this.debugOverlayVisible);
+    this.applyPreviewVisible(this.previewVisibleByViewport);
+    this.maze.setBackgroundColor(this.guiController.settings.backgroundColor);
     this.updatePreview();
 
     this.resizeHandler = () => this.onWindowResize();
     this.keydownHandler = event => {
       if (event.key === 'p' || event.key === 'P') {
-        this.setPreviewVisible(!this.isPreviewVisible);
+        this.setPreviewVisible(!this.previewController.isVisible());
       }
     };
     this.registerGlobalListeners();
@@ -109,33 +124,45 @@ export class MainApp implements MazeController, MazeAppBridge {
     const loaded = this.settingsStorage.load({
       enabled: MESH_REDUCTION.DEFAULT_ENABLED,
       threshold: MESH_REDUCTION.DEFAULT_THRESHOLD,
+      hideEdgesDuringInteractionEnabled: false,
+      floorGridEnabled: false,
+      adaptiveQualityEnabled: true,
+      cameraZoomLimitEnabled: CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED,
+      cameraZoomMinDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE,
+      cameraZoomMaxDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE,
     });
     this.meshReductionEnabled = loaded.enabled;
     this.meshReductionThreshold = loaded.threshold;
+    this.hideEdgesDuringInteractionEnabled = loaded.hideEdgesDuringInteractionEnabled;
+    this.floorGridEnabled = loaded.floorGridEnabled;
+    this.adaptiveQualityEnabled = loaded.adaptiveQualityEnabled;
+    this.cameraZoomLimitEnabled = loaded.cameraZoomLimitEnabled;
+    this.cameraZoomMinDistance = loaded.cameraZoomMinDistance;
+    this.cameraZoomMaxDistance = loaded.cameraZoomMaxDistance;
   }
 
   private applyMeshReductionSettingsToMaze(): void {
     this.maze.setMeshMergeThreshold(this.meshReductionThreshold);
     this.maze.setMeshReductionEnabled(this.meshReductionEnabled);
+    this.maze.setHideEdgesDuringInteractionEnabled(this.hideEdgesDuringInteractionEnabled);
+    this.maze.setFloorGridEnabled(this.floorGridEnabled);
+    this.maze.setAdaptiveQualityEnabled(this.adaptiveQualityEnabled);
+    this.maze.setCameraZoomMinDistance(this.cameraZoomMinDistance);
+    this.maze.setCameraZoomMaxDistance(this.cameraZoomMaxDistance);
+    this.maze.setCameraZoomLimitEnabled(this.cameraZoomLimitEnabled);
   }
 
   private initializeVisibilityByViewport(): void {
     const isMobile = window.innerWidth <= this.mobileBreakpoint;
-    this.isDebugOverlayVisible = !isMobile;
-    this.isPreviewVisible = !isMobile;
-    this.guiController.updateSetting('showDebug', this.isDebugOverlayVisible);
-    this.guiController.updateSetting('showPreview', this.isPreviewVisible);
+    this.debugOverlayVisible = !isMobile;
+    this.previewVisibleByViewport = !isMobile;
+    this.guiController.updateSetting('showDebug', this.debugOverlayVisible);
+    this.guiController.updateSetting('showPreview', this.previewVisibleByViewport);
   }
 
   private subscribeToLanguageChanges(): void {
     this.unsubscribeLanguageChange = subscribeLanguageChange(() => {
-      if (this.previewWindowManager.isWindowClosed()) {
-        this.guiController.setControllerEnabled(
-          'showPreview',
-          false,
-          t('gui.previewClosedTooltip')
-        );
-      }
+      this.previewController.handleLanguageChange();
     });
   }
 
@@ -149,8 +176,8 @@ export class MainApp implements MazeController, MazeAppBridge {
     window.removeEventListener('keydown', this.keydownHandler);
   }
 
-  private createInitialMaze(): SingleLayerMaze {
-    return new SingleLayerMaze(this.canvas, createInitialMazeData());
+  private createInitialMaze(): MazeInstance {
+    return new MultiLayerMaze(this.canvas, createSampleMultiLayerMazeData());
   }
 
   /**
@@ -160,22 +187,22 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.toolbar.resizeToolbar();
     this.maze.resize();
     this.guiController.checkWindowSize();
-    this.previewWindowManager.handleWindowResize();
+    this.previewController.handleWindowResize();
 
     const isMobile = window.innerWidth <= this.mobileBreakpoint;
     const nextDebugVisible = !isMobile;
     const nextPreviewVisible = !isMobile;
-    const effectivePreviewVisible =
-      nextPreviewVisible && !this.previewWindowManager.isWindowClosed();
+    const effectivePreviewVisible = nextPreviewVisible && !this.previewController.isWindowClosed();
 
-    if (this.isDebugOverlayVisible !== nextDebugVisible) {
-      this.setDebugOverlayVisible(nextDebugVisible);
-      this.guiController.updateSetting('showDebug', nextDebugVisible);
+    if (!this.debugVisibilityOverriddenByUser && this.debugOverlayVisible !== nextDebugVisible) {
+      this.applyDebugOverlayVisible(nextDebugVisible);
     }
 
-    if (this.isPreviewVisible !== effectivePreviewVisible) {
-      this.setPreviewVisible(effectivePreviewVisible);
-      this.guiController.updateSetting('showPreview', effectivePreviewVisible);
+    if (
+      !this.previewVisibilityOverriddenByUser &&
+      this.previewController.isVisible() !== effectivePreviewVisible
+    ) {
+      this.applyPreviewVisible(effectivePreviewVisible);
     }
   }
 
@@ -191,6 +218,8 @@ export class MainApp implements MazeController, MazeAppBridge {
     },
     options: UpdateMazeOptions = {}
   ): void {
+    this.solutionPath = [];
+    this.maze.clearSolutionPath();
     const cameraSnapshot = this.captureCameraSnapshot(options.preserveCamera === true);
 
     if (this.canReuseMazeInstance(multiLayer)) {
@@ -257,7 +286,7 @@ export class MainApp implements MazeController, MazeAppBridge {
       return;
     }
 
-    const currentData = this.maze.getMazeData();
+    const currentData = this.maze.getMazeDataRef();
     this.previewMarkers = computeMarkersFromLayer(currentData?.[0]);
   }
 
@@ -265,29 +294,25 @@ export class MainApp implements MazeController, MazeAppBridge {
    * Update preview window with current maze data
    */
   private updatePreview(): void {
-    const mazeData = this.maze.getMazeData();
+    const mazeData = this.maze.getMazeDataRef();
     if (mazeData.length === 0) {
       return;
     }
 
     if (this.previewMarkers) {
-      this.previewWindowManager.updateMaze(mazeData[0], this.previewMarkers);
+      this.previewController.updateMaze(mazeData, this.previewMarkers, this.solutionPath);
       return;
     }
 
-    this.previewWindowManager.updateMaze(mazeData[0]);
+    this.previewController.updateMaze(mazeData, undefined, this.solutionPath);
   }
 
   /**
    * Apply current GUI settings to maze
    */
   private applyGUISettings(): void {
-    const renderer = this.getRenderer();
-    if (!renderer) {
-      return;
-    }
-    renderer.setClearColor(this.guiController.settings.backgroundColor);
-    this.requestRender();
+    this.maze.setBackgroundColor(this.guiController.settings.backgroundColor);
+    this.maze.toggleEdges(this.edgesVisible);
   }
 
   /**
@@ -308,7 +333,7 @@ export class MainApp implements MazeController, MazeAppBridge {
    * Toggle preview window visibility
    */
   public togglePreview(): void {
-    this.setPreviewVisible(!this.isPreviewVisible);
+    this.setPreviewVisible(!this.previewController.isVisible());
   }
 
   public setMeshReductionThreshold(threshold: number): void {
@@ -337,18 +362,114 @@ export class MainApp implements MazeController, MazeAppBridge {
     return this.meshReductionEnabled;
   }
 
+  public setHideEdgesDuringInteractionEnabled(enabled: boolean): void {
+    this.hideEdgesDuringInteractionEnabled = enabled;
+    this.maze.setHideEdgesDuringInteractionEnabled(enabled);
+    this.settingsStorage.saveHideEdgesDuringInteractionEnabled(enabled);
+  }
+
+  public isHideEdgesDuringInteractionEnabled(): boolean {
+    return this.hideEdgesDuringInteractionEnabled;
+  }
+
+  public setAdaptiveQualityEnabled(enabled: boolean): void {
+    this.adaptiveQualityEnabled = enabled;
+    this.maze.setAdaptiveQualityEnabled(enabled);
+    this.settingsStorage.saveAdaptiveQualityEnabled(enabled);
+  }
+
+  public setFloorGridEnabled(enabled: boolean): void {
+    this.floorGridEnabled = enabled;
+    this.maze.setFloorGridEnabled(enabled);
+    this.settingsStorage.saveFloorGridEnabled(enabled);
+  }
+
+  public isFloorGridEnabled(): boolean {
+    return this.floorGridEnabled;
+  }
+
+  public isAdaptiveQualityEnabled(): boolean {
+    return this.adaptiveQualityEnabled;
+  }
+
+  public setCameraZoomLimitEnabled(enabled: boolean): void {
+    this.cameraZoomLimitEnabled = enabled;
+    this.maze.setCameraZoomLimitEnabled(enabled);
+    this.settingsStorage.saveCameraZoomLimitEnabled(enabled);
+  }
+
+  public isCameraZoomLimitEnabled(): boolean {
+    return this.cameraZoomLimitEnabled;
+  }
+
+  public setCameraZoomMinDistance(distance: number): void {
+    const normalized = Math.min(
+      CAMERA_ZOOM_LIMIT.MAX_DISTANCE_MAX,
+      Math.max(CAMERA_ZOOM_LIMIT.MIN_DISTANCE_MIN, distance)
+    );
+    this.cameraZoomMinDistance = normalized;
+    if (this.cameraZoomMaxDistance < normalized) {
+      this.cameraZoomMaxDistance = normalized;
+      this.settingsStorage.saveCameraZoomMaxDistance(normalized);
+    }
+    this.maze.setCameraZoomMinDistance(normalized);
+    this.settingsStorage.saveCameraZoomMinDistance(normalized);
+  }
+
+  public getCameraZoomMinDistance(): number {
+    return this.cameraZoomMinDistance;
+  }
+
+  public setCameraZoomMaxDistance(distance: number): void {
+    const normalized = Math.min(
+      CAMERA_ZOOM_LIMIT.MAX_DISTANCE_MAX,
+      Math.max(CAMERA_ZOOM_LIMIT.MIN_DISTANCE_MIN, distance)
+    );
+    this.cameraZoomMaxDistance = normalized;
+    if (this.cameraZoomMinDistance > normalized) {
+      this.cameraZoomMinDistance = normalized;
+      this.settingsStorage.saveCameraZoomMinDistance(normalized);
+    }
+    this.maze.setCameraZoomMaxDistance(normalized);
+    this.settingsStorage.saveCameraZoomMaxDistance(normalized);
+  }
+
+  public getCameraZoomMaxDistance(): number {
+    return this.cameraZoomMaxDistance;
+  }
+
   // ========== MazeController Interface Implementation ==========
 
   public getRenderer(): WebGLRenderer {
     return this.maze.getRenderer();
   }
 
+  public setBackgroundColor(color: string): void {
+    this.maze.setBackgroundColor(color);
+  }
+
   public getMazeData(): number[][][] {
     return this.maze.getMazeData();
   }
 
+  public getMazeDataRef(): number[][][] {
+    return this.maze.getMazeDataRef();
+  }
+
   public getMazeMarkers(): MazeMarkers | null {
     return this.previewMarkers ? { ...this.previewMarkers } : null;
+  }
+
+  public setSolutionPath(path: SolutionPath): void {
+    this.solutionPath = path.map(cell => ({ ...cell }));
+    this.maze.setSolutionPath(this.solutionPath);
+    this.updatePreview();
+  }
+
+  public clearSolutionPath(): void {
+    this.solutionPath = [];
+    this.maze.clearSolutionPath();
+    this.updatePreview();
   }
 
   public updateWallColor(color: string): void {
@@ -368,7 +489,17 @@ export class MainApp implements MazeController, MazeAppBridge {
   }
 
   public toggleEdges(showEdges: boolean): void {
+    this.edgesVisible = showEdges;
+    this.guiController.updateSetting('showEdges', showEdges);
     this.maze.toggleEdges(showEdges);
+  }
+
+  public setEdgesVisible(enabled: boolean): void {
+    this.toggleEdges(enabled);
+  }
+
+  public isEdgesVisible(): boolean {
+    return this.edgesVisible;
   }
 
   public requestRender(): void {
@@ -384,7 +515,7 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.toolbar.destroy();
     this.maze.destroy();
     this.guiController.destroy();
-    this.previewWindowManager.destroy();
+    this.previewController.destroy();
     if (this.unsubscribeLanguageChange) {
       this.unsubscribeLanguageChange();
       this.unsubscribeLanguageChange = null;
@@ -393,46 +524,40 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.debugOverlay.destroy();
   }
 
-  public setDebugOverlayVisible(visible: boolean): void {
-    this.isDebugOverlayVisible = visible;
+  private applyDebugOverlayVisible(visible: boolean): void {
+    this.debugOverlayVisible = visible;
+    this.guiController.updateSetting('showDebug', visible);
     this.debugOverlay.setVisible(visible);
   }
 
+  private applyPreviewVisible(visible: boolean): void {
+    this.previewController.setVisible(visible);
+  }
+
+  public setDebugOverlayVisible(visible: boolean): void {
+    this.debugVisibilityOverriddenByUser = true;
+    this.applyDebugOverlayVisible(visible);
+  }
+
+  public isDebugOverlayVisible(): boolean {
+    return this.debugOverlayVisible;
+  }
+
   public setPreviewVisible(visible: boolean): void {
-    this.isPreviewVisible = visible;
-    if (this.previewWindowManager.isWindowClosed()) {
-      if (visible) {
-        this.isPreviewVisible = false;
-        this.guiController.updateSetting('showPreview', false);
-      }
-      return;
-    }
-    this.previewWindowManager.setVisible(visible);
+    this.previewVisibilityOverriddenByUser = true;
+    this.applyPreviewVisible(visible);
   }
 
-  private handlePreviewVisibilityChanged(visible: boolean): void {
-    this.isPreviewVisible = visible;
-    this.guiController.updateSetting('showPreview', visible);
-  }
-
-  private handlePreviewClosed(): void {
-    this.isPreviewVisible = false;
-    this.guiController.updateSetting('showPreview', false);
-    this.guiController.setControllerEnabled('showPreview', false, t('gui.previewClosedTooltip'));
-    this.emitPreviewWindowStatusChanged();
+  public isPreviewVisible(): boolean {
+    return this.previewController.isVisible();
   }
 
   public reopenPreviewWindow(): void {
-    this.previewWindowManager.reopen();
-    this.isPreviewVisible = true;
-    this.guiController.updateSetting('showPreview', true);
-    this.guiController.setControllerEnabled('showPreview', true);
-    this.updatePreview();
-    this.emitPreviewWindowStatusChanged();
+    this.previewController.reopen();
   }
 
   public canOpenNewPreviewWindow(): boolean {
-    return this.previewWindowManager.canOpenNewWindow();
+    return this.previewController.canOpenNewWindow();
   }
 
   private createPreviewWindow(onHide: () => void, onClose: () => void): PreviewWindow {
@@ -445,10 +570,10 @@ export class MainApp implements MazeController, MazeAppBridge {
     });
   }
 
-  private emitPreviewWindowStatusChanged(): void {
+  private emitPreviewWindowStatusChanged(canOpenNewPreviewWindow: boolean): void {
     window.dispatchEvent(
       new CustomEvent(PREVIEW_WINDOW_STATUS_CHANGED_EVENT, {
-        detail: { canOpenNewPreviewWindow: this.canOpenNewPreviewWindow() },
+        detail: { canOpenNewPreviewWindow },
       })
     );
   }

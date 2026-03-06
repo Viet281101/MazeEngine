@@ -1,5 +1,5 @@
 import * as dat from 'dat.gui';
-import { MazeController } from './maze/maze-controller';
+import type { MazeController } from './maze';
 import { subscribeLanguageChange, t, type TranslationKey } from './sidebar/i18n';
 import { UI_BREAKPOINTS } from './constants/ui';
 
@@ -77,9 +77,6 @@ export class GUIController {
     this.styleGUIContainer();
     this.addColorControls();
     this.addOpacityControls();
-    this.addEdgeControl();
-    this.addDebugControl();
-    this.addPreviewControl();
   }
 
   /**
@@ -106,11 +103,7 @@ export class GUIController {
     const bgController = this.gui.addColor(this.settings, 'backgroundColor');
     this.setControllerLabel(bgController, 'gui.backgroundColor');
     bgController.onChange((value: string) => {
-      const renderer = this.mazeController.getRenderer();
-      if (renderer) {
-        renderer.setClearColor(value);
-        this.mazeController.requestRender();
-      }
+      this.mazeController.setBackgroundColor(value);
     });
     this.controllers.set('backgroundColor', bgController);
     this.controllerLabelKeys.backgroundColor = 'gui.backgroundColor';
@@ -155,45 +148,6 @@ export class GUIController {
     });
     this.controllers.set('floorOpacity', floorOpacityController);
     this.controllerLabelKeys.floorOpacity = 'gui.floorOpacity';
-  }
-
-  /**
-   * Add edge toggle control
-   */
-  private addEdgeControl(): void {
-    const edgeController = this.gui.add(this.settings, 'showEdges');
-    this.setControllerLabel(edgeController, 'gui.showEdges');
-    edgeController.onChange((value: boolean) => {
-      this.mazeController.toggleEdges(value);
-    });
-    this.controllers.set('showEdges', edgeController);
-    this.controllerLabelKeys.showEdges = 'gui.showEdges';
-  }
-
-  /**
-   * Add debug overlay toggle
-   */
-  private addDebugControl(): void {
-    const debugController = this.gui.add(this.settings, 'showDebug');
-    this.setControllerLabel(debugController, 'gui.showDebug');
-    debugController.onChange((value: boolean) => {
-      this.mazeController.setDebugOverlayVisible(value);
-    });
-    this.controllers.set('showDebug', debugController);
-    this.controllerLabelKeys.showDebug = 'gui.showDebug';
-  }
-
-  /**
-   * Add preview window toggle
-   */
-  private addPreviewControl(): void {
-    const previewController = this.gui.add(this.settings, 'showPreview');
-    this.setControllerLabel(previewController, 'gui.showPreview');
-    previewController.onChange((value: boolean) => {
-      this.mazeController.setPreviewVisible(value);
-    });
-    this.controllers.set('showPreview', previewController);
-    this.controllerLabelKeys.showPreview = 'gui.showPreview';
   }
 
   public refreshTranslations(): void {
