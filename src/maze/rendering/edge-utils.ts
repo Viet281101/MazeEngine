@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { FLOOR_GRID_Y_OFFSET } from '../constants/maze';
-import type { ResourceManager } from '../resources/resource-manager';
-import { DisposalHelper } from '../resources/disposal-helper';
+import { FLOOR_GRID_Y_OFFSET } from '../../constants/maze';
+import type { ResourceManager } from '../../resources/resource-manager';
+import { DisposalHelper } from '../../resources/disposal-helper';
 export { FLOOR_GRID_Y_OFFSET };
 
 export function rebuildEdgesOnLayers(

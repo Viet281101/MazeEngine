@@ -1,11 +1,10 @@
-import { SingleLayerMaze } from '../maze/single-layer-maze';
-import { MultiLayerMaze } from '../maze/multi-layer-maze';
+import { MultiLayerMaze, SingleLayerMaze } from '../maze';
 import { Toolbar } from '../sidebar/toolbar';
 import { GUIController } from '../gui';
 import { PreviewWindow } from '../preview/preview-window';
 import { PreviewController } from './preview-controller';
-import type { MazeController } from '../maze/maze-controller';
-import { computeMarkersFromLayer } from '../maze/marker-utils';
+import type { MazeController } from '../maze';
+import { computeMarkersFromLayer } from '../maze';
 import { subscribeLanguageChange, t } from '../sidebar/i18n';
 import { DebugOverlay } from '../debug/debug-overlay';
 import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION } from '../constants/maze';

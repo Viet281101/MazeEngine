@@ -1,7 +1,15 @@
-import { Maze, MazeConfig } from './maze';
+import { Maze, MazeConfig } from '../core';
 import * as THREE from 'three';
-import { MULTI_LAYER_MAZE } from '../constants/maze';
-import { FLOOR_THICKNESS, type StairDirection } from '../resources/mesh-factory';
+import { MULTI_LAYER_MAZE } from '../../constants/maze';
+import { FLOOR_THICKNESS, type StairDirection } from '../../resources/mesh-factory';
+import { computeLayerMetrics } from '../core/model';
+
+const CONNECTOR_DIRECTION_BY_CELL_VALUE: Partial<Record<number, StairDirection>> = {
+  [MULTI_LAYER_MAZE.OPENING_NORTH_CELL_VALUE]: 'north',
+  [MULTI_LAYER_MAZE.OPENING_EAST_CELL_VALUE]: 'east',
+  [MULTI_LAYER_MAZE.OPENING_SOUTH_CELL_VALUE]: 'south',
+  [MULTI_LAYER_MAZE.OPENING_WEST_CELL_VALUE]: 'west',
+};
 
 /**
  * MultiLayerMaze - Maze with multiple stacked layers
@@ -89,19 +97,7 @@ export class MultiLayerMaze extends Maze {
   }
 
   private getDirectionFromConnectorCellValue(cellValue: number): StairDirection | null {
-    if (cellValue === MULTI_LAYER_MAZE.OPENING_NORTH_CELL_VALUE) {
-      return 'north';
-    }
-    if (cellValue === MULTI_LAYER_MAZE.OPENING_EAST_CELL_VALUE) {
-      return 'east';
-    }
-    if (cellValue === MULTI_LAYER_MAZE.OPENING_SOUTH_CELL_VALUE) {
-      return 'south';
-    }
-    if (cellValue === MULTI_LAYER_MAZE.OPENING_WEST_CELL_VALUE) {
-      return 'west';
-    }
-    return null;
+    return CONNECTOR_DIRECTION_BY_CELL_VALUE[cellValue] ?? null;
   }
 
   private inferConnectorDirection(
@@ -128,18 +124,14 @@ export class MultiLayerMaze extends Maze {
    * Position camera for multi-layer maze
    */
   private positionCameraForMultiLayer(): void {
-    const firstLayer = this.maze[0];
-    const rows = firstLayer?.length ?? 0;
-    const cols = firstLayer?.[0]?.length ?? 0;
-    if (rows === 0 || cols === 0) {
+    const metrics = computeLayerMetrics(this.maze[0], this.cellSize);
+    if (!metrics) {
       this.positionCamera(0, 0, Math.max(this.maze.length, 1) * this.cellSize);
       return;
     }
-    const mazeCenterX = (cols * this.cellSize) / 2 - this.cellSize / 2;
-    const mazeCenterZ = -(rows * this.cellSize) / 2 + this.cellSize / 2;
     const distance = this.maze.length * this.cellSize;
 
-    this.positionCamera(mazeCenterX, mazeCenterZ, distance);
+    this.positionCamera(metrics.center.x, metrics.center.z, distance);
   }
 
   private getLayerStride(): number {

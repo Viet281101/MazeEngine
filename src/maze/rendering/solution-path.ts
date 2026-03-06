@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { SOLUTION_PATH } from '../constants/maze';
-import type { SolutionPath } from '../types/maze';
+import { SOLUTION_PATH } from '../../constants/maze';
+import type { SolutionPath } from '../../types/maze';
 
 export function createSolutionPathLine(
   path: SolutionPath,

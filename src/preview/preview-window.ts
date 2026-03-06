@@ -5,7 +5,7 @@ import {
   renderPreviewMaze,
   type PreviewLayout,
 } from './preview-canvas-renderer';
-import { computeMarkersFromLayer } from '../maze/marker-utils';
+import { computeMarkersFromLayer } from '../maze';
 import { subscribeLanguageChange, t } from '../sidebar/i18n';
 import type { SolutionPath } from '../types/maze';
 

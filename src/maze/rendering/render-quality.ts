@@ -1,4 +1,4 @@
-import { ADAPTIVE_QUALITY, ADAPTIVE_QUALITY_DEFAULT_SCALE } from '../constants/maze';
+import { ADAPTIVE_QUALITY, ADAPTIVE_QUALITY_DEFAULT_SCALE } from '../../constants/maze';
 
 interface RendererSizeParams {
   isInteraction: boolean;

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { MeshFactory } from '../resources/mesh-factory';
+import type { MeshFactory } from '../../resources/mesh-factory';
 
 interface WallBuildParams {
   layer: number[][];

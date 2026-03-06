@@ -1,5 +1,6 @@
-import { Maze, MazeConfig } from './maze';
+import { Maze, MazeConfig } from '../core';
 import * as THREE from 'three';
+import { computeLayerMetrics } from '../core/model';
 
 /**
  * SingleLayerMaze - Maze with a single layer
@@ -39,16 +40,13 @@ export class SingleLayerMaze extends Maze {
    * Position camera to view entire maze
    */
   private positionCameraForMaze(layer: number[][]): void {
-    const rows = layer.length;
-    const cols = layer[0]?.length ?? 0;
-    if (rows === 0 || cols === 0) {
+    const metrics = computeLayerMetrics(layer, this.cellSize);
+    if (!metrics) {
       this.positionCamera(0, 0, this.cellSize);
       return;
     }
-    const mazeCenterX = (cols * this.cellSize) / 2 - this.cellSize / 2;
-    const mazeCenterZ = -(rows * this.cellSize) / 2 + this.cellSize / 2;
-    const distance = rows * this.cellSize;
+    const distance = metrics.rows * this.cellSize;
 
-    this.positionCamera(mazeCenterX, mazeCenterZ, distance);
+    this.positionCamera(metrics.center.x, metrics.center.z, distance);
   }
 }
