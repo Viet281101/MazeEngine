@@ -1,6 +1,6 @@
 import { PreviewWindow } from '../preview/preview-window';
 import { PreviewWindowManager } from './preview-manager';
-import type { MarkerPoint, SolutionPath } from '../types/maze';
+import type { MarkerPoint, MazeData, SolutionPath } from '../types/maze';
 
 interface PreviewControllerOptions {
   initialVisible: boolean;
@@ -77,7 +77,7 @@ export class PreviewController {
   }
 
   public updateMaze(
-    mazeData: number[][],
+    mazeData: MazeData,
     markers?: { start?: MarkerPoint | null; end?: MarkerPoint | null },
     solutionPath?: SolutionPath
   ): void {

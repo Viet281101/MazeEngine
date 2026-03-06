@@ -4,6 +4,7 @@ export const PREVIEW_COLORS = {
   surfaceTop: '#4a4a4a',
   wall: '#808080',
   path: '#c0c0c0',
+  connector: '#4fa3ff',
   grid: '#1a1a1a',
   border: '#1a1a1a',
   borderSoft: '#2a2a2a',

@@ -1,6 +1,6 @@
 export type MazeData = number[][][];
 
-export type MarkerPoint = { row: number; col: number };
+export type MarkerPoint = { row: number; col: number; layerIndex?: number };
 export type SolutionPath = MarkerPoint[];
 
 export type MazeMarkers = { start: MarkerPoint | null; end: MarkerPoint | null };

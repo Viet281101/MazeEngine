@@ -1,4 +1,6 @@
 import { PREVIEW_COLORS } from './preview-constants';
+import { getIconPath } from '../constants/assets';
+import { MULTI_LAYER_MAZE } from '../constants/maze';
 import type { SolutionPath } from '../types/maze';
 
 export interface PreviewLayout {
@@ -24,6 +26,42 @@ interface RenderPreviewMazeParams {
   startCell: MarkerCell | null;
   endCell: MarkerCell | null;
   solutionPath: SolutionPath;
+}
+
+interface DirectionVector {
+  dx: number;
+  dy: number;
+}
+
+const connectorArrowImage = new Image();
+connectorArrowImage.decoding = 'async';
+connectorArrowImage.src = getIconPath('arrow.png');
+
+function isConnectorCellValue(cell: number): boolean {
+  return (
+    cell === MULTI_LAYER_MAZE.OPENING_CELL_VALUE ||
+    cell === MULTI_LAYER_MAZE.OPENING_NORTH_CELL_VALUE ||
+    cell === MULTI_LAYER_MAZE.OPENING_EAST_CELL_VALUE ||
+    cell === MULTI_LAYER_MAZE.OPENING_SOUTH_CELL_VALUE ||
+    cell === MULTI_LAYER_MAZE.OPENING_WEST_CELL_VALUE
+  );
+}
+
+function getConnectorDirection(cell: number): DirectionVector | null {
+  // Canvas Y-axis points downward and maze rows are vertically flipped in preview.
+  if (cell === MULTI_LAYER_MAZE.OPENING_NORTH_CELL_VALUE) {
+    return { dx: 0, dy: 1 };
+  }
+  if (cell === MULTI_LAYER_MAZE.OPENING_EAST_CELL_VALUE) {
+    return { dx: 1, dy: 0 };
+  }
+  if (cell === MULTI_LAYER_MAZE.OPENING_SOUTH_CELL_VALUE) {
+    return { dx: 0, dy: -1 };
+  }
+  if (cell === MULTI_LAYER_MAZE.OPENING_WEST_CELL_VALUE) {
+    return { dx: -1, dy: 0 };
+  }
+  return null;
 }
 
 export function computePreviewLayout(
@@ -77,7 +115,13 @@ export function renderPreviewMaze(params: RenderPreviewMazeParams): void {
       const x = offsetX + col * cellSize;
       const y = offsetY + (rows - 1 - row) * cellSize;
 
-      const nextFill = mazeRow[col] === 1 ? PREVIEW_COLORS.wall : PREVIEW_COLORS.path;
+      const cell = mazeRow[col];
+      let nextFill = PREVIEW_COLORS.path;
+      if (cell === 1) {
+        nextFill = PREVIEW_COLORS.wall;
+      } else if (isConnectorCellValue(cell)) {
+        nextFill = PREVIEW_COLORS.connector;
+      }
       if (currentFill !== nextFill) {
         currentFill = nextFill;
         ctx.fillStyle = currentFill;
@@ -88,6 +132,7 @@ export function renderPreviewMaze(params: RenderPreviewMazeParams): void {
       if (showGrid) {
         ctx.strokeRect(x, y, cellSize, cellSize);
       }
+      drawConnectorDirectionArrow(ctx, cell, x, y, cellSize);
     }
   }
 
@@ -107,6 +152,33 @@ export function renderPreviewMaze(params: RenderPreviewMazeParams): void {
   if (endCell) {
     drawMarker(ctx, endCell, rows, cellSize, offsetX, offsetY, PREVIEW_COLORS.markerEnd);
   }
+}
+
+function drawConnectorDirectionArrow(
+  ctx: CanvasRenderingContext2D,
+  cellValue: number,
+  x: number,
+  y: number,
+  cellSize: number
+): void {
+  const direction = getConnectorDirection(cellValue);
+  if (!direction) {
+    return;
+  }
+  if (cellSize < 9 || !connectorArrowImage.complete || connectorArrowImage.naturalWidth === 0) {
+    return;
+  }
+
+  const centerX = x + cellSize / 2;
+  const centerY = y + cellSize / 2;
+  const angle = Math.atan2(direction.dy, direction.dx);
+  const iconSize = cellSize * 0.68;
+
+  ctx.save();
+  ctx.translate(centerX, centerY);
+  ctx.rotate(angle);
+  ctx.drawImage(connectorArrowImage, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
+  ctx.restore();
 }
 
 function drawMarker(

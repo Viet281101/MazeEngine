@@ -4,20 +4,29 @@ import type { SolutionPath } from '../../types/maze';
 
 export function createSolutionPathLine(
   path: SolutionPath,
-  targetLayer: number[][],
+  maze: number[][][],
   cellSize: number,
-  layerBaseY: number
+  defaultLayerIndex: number,
+  getLayerBaseY: (layerIndex: number) => number
 ): THREE.Line | null {
-  const rows = targetLayer.length;
-  const cols = targetLayer[0]?.length ?? 0;
   const points: THREE.Vector3[] = [];
 
   path.forEach(cell => {
+    const layerIndex =
+      typeof cell.layerIndex === 'number' && Number.isInteger(cell.layerIndex)
+        ? cell.layerIndex
+        : defaultLayerIndex;
+    const layer = maze[layerIndex];
+    if (!layer || layer.length === 0) {
+      return;
+    }
+    const rows = layer.length;
+    const cols = layer[0]?.length ?? 0;
     if (cell.row < 0 || cell.row >= rows || cell.col < 0 || cell.col >= cols) {
       return;
     }
     const x = cell.col * cellSize;
-    const y = SOLUTION_PATH.Y_OFFSET + layerBaseY;
+    const y = SOLUTION_PATH.Y_OFFSET + getLayerBaseY(layerIndex);
     const z = -cell.row * cellSize;
     points.push(new THREE.Vector3(x, y, z));
   });

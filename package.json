@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "deploy": "gh-pages -d dist",
     "format": "prettier --write .",
+    "check:multilayer": "tsc -p scripts/tsconfig.multilayer-check.json --outDir /tmp/mazeengine-multilayer-check && node /tmp/mazeengine-multilayer-check/scripts/check-multilayer-solvable.js",
     "lint:file-names": "node scripts/check-file-names.mjs",
     "lint:eslint": "eslint .",
     "lint": "npm run lint:file-names && npm run lint:eslint"

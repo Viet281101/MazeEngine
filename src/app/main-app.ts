@@ -300,11 +300,11 @@ export class MainApp implements MazeController, MazeAppBridge {
     }
 
     if (this.previewMarkers) {
-      this.previewController.updateMaze(mazeData[0], this.previewMarkers, this.solutionPath);
+      this.previewController.updateMaze(mazeData, this.previewMarkers, this.solutionPath);
       return;
     }
 
-    this.previewController.updateMaze(mazeData[0], undefined, this.solutionPath);
+    this.previewController.updateMaze(mazeData, undefined, this.solutionPath);
   }
 
   /**
@@ -462,7 +462,7 @@ export class MainApp implements MazeController, MazeAppBridge {
 
   public setSolutionPath(path: SolutionPath): void {
     this.solutionPath = path.map(cell => ({ ...cell }));
-    this.maze.setSolutionPath(this.solutionPath, 0);
+    this.maze.setSolutionPath(this.solutionPath);
     this.updatePreview();
   }
 

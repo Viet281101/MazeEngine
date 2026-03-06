@@ -10,7 +10,7 @@ import { createSolvePopupDom } from './solve-dom';
 import {
   detectTopology,
   getMazeAppBridge,
-  runSingleLayerSolve,
+  runMazeSolve,
   type SolveRunResult,
 } from './solve-runtime';
 import {
@@ -104,14 +104,14 @@ class SolvePopup {
         return;
       }
 
-      const result = runSingleLayerSolve(this.selectedAlgorithm.id);
+      const result = runMazeSolve(this.selectedAlgorithm.id);
       this.handleSolveResult(result);
     });
   }
 
   private handleSolveResult(result: SolveRunResult): void {
-    if (result.status === 'singleLayerOnly') {
-      window.alert(t('solve.singleLayerOnlyAlert'));
+    if (result.status === 'unsupportedTopology') {
+      window.alert(t('solve.unsupportedTopologyAlert'));
       return;
     }
     if (result.status === 'noPath') {

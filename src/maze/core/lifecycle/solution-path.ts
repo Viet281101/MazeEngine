@@ -35,16 +35,16 @@ export function upsertSolutionPathLine(
     return { line: clearedLine };
   }
 
-  const targetLayer = params.maze[params.layerIndex];
-  if (!targetLayer || targetLayer.length === 0) {
+  if (!params.maze[params.layerIndex] || params.maze[params.layerIndex].length === 0) {
     return { line: clearedLine };
   }
 
   const nextLine = createSolutionPathLine(
     params.path,
-    targetLayer,
+    params.maze,
     params.cellSize,
-    params.getLayerBaseY(params.layerIndex)
+    params.layerIndex,
+    params.getLayerBaseY
   );
   if (!nextLine) {
     return { line: clearedLine };

@@ -1,12 +1,13 @@
 import type { MazeTopologyId } from '../../../generator';
 import type { MazeAppBridge } from '../../../types/maze';
+import { solveMultiLayerMazeWithBfs } from '../../../solve/runtime/multi-layer-bfs';
 import { solveSingleLayerMazeWithBfs } from '../../../solve/runtime/single-layer-bfs';
 
 export type SolveTopology = MazeTopologyId | 'unknown';
 
 export type SolveRunResult =
   | { status: 'appUnavailable' }
-  | { status: 'singleLayerOnly' }
+  | { status: 'unsupportedTopology' }
   | { status: 'markersMissing' }
   | { status: 'noPath' }
   | { status: 'solved'; pathLength: number };
@@ -33,7 +34,14 @@ export function detectTopology(mazeData: number[][][]): SolveTopology {
   return isRect ? 'singleLayerRect' : 'unknown';
 }
 
-export function runSingleLayerSolve(selectedAlgorithmId: string): SolveRunResult {
+function normalizeMarkerLayerIndex(marker: { row: number; col: number; layerIndex?: number }): number {
+  if (typeof marker.layerIndex === 'number' && Number.isInteger(marker.layerIndex)) {
+    return marker.layerIndex;
+  }
+  return 0;
+}
+
+export function runMazeSolve(selectedAlgorithmId: string): SolveRunResult {
   const mazeApp = getMazeAppBridge();
   if (!mazeApp) {
     return { status: 'appUnavailable' };
@@ -43,9 +51,9 @@ export function runSingleLayerSolve(selectedAlgorithmId: string): SolveRunResult
     typeof mazeApp.getMazeDataRef === 'function' ? mazeApp.getMazeDataRef() : mazeApp.getMazeData();
   const markers = mazeApp.getMazeMarkers();
   const topology = detectTopology(mazeData);
-  if (topology !== 'singleLayerRect') {
+  if (topology !== 'singleLayerRect' && topology !== 'multiLayerRect') {
     mazeApp.clearSolutionPath();
-    return { status: 'singleLayerOnly' };
+    return { status: 'unsupportedTopology' };
   }
 
   if (!markers?.start || !markers?.end || mazeData.length === 0) {
@@ -53,8 +61,14 @@ export function runSingleLayerSolve(selectedAlgorithmId: string): SolveRunResult
     return { status: 'markersMissing' };
   }
 
-  const layer = mazeData[0];
-  const path = solveSingleLayerMazeWithBfs(layer, markers.start, markers.end);
+  const path =
+    topology === 'singleLayerRect'
+      ? solveSingleLayerMazeWithBfs(mazeData[0] ?? [], markers.start, markers.end)
+      : solveMultiLayerMazeWithBfs(
+          mazeData,
+          { ...markers.start, layerIndex: normalizeMarkerLayerIndex(markers.start) },
+          { ...markers.end, layerIndex: normalizeMarkerLayerIndex(markers.end) }
+        );
   if (!path) {
     mazeApp.clearSolutionPath();
     return { status: 'noPath' };
@@ -62,7 +76,7 @@ export function runSingleLayerSolve(selectedAlgorithmId: string): SolveRunResult
 
   mazeApp.setSolutionPath(path);
   console.info(
-    `[solve] Solved with BFS runtime (selected: ${selectedAlgorithmId}) path length=${path.length}`
+    `[solve] Solved with BFS runtime (selected: ${selectedAlgorithmId}, topology: ${topology}) path length=${path.length}`
   );
   return { status: 'solved', pathLength: path.length };
 }

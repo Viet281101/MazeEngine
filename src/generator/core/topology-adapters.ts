@@ -41,6 +41,10 @@ class MultiLayerRectTopologyAdapter implements TopologyAdapter {
   }
 
   public adaptOutput(output: GeneratedMazeResult, input: GeneratorRunInput): GeneratedMazeResult {
+    if (output.maze.length > 1) {
+      return output;
+    }
+
     const baseLayer = output.maze[0];
     if (!baseLayer || !Array.isArray(baseLayer[0])) {
       return output;
