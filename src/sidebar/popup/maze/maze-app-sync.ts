@@ -1,5 +1,6 @@
 import { MAZE_SIZE } from '../../../constants/maze';
 import { t } from '../../i18n';
+import { updateMazePreservingCamera } from '../popup-maze-app-bridge';
 import type { MazePopupState } from './types';
 
 export interface LoadedMazeSize {
@@ -13,12 +14,16 @@ export function clampMazeSize(value: number): number {
 
 export function loadCurrentMazeIntoState(state: MazePopupState): LoadedMazeSize | null {
   const mazeApp = window.mazeApp;
-  if (!mazeApp || typeof mazeApp.getMazeData !== 'function') {
-    console.warn('mazeApp.getMazeData not available');
+  if (
+    !mazeApp ||
+    (typeof mazeApp.getMazeDataRef !== 'function' && typeof mazeApp.getMazeData !== 'function')
+  ) {
+    console.warn('mazeApp.getMazeDataRef/getMazeData not available');
     return null;
   }
 
-  const data = mazeApp.getMazeData();
+  const data =
+    typeof mazeApp.getMazeDataRef === 'function' ? mazeApp.getMazeDataRef() : mazeApp.getMazeData();
   const markers =
     mazeApp && typeof mazeApp.getMazeMarkers === 'function' ? mazeApp.getMazeMarkers() : null;
   if (!Array.isArray(data) || data.length === 0 || !Array.isArray(data[0])) {
@@ -101,8 +106,79 @@ export function applyStateToMaze(state: MazePopupState): void {
     ? { row: state.rows - 1 - state.start.row, col: state.start.col }
     : null;
   const end = state.end ? { row: state.rows - 1 - state.end.row, col: state.end.col } : null;
-  mazeApp.updateMaze(mazeData, false, {
-    start,
-    end,
-  });
+
+  if (isSameAsCurrentMaze(mazeApp, mazeData[0], start, end)) {
+    return;
+  }
+
+  updateMazePreservingCamera(mazeApp, mazeData, false, { start, end });
+}
+
+function isSameAsCurrentMaze(
+  mazeApp: Window['mazeApp'],
+  nextLayer: number[][],
+  nextStart: { row: number; col: number } | null,
+  nextEnd: { row: number; col: number } | null
+): boolean {
+  if (
+    !mazeApp ||
+    (typeof mazeApp.getMazeDataRef !== 'function' && typeof mazeApp.getMazeData !== 'function')
+  ) {
+    return false;
+  }
+
+  const currentMazeData =
+    typeof mazeApp.getMazeDataRef === 'function' ? mazeApp.getMazeDataRef() : mazeApp.getMazeData();
+  if (!Array.isArray(currentMazeData) || currentMazeData.length !== 1) {
+    return false;
+  }
+
+  const currentLayer = currentMazeData[0];
+  if (!isSameLayer(currentLayer, nextLayer)) {
+    return false;
+  }
+
+  if (typeof mazeApp.getMazeMarkers !== 'function') {
+    return false;
+  }
+
+  const currentMarkers = mazeApp.getMazeMarkers();
+  return (
+    isSameMarker(currentMarkers?.start ?? null, nextStart) &&
+    isSameMarker(currentMarkers?.end ?? null, nextEnd)
+  );
+}
+
+function isSameLayer(currentLayer: number[][], nextLayer: number[][]): boolean {
+  if (!Array.isArray(currentLayer) || currentLayer.length !== nextLayer.length) {
+    return false;
+  }
+
+  for (let row = 0; row < nextLayer.length; row += 1) {
+    const currentRow = currentLayer[row];
+    const nextRow = nextLayer[row];
+    if (!Array.isArray(currentRow) || currentRow.length !== nextRow.length) {
+      return false;
+    }
+    for (let col = 0; col < nextRow.length; col += 1) {
+      if (currentRow[col] !== nextRow[col]) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+function isSameMarker(
+  current: { row: number; col: number } | null,
+  next: { row: number; col: number } | null
+): boolean {
+  if (!current && !next) {
+    return true;
+  }
+  if (!current || !next) {
+    return false;
+  }
+  return current.row === next.row && current.col === next.col;
 }

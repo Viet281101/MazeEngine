@@ -55,7 +55,8 @@
   gap: 6px;
 }
 
-.preview-grid-btn {
+.preview-grid-btn,
+.preview-layer-btn {
   background: var(--preview-button-bg, #2f2f2f);
   border: 1px solid var(--preview-button-border, #1a1a1a);
   color: #e0e0e0;
@@ -83,8 +84,14 @@
   background: var(--preview-button-hover, #3a3a3a);
 }
 
-.preview-grid-btn:active {
+.preview-grid-btn:active,
+.preview-layer-btn:active {
   background: var(--preview-button-active, #2a2a2a);
+}
+
+.preview-layer-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 .preview-legend {
@@ -99,7 +106,7 @@
 
 .preview-footer {
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
   padding: 6px 8px;
   height: 26px;
@@ -126,6 +133,10 @@
 
 .preview-swatch.path {
   background: var(--preview-path, #c0c0c0);
+}
+
+.preview-swatch.connector {
+  background: var(--preview-connector, #4fa3ff);
 }
 
 .preview-swatch.start {
@@ -195,6 +206,19 @@
   background-color: var(--preview-bg, #2a2a2a);
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
+
+.preview-layer-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.preview-layer-label {
+  min-width: 68px;
+  text-align: center;
+  font-size: 11px;
+  color: #e0e0e0;
 }
 
 .preview-window::after {

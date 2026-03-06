@@ -8,6 +8,7 @@ import {
 } from '../../../generator';
 import type { GenerateTaskRequest, GenerateTaskResponse } from '../../../generator/worker-protocol';
 import { t } from '../../i18n';
+import { updateMazePreservingCamera } from '../popup-maze-app-bridge';
 
 interface MultiLayerTopologyParams {
   layers: number;
@@ -166,17 +167,10 @@ export async function runGeneration(input: RunGenerationInput): Promise<void> {
   }
 
   const updateStartedAt = performance.now();
-  mazeApp.updateMaze(
-    generated.maze,
-    input.topology === 'multiLayerRect',
-    {
-      start: generated.markers.start,
-      end: generated.markers.end,
-    },
-    {
-      preserveCamera: true,
-    }
-  );
+  updateMazePreservingCamera(mazeApp, generated.maze, input.topology === 'multiLayerRect', {
+    start: generated.markers.start,
+    end: generated.markers.end,
+  });
   logPerf('updateMaze', performance.now() - updateStartedAt);
 }
 

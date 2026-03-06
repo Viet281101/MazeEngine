@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { ResourceManager } from './resource-manager';
 
+export const FLOOR_THICKNESS = 0.06;
+
 export interface WallParams {
   x: number;
   y: number;
@@ -16,21 +18,36 @@ export interface FloorParams {
   z: number;
   width: number;
   height: number;
-  rotationX?: number;
+  materialKey?: string;
 }
+
+export interface StairConnectorParams {
+  x: number;
+  y: number;
+  z: number;
+  cellSize: number;
+  riseHeight: number;
+  stepCount?: number;
+  direction?: StairDirection;
+}
+
+export type StairDirection = 'north' | 'east' | 'south' | 'west';
 
 /**
  * MeshFactory - Factory pattern to create meshes
  * Use ResourceManager to reuse geometries
  */
 export class MeshFactory {
+  private static readonly DEFAULT_STAIR_STEP_COUNT = 4;
+
   constructor(
     private resourceManager: ResourceManager,
     private wallColor: THREE.Color,
     private floorColor: THREE.Color,
     private wallOpacity: number,
     private floorOpacity: number,
-    private showEdges: boolean
+    private showEdges: boolean,
+    private showFloorGrid: boolean
   ) {}
 
   /**
@@ -49,6 +66,7 @@ export class MeshFactory {
 
     const wall = new THREE.Mesh(geometry, material);
     wall.position.set(x, y, z);
+    wall.userData.surfaceType = 'wall';
     wall.userData.sharedGeometry = true;
     wall.userData.sharedMaterial = true;
 
@@ -66,27 +84,28 @@ export class MeshFactory {
    * Create floor mesh with edges (if enabled)
    */
   createFloor(params: FloorParams): THREE.Group {
-    const { x, y, z, width, height, rotationX = -Math.PI / 2 } = params;
+    const { x, y, z, width, height, materialKey = 'floor' } = params;
 
-    const geometry = this.resourceManager.getPlaneGeometry(width, height);
+    const geometry = this.resourceManager.getBoxGeometry(width, FLOOR_THICKNESS, height);
     const material = this.resourceManager.getMaterial(
-      'floor',
+      materialKey,
       'floor',
       this.floorColor,
       this.floorOpacity
     );
 
     const floor = new THREE.Mesh(geometry, material);
-    floor.rotation.x = rotationX;
-    floor.position.set(x, y, z);
+    // "y" is the top surface elevation of the floor slab.
+    floor.position.set(x, y - FLOOR_THICKNESS / 2, z);
+    floor.userData.surfaceType = 'floor';
     floor.userData.sharedGeometry = true;
     floor.userData.sharedMaterial = true;
 
     const group = new THREE.Group();
     group.add(floor);
 
-    if (this.showEdges) {
-      this.addEdgesToGroup(group, geometry, x, y, z, rotationX);
+    if (this.showEdges && this.showFloorGrid && materialKey === 'floor-interlayer') {
+      this.addEdgesToGroup(group, geometry, x, y - FLOOR_THICKNESS / 2, z);
     }
 
     return group;
@@ -102,8 +121,104 @@ export class MeshFactory {
       z,
       width: size,
       height: size,
-      rotationX: -Math.PI / 2,
+      materialKey: 'floor-interlayer',
     });
+  }
+
+  /**
+   * Create compact symbolic stairs to connect two layers within one maze cell.
+   */
+  createStairConnector(params: StairConnectorParams): THREE.Group {
+    const {
+      x,
+      y,
+      z,
+      cellSize,
+      riseHeight,
+      stepCount = MeshFactory.DEFAULT_STAIR_STEP_COUNT,
+      direction = 'east',
+    } = params;
+    const steps = Math.max(1, Math.floor(stepCount));
+
+    const group = new THREE.Group();
+    group.position.set(x, y, z);
+
+    const geometry = this.getStairGeometry(cellSize, riseHeight, steps);
+
+    const material = this.resourceManager.getMaterial(
+      'wall',
+      'wall',
+      this.wallColor,
+      this.wallOpacity
+    );
+    const stairs = new THREE.Mesh(geometry, material);
+    stairs.rotation.y = this.getStairRotationY(direction);
+    stairs.userData.surfaceType = 'wall';
+    stairs.userData.sharedGeometry = true;
+    stairs.userData.sharedMaterial = true;
+    group.add(stairs);
+
+    if (this.showEdges) {
+      const edges = this.resourceManager.getEdgesGeometry(geometry);
+      const edgeMaterial = this.resourceManager.getEdgeMaterial();
+      const edgeLines = new THREE.LineSegments(edges, edgeMaterial);
+      edgeLines.position.copy(stairs.position);
+      edgeLines.rotation.copy(stairs.rotation);
+      edgeLines.renderOrder = 1;
+      edgeLines.userData.sharedGeometry = true;
+      edgeLines.userData.sharedMaterial = true;
+      group.add(edgeLines);
+    }
+
+    return group;
+  }
+
+  private getStairGeometry(
+    cellSize: number,
+    riseHeight: number,
+    stepCount: number
+  ): THREE.ExtrudeGeometry {
+    const geometryKey = `stair-${cellSize}-${riseHeight}-${stepCount}`;
+    return this.resourceManager.getCustomGeometry(geometryKey, () => {
+      // Build one solid stair volume so edges only draw on the outer shell.
+      const stepDepth = cellSize / stepCount;
+      const stepRise = riseHeight / stepCount;
+      const halfRun = cellSize / 2;
+
+      const profile = new THREE.Shape();
+      profile.moveTo(-halfRun, 0);
+
+      for (let stepIndex = 0; stepIndex < stepCount; stepIndex += 1) {
+        const xEdge = -halfRun + stepIndex * stepDepth;
+        const yEdge = (stepIndex + 1) * stepRise;
+        profile.lineTo(xEdge, yEdge);
+        profile.lineTo(xEdge + stepDepth, yEdge);
+      }
+
+      profile.lineTo(halfRun, 0);
+      profile.lineTo(-halfRun, 0);
+
+      const geometry = new THREE.ExtrudeGeometry(profile, {
+        depth: cellSize,
+        bevelEnabled: false,
+        steps: 1,
+      });
+      geometry.translate(0, 0, -cellSize / 2);
+      return geometry;
+    }) as THREE.ExtrudeGeometry;
+  }
+
+  private getStairRotationY(direction: StairDirection): number {
+    if (direction === 'east') {
+      return 0;
+    }
+    if (direction === 'south') {
+      return Math.PI / 2;
+    }
+    if (direction === 'west') {
+      return Math.PI;
+    }
+    return -Math.PI / 2; // north
   }
 
   /**
@@ -139,11 +254,13 @@ export class MeshFactory {
     wallOpacity?: number;
     floorOpacity?: number;
     showEdges?: boolean;
+    showFloorGrid?: boolean;
   }): void {
     if (settings.wallColor) this.wallColor = settings.wallColor;
     if (settings.floorColor) this.floorColor = settings.floorColor;
     if (settings.wallOpacity !== undefined) this.wallOpacity = settings.wallOpacity;
     if (settings.floorOpacity !== undefined) this.floorOpacity = settings.floorOpacity;
     if (settings.showEdges !== undefined) this.showEdges = settings.showEdges;
+    if (settings.showFloorGrid !== undefined) this.showFloorGrid = settings.showFloorGrid;
   }
 }

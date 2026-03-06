@@ -5,6 +5,7 @@ import type { WebGLRenderer } from 'three';
  */
 export interface MazeController {
   getRenderer(): WebGLRenderer;
+  setBackgroundColor(color: string): void;
   updateWallColor(color: string): void;
   updateFloorColor(color: string): void;
   updateWallOpacity(opacity: number): void;

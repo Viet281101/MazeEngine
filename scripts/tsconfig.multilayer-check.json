@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "noEmit": false,
+    "rootDir": ".."
+  },
+  "include": [
+    "./check-multilayer-solvable.ts",
+    "../src/generator/algorithms/binary-tree.ts",
+    "../src/generator/core/types.ts",
+    "../src/constants/maze.ts",
+    "../src/types/maze.ts",
+    "../src/solve/runtime/multi-layer-bfs.ts"
+  ]
+}
