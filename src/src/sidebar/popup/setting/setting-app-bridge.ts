@@ -61,7 +61,7 @@ export function getInitialSettingsValues(): InitialSettingsValues {
         ? app.isHideEdgesDuringInteractionEnabled()
         : false,
     floorGridEnabled:
-      app && typeof app.isFloorGridEnabled === 'function' ? app.isFloorGridEnabled() : false,
+      app && typeof app.isFloorGridEnabled === 'function' ? app.isFloorGridEnabled() : true,
     adaptiveQualityEnabled:
       app && typeof app.isAdaptiveQualityEnabled === 'function'
         ? app.isAdaptiveQualityEnabled()

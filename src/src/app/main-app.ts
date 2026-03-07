@@ -11,7 +11,7 @@ import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION } from '../constants/maze';
 import { PREVIEW_WINDOW, UI_BREAKPOINTS } from '../constants/ui';
 import { PREVIEW_WINDOW_STATUS_CHANGED_EVENT } from '../constants/events';
 import type { WebGLRenderer } from 'three';
-import { createSampleMultiLayerMazeData, createSampleSingleLayerMazeData } from './default-mazes';
+import { createInitialMazeData, createSampleMultiLayerMazeData } from './default-mazes';
 import { MeshReductionSettingsStorage } from './mesh-settings-store';
 import type {
   MarkerPoint,
@@ -54,7 +54,7 @@ export class MainApp implements MazeController, MazeAppBridge {
   private meshReductionThreshold: number = MESH_REDUCTION.DEFAULT_THRESHOLD;
   private meshReductionEnabled: boolean = MESH_REDUCTION.DEFAULT_ENABLED;
   private hideEdgesDuringInteractionEnabled: boolean = false;
-  private floorGridEnabled: boolean = false;
+  private floorGridEnabled: boolean = true;
   private adaptiveQualityEnabled: boolean = true;
   private cameraZoomLimitEnabled: boolean = CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED;
   private cameraZoomMinDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE;
@@ -125,7 +125,7 @@ export class MainApp implements MazeController, MazeAppBridge {
       enabled: MESH_REDUCTION.DEFAULT_ENABLED,
       threshold: MESH_REDUCTION.DEFAULT_THRESHOLD,
       hideEdgesDuringInteractionEnabled: false,
-      floorGridEnabled: false,
+      floorGridEnabled: true,
       adaptiveQualityEnabled: true,
       cameraZoomLimitEnabled: CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED,
       cameraZoomMinDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE,
@@ -177,7 +177,7 @@ export class MainApp implements MazeController, MazeAppBridge {
   }
 
   private createInitialMaze(): MazeInstance {
-    return new MultiLayerMaze(this.canvas, createSampleMultiLayerMazeData());
+    return new SingleLayerMaze(this.canvas, createInitialMazeData());
   }
 
   /**
@@ -320,13 +320,6 @@ export class MainApp implements MazeController, MazeAppBridge {
    */
   public createMultiLayerMaze(): void {
     this.updateMaze(createSampleMultiLayerMazeData(), true);
-  }
-
-  /**
-   * Create single-layer maze example
-   */
-  public createSingleLayerMaze(): void {
-    this.updateMaze(createSampleSingleLayerMazeData(), false);
   }
 
   /**

@@ -1,5 +1,12 @@
 import type { MazeData } from '../types/maze';
 
+/**
+ * Single-layer maze example
+ *
+ * 0 = floor
+ *
+ * 1 = wall
+ */
 export function createInitialMazeData(): MazeData {
   return [
     [
@@ -23,6 +30,8 @@ export function createInitialMazeData(): MazeData {
 /**
  * Multi-layer maze example
  * Staircase from top to bottom
+ *
+ * 0 = floor
  *
  * 1 = wall
  *
@@ -51,18 +60,6 @@ export function createSampleMultiLayerMazeData(): MazeData {
       [1, 0, 0, 1, 1, 1],
       [1, 0, 0, 6, 0, 1],
       [1, 1, 1, 1, 1, 1],
-    ],
-  ];
-}
-
-export function createSampleSingleLayerMazeData(): MazeData {
-  return [
-    [
-      [1, 1, 1, 1, 1],
-      [1, 0, 0, 0, 1],
-      [1, 0, 1, 0, 1],
-      [1, 0, 0, 0, 1],
-      [1, 1, 1, 1, 1],
     ],
   ];
 }

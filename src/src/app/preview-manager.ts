@@ -53,7 +53,6 @@ export class PreviewWindowManager {
       previewWindow.show();
     } else {
       if (!this.previewWindow) {
-        this.config.onVisibilityChanged?.(false);
         return;
       }
       this.previewWindow.hide();
