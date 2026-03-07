@@ -5,7 +5,7 @@ import { getIconPath } from '../../constants/assets';
 type RowControl = HTMLInputElement | HTMLSelectElement | HTMLDivElement | HTMLButtonElement;
 
 // Moved from setting-dom.ts to be reusable
-export function createHelpIcon(): HTMLImageElement {
+function createHelpIcon(): HTMLImageElement {
   const icon = document.createElement('img');
   icon.className = 'settings-popup__help-icon';
   icon.src = getIconPath('question.png');

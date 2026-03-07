@@ -4,6 +4,8 @@ import type { GeneratorDefinition, GeneratorId, GeneratorRunInput, MazeTopologyI
 
 const RECT_GRID_TOPOLOGIES: readonly MazeTopologyId[] = ['singleLayerRect', 'multiLayerRect'];
 
+// NOTE: Generators marked unavailable are intentional placeholders for future feature tasks.
+// Keep their IDs in catalog so UI/i18n wiring remains stable across incremental deliveries.
 export const GENERATOR_CATALOG: readonly GeneratorDefinition[] = [
   {
     id: 'binaryTree',

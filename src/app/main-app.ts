@@ -10,6 +10,11 @@ import { DebugOverlay } from '../debug/debug-overlay';
 import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION } from '../constants/maze';
 import { PREVIEW_WINDOW, UI_BREAKPOINTS } from '../constants/ui';
 import { PREVIEW_WINDOW_STATUS_CHANGED_EVENT } from '../constants/events';
+import {
+  normalizeCameraZoomMaxDistance,
+  normalizeCameraZoomMinDistance,
+  normalizeMeshReductionThreshold,
+} from '../utils/maze-normalizers';
 import type { WebGLRenderer } from 'three';
 import { createInitialMazeData, createSampleMultiLayerMazeData } from './default-mazes';
 import { MeshReductionSettingsStorage } from './mesh-settings-store';
@@ -330,10 +335,7 @@ export class MainApp implements MazeController, MazeAppBridge {
   }
 
   public setMeshReductionThreshold(threshold: number): void {
-    const normalized = Math.max(
-      MESH_REDUCTION.MIN_THRESHOLD,
-      Math.min(MESH_REDUCTION.MAX_THRESHOLD, Math.floor(threshold))
-    );
+    const normalized = normalizeMeshReductionThreshold(threshold);
     this.meshReductionThreshold = normalized;
     this.maze.setMeshMergeThreshold(normalized);
     this.settingsStorage.saveThreshold(normalized);
@@ -396,10 +398,7 @@ export class MainApp implements MazeController, MazeAppBridge {
   }
 
   public setCameraZoomMinDistance(distance: number): void {
-    const normalized = Math.min(
-      CAMERA_ZOOM_LIMIT.MAX_DISTANCE_MAX,
-      Math.max(CAMERA_ZOOM_LIMIT.MIN_DISTANCE_MIN, distance)
-    );
+    const normalized = normalizeCameraZoomMinDistance(distance);
     this.cameraZoomMinDistance = normalized;
     if (this.cameraZoomMaxDistance < normalized) {
       this.cameraZoomMaxDistance = normalized;
@@ -414,10 +413,7 @@ export class MainApp implements MazeController, MazeAppBridge {
   }
 
   public setCameraZoomMaxDistance(distance: number): void {
-    const normalized = Math.min(
-      CAMERA_ZOOM_LIMIT.MAX_DISTANCE_MAX,
-      Math.max(CAMERA_ZOOM_LIMIT.MIN_DISTANCE_MIN, distance)
-    );
+    const normalized = normalizeCameraZoomMaxDistance(distance);
     this.cameraZoomMaxDistance = normalized;
     if (this.cameraZoomMinDistance > normalized) {
       this.cameraZoomMinDistance = normalized;

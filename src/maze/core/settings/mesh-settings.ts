@@ -1,5 +1,5 @@
-import { MESH_REDUCTION } from '../../../constants/maze';
 import { shouldMergeWallsForConfig, shouldRebuildForMeshConfig } from '../../builders';
+import { normalizeMeshReductionThreshold } from '../../../utils/maze-normalizers';
 
 interface MeshReductionToggleDecision {
   changed: boolean;
@@ -46,7 +46,7 @@ export function decideMeshMergeThreshold(
   currentThreshold: number,
   rawThreshold: number
 ): MeshMergeThresholdDecision {
-  const threshold = Math.max(MESH_REDUCTION.MIN_THRESHOLD, Math.floor(rawThreshold));
+  const threshold = normalizeMeshReductionThreshold(rawThreshold, currentThreshold);
   if (currentThreshold === threshold) {
     return {
       changed: false,
