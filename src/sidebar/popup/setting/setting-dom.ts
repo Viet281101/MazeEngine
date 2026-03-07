@@ -1,25 +1,27 @@
 import { MESH_REDUCTION } from '../../../constants/maze';
-import { getIconPath } from '../../../constants/assets';
 import { getLanguage, t, type AppLanguage } from '../../i18n';
 import { createNumberStepperField } from '../popup-inputs';
+import { createLabelWithHelp, createRow, createToggleRow } from '../popup-rows';
 
 export interface SettingsPopupDom {
   content: HTMLDivElement;
   select: HTMLSelectElement;
   languageOptions: Record<AppLanguage, HTMLOptionElement>;
-  languageLabel: HTMLSpanElement;
-  meshReductionLabel: HTMLSpanElement;
-  thresholdLabel: HTMLSpanElement;
-  hideEdgesDuringInteractionLabel: HTMLSpanElement;
-  floorGridLabel: HTMLSpanElement;
-  adaptiveQualityLabel: HTMLSpanElement;
-  showEdgesLabel: HTMLSpanElement;
-  showDebugLabel: HTMLSpanElement;
-  showPreviewLabel: HTMLSpanElement;
-  cameraZoomLimitLabel: HTMLSpanElement;
-  cameraZoomMinLabel: HTMLSpanElement;
-  cameraZoomMaxLabel: HTMLSpanElement;
-  previewLabel: HTMLSpanElement;
+  languageLabel: HTMLElement;
+  meshReductionLabel: HTMLElement;
+  thresholdLabel: HTMLElement;
+  hideEdgesDuringInteractionLabel: HTMLElement;
+  floorGridLabel: HTMLElement;
+  adaptiveQualityLabel: HTMLElement;
+  showEdgesLabel: HTMLElement;
+  showDebugLabel: HTMLElement;
+  showPreviewLabel: HTMLElement;
+  cameraZoomLimitLabel: HTMLElement;
+  cameraZoomMinLabel: HTMLElement;
+  cameraZoomMaxLabel: HTMLElement;
+  cameraZoomMinRow: HTMLLabelElement;
+  cameraZoomMaxRow: HTMLLabelElement;
+  previewLabel: HTMLElement;
   previewButton: HTMLButtonElement;
   meshReductionToggle: HTMLInputElement;
   thresholdInput: HTMLInputElement;
@@ -32,8 +34,6 @@ export interface SettingsPopupDom {
   cameraZoomLimitToggle: HTMLInputElement;
   cameraZoomMinInput: HTMLInputElement;
   cameraZoomMaxInput: HTMLInputElement;
-  cameraZoomMinRow: HTMLLabelElement;
-  cameraZoomMaxRow: HTMLLabelElement;
   cameraZoomMinIncreaseButton: HTMLButtonElement;
   cameraZoomMinDecreaseButton: HTMLButtonElement;
   cameraZoomMaxIncreaseButton: HTMLButtonElement;
@@ -73,16 +73,6 @@ function createLanguageOption(language: AppLanguage): HTMLOptionElement {
   return option;
 }
 
-function createHelpIcon(): HTMLImageElement {
-  const icon = document.createElement('img');
-  icon.className = 'settings-popup__help-icon';
-  icon.src = getIconPath('question.png');
-  icon.alt = 'Help';
-  icon.tabIndex = 0;
-  icon.setAttribute('role', 'button');
-  return icon;
-}
-
 function getStepperButtonOrThrow(
   field: HTMLDivElement,
   selector: string,
@@ -111,49 +101,35 @@ export function createSettingsPopupDom(
   const content = document.createElement('div');
   content.className = 'settings-popup__content';
 
-  const languageRow = document.createElement('label');
-  languageRow.className = 'settings-popup__row';
-  const languageLabel = document.createElement('span');
-  languageLabel.className = 'settings-popup__label';
-  const select = document.createElement('select');
-  select.className = 'settings-popup__select';
   const languageOptions: Record<AppLanguage, HTMLOptionElement> = {
     vi: createLanguageOption('vi'),
     en: createLanguageOption('en'),
     fr: createLanguageOption('fr'),
   };
+  const select = document.createElement('select');
+  select.className = 'settings-popup__select';
   select.appendChild(languageOptions.vi);
   select.appendChild(languageOptions.en);
   select.appendChild(languageOptions.fr);
   select.value = getLanguage();
-  languageRow.appendChild(languageLabel);
-  languageRow.appendChild(select);
+  const { row: languageRow, label: languageLabel } = createRow({
+    label: 'settings.language',
+    control: select,
+  });
   content.appendChild(languageRow);
 
-  const meshReductionRow = document.createElement('label');
-  meshReductionRow.className = 'settings-popup__row';
-  const meshReductionLabelWrap = document.createElement('span');
-  meshReductionLabelWrap.className = 'settings-popup__label settings-popup__label--with-help';
-  const meshReductionLabel = document.createElement('span');
-  meshReductionLabel.className = 'settings-popup__label-text';
-  const meshReductionHelpIcon = createHelpIcon();
-  meshReductionLabelWrap.appendChild(meshReductionLabel);
-  meshReductionLabelWrap.appendChild(meshReductionHelpIcon);
-  const meshReductionToggle = document.createElement('input');
-  meshReductionToggle.type = 'checkbox';
-  meshReductionToggle.className = 'settings-popup__checkbox';
-  meshReductionToggle.checked = initialMeshEnabled;
-  meshReductionRow.appendChild(meshReductionLabelWrap);
-  meshReductionRow.appendChild(meshReductionToggle);
+  const {
+    row: meshReductionRow,
+    toggle: meshReductionToggle,
+    label: meshReductionLabel,
+    helpIcon: meshReductionHelpIcon,
+  } = createToggleRow({
+    labelKey: 'settings.meshVisible',
+    initialState: initialMeshEnabled,
+    withHelp: true,
+  });
   content.appendChild(meshReductionRow);
 
-  const thresholdRow = document.createElement('label');
-  thresholdRow.className = 'settings-popup__row';
-  const thresholdLabelWrap = document.createElement('span');
-  thresholdLabelWrap.className = 'settings-popup__label settings-popup__label--with-help';
-  const thresholdLabel = document.createElement('span');
-  thresholdLabel.className = 'settings-popup__label-text';
-  const thresholdHelpIcon = createHelpIcon();
   const thresholdInput = document.createElement('input');
   thresholdInput.type = 'number';
   thresholdInput.className = 'settings-popup__input';
@@ -161,136 +137,101 @@ export function createSettingsPopupDom(
   thresholdInput.max = String(MESH_REDUCTION.MAX_THRESHOLD);
   thresholdInput.step = '1';
   thresholdInput.value = String(initialThreshold);
-  thresholdLabelWrap.appendChild(thresholdLabel);
-  thresholdLabelWrap.appendChild(thresholdHelpIcon);
   const thresholdField = createNumberStepperField(thresholdInput, {
     increaseLabel: 'Increase threshold',
     decreaseLabel: 'Decrease threshold',
   });
   thresholdField.classList.add('settings-popup__number-field');
-  thresholdRow.appendChild(thresholdLabelWrap);
-  thresholdRow.appendChild(thresholdField);
+  const {
+    labelWrap: thresholdLabelWrap,
+    labelText: thresholdLabel,
+    helpIcon: thresholdHelpIcon,
+  } = createLabelWithHelp('settings.meshReductionThreshold');
+  const { row: thresholdRow } = createRow({ label: thresholdLabelWrap, control: thresholdField });
   content.appendChild(thresholdRow);
 
-  const hideEdgesDuringInteractionRow = document.createElement('label');
-  hideEdgesDuringInteractionRow.className = 'settings-popup__row';
-  const hideEdgesDuringInteractionLabelWrap = document.createElement('span');
-  hideEdgesDuringInteractionLabelWrap.className =
-    'settings-popup__label settings-popup__label--with-help';
-  const hideEdgesDuringInteractionLabel = document.createElement('span');
-  hideEdgesDuringInteractionLabel.className = 'settings-popup__label-text';
-  const hideEdgesDuringInteractionHelpIcon = createHelpIcon();
-  hideEdgesDuringInteractionLabelWrap.appendChild(hideEdgesDuringInteractionLabel);
-  hideEdgesDuringInteractionLabelWrap.appendChild(hideEdgesDuringInteractionHelpIcon);
-  const hideEdgesDuringInteractionToggle = document.createElement('input');
-  hideEdgesDuringInteractionToggle.type = 'checkbox';
-  hideEdgesDuringInteractionToggle.className = 'settings-popup__checkbox';
-  hideEdgesDuringInteractionToggle.checked = initialHideEdgesDuringInteractionEnabled;
-  hideEdgesDuringInteractionRow.appendChild(hideEdgesDuringInteractionLabelWrap);
-  hideEdgesDuringInteractionRow.appendChild(hideEdgesDuringInteractionToggle);
-  content.appendChild(hideEdgesDuringInteractionRow);
+  const {
+    row: hideEdgesRow,
+    toggle: hideEdgesDuringInteractionToggle,
+    label: hideEdgesDuringInteractionLabel,
+    helpIcon: hideEdgesDuringInteractionHelpIcon,
+  } = createToggleRow({
+    labelKey: 'settings.hideEdgesDuringInteraction',
+    initialState: initialHideEdgesDuringInteractionEnabled,
+    withHelp: true,
+  });
+  content.appendChild(hideEdgesRow);
 
-  const adaptiveQualityRow = document.createElement('label');
-  adaptiveQualityRow.className = 'settings-popup__row';
-  const adaptiveQualityLabelWrap = document.createElement('span');
-  adaptiveQualityLabelWrap.className = 'settings-popup__label settings-popup__label--with-help';
-  const adaptiveQualityLabel = document.createElement('span');
-  adaptiveQualityLabel.className = 'settings-popup__label-text';
-  const adaptiveQualityHelpIcon = createHelpIcon();
-  adaptiveQualityLabelWrap.appendChild(adaptiveQualityLabel);
-  adaptiveQualityLabelWrap.appendChild(adaptiveQualityHelpIcon);
-  const adaptiveQualityToggle = document.createElement('input');
-  adaptiveQualityToggle.type = 'checkbox';
-  adaptiveQualityToggle.className = 'settings-popup__checkbox';
-  adaptiveQualityToggle.checked = initialAdaptiveQualityEnabled;
-  adaptiveQualityRow.appendChild(adaptiveQualityLabelWrap);
-  adaptiveQualityRow.appendChild(adaptiveQualityToggle);
+  const {
+    row: adaptiveQualityRow,
+    toggle: adaptiveQualityToggle,
+    label: adaptiveQualityLabel,
+    helpIcon: adaptiveQualityHelpIcon,
+  } = createToggleRow({
+    labelKey: 'settings.adaptiveQuality',
+    initialState: initialAdaptiveQualityEnabled,
+    withHelp: true,
+  });
   content.appendChild(adaptiveQualityRow);
 
-  const showEdgesRow = document.createElement('label');
-  showEdgesRow.className = 'settings-popup__row';
-  const showEdgesLabelWrap = document.createElement('span');
-  showEdgesLabelWrap.className = 'settings-popup__label settings-popup__label--with-help';
-  const showEdgesLabel = document.createElement('span');
-  showEdgesLabel.className = 'settings-popup__label-text';
-  const showEdgesHelpIcon = createHelpIcon();
-  showEdgesLabelWrap.appendChild(showEdgesLabel);
-  showEdgesLabelWrap.appendChild(showEdgesHelpIcon);
-  const showEdgesToggle = document.createElement('input');
-  showEdgesToggle.type = 'checkbox';
-  showEdgesToggle.className = 'settings-popup__checkbox';
-  showEdgesToggle.checked = initialShowEdgesEnabled;
-  showEdgesRow.appendChild(showEdgesLabelWrap);
-  showEdgesRow.appendChild(showEdgesToggle);
+  const {
+    row: showEdgesRow,
+    toggle: showEdgesToggle,
+    label: showEdgesLabel,
+    helpIcon: showEdgesHelpIcon,
+  } = createToggleRow({
+    labelKey: 'gui.showEdges',
+    initialState: initialShowEdgesEnabled,
+    withHelp: true,
+  });
   content.appendChild(showEdgesRow);
 
-  const showDebugRow = document.createElement('label');
-  showDebugRow.className = 'settings-popup__row';
-  const showDebugLabelWrap = document.createElement('span');
-  showDebugLabelWrap.className = 'settings-popup__label settings-popup__label--with-help';
-  const showDebugLabel = document.createElement('span');
-  showDebugLabel.className = 'settings-popup__label-text';
-  const showDebugHelpIcon = createHelpIcon();
-  showDebugLabelWrap.appendChild(showDebugLabel);
-  showDebugLabelWrap.appendChild(showDebugHelpIcon);
-  const showDebugToggle = document.createElement('input');
-  showDebugToggle.type = 'checkbox';
-  showDebugToggle.className = 'settings-popup__checkbox';
-  showDebugToggle.checked = initialShowDebugEnabled;
-  showDebugRow.appendChild(showDebugLabelWrap);
-  showDebugRow.appendChild(showDebugToggle);
+  const {
+    row: showDebugRow,
+    toggle: showDebugToggle,
+    label: showDebugLabel,
+    helpIcon: showDebugHelpIcon,
+  } = createToggleRow({
+    labelKey: 'gui.showDebug',
+    initialState: initialShowDebugEnabled,
+    withHelp: true,
+  });
   content.appendChild(showDebugRow);
 
-  const showPreviewRow = document.createElement('label');
-  showPreviewRow.className = 'settings-popup__row';
-  const showPreviewLabelWrap = document.createElement('span');
-  showPreviewLabelWrap.className = 'settings-popup__label settings-popup__label--with-help';
-  const showPreviewLabel = document.createElement('span');
-  showPreviewLabel.className = 'settings-popup__label-text';
-  const showPreviewHelpIcon = createHelpIcon();
-  showPreviewLabelWrap.appendChild(showPreviewLabel);
-  showPreviewLabelWrap.appendChild(showPreviewHelpIcon);
-  const showPreviewToggle = document.createElement('input');
-  showPreviewToggle.type = 'checkbox';
-  showPreviewToggle.className = 'settings-popup__checkbox';
-  showPreviewToggle.checked = initialShowPreviewEnabled;
-  showPreviewRow.appendChild(showPreviewLabelWrap);
-  showPreviewRow.appendChild(showPreviewToggle);
+  const {
+    row: showPreviewRow,
+    toggle: showPreviewToggle,
+    label: showPreviewLabel,
+    helpIcon: showPreviewHelpIcon,
+  } = createToggleRow({
+    labelKey: 'gui.showPreview',
+    initialState: initialShowPreviewEnabled,
+    withHelp: true,
+  });
   content.appendChild(showPreviewRow);
 
-  const floorGridRow = document.createElement('label');
-  floorGridRow.className = 'settings-popup__row';
-  const floorGridLabelWrap = document.createElement('span');
-  floorGridLabelWrap.className = 'settings-popup__label settings-popup__label--with-help';
-  const floorGridLabel = document.createElement('span');
-  floorGridLabel.className = 'settings-popup__label-text';
-  const floorGridHelpIcon = createHelpIcon();
-  floorGridLabelWrap.appendChild(floorGridLabel);
-  floorGridLabelWrap.appendChild(floorGridHelpIcon);
-  const floorGridToggle = document.createElement('input');
-  floorGridToggle.type = 'checkbox';
-  floorGridToggle.className = 'settings-popup__checkbox';
-  floorGridToggle.checked = initialFloorGridEnabled;
-  floorGridRow.appendChild(floorGridLabelWrap);
-  floorGridRow.appendChild(floorGridToggle);
+  const {
+    row: floorGridRow,
+    toggle: floorGridToggle,
+    label: floorGridLabel,
+    helpIcon: floorGridHelpIcon,
+  } = createToggleRow({
+    labelKey: 'settings.floorGrid',
+    initialState: initialFloorGridEnabled,
+    withHelp: true,
+  });
   content.appendChild(floorGridRow);
 
-  const cameraZoomLimitRow = document.createElement('label');
-  cameraZoomLimitRow.className = 'settings-popup__row';
-  const cameraZoomLimitLabel = document.createElement('span');
-  cameraZoomLimitLabel.className = 'settings-popup__label';
-  const cameraZoomLimitToggle = document.createElement('input');
-  cameraZoomLimitToggle.type = 'checkbox';
-  cameraZoomLimitToggle.className = 'settings-popup__checkbox';
-  cameraZoomLimitToggle.checked = initialCameraZoomLimitEnabled;
-  cameraZoomLimitRow.appendChild(cameraZoomLimitLabel);
-  cameraZoomLimitRow.appendChild(cameraZoomLimitToggle);
+  const {
+    row: cameraZoomLimitRow,
+    toggle: cameraZoomLimitToggle,
+    label: cameraZoomLimitLabel,
+  } = createToggleRow({
+    labelKey: 'settings.cameraZoomLimit',
+    initialState: initialCameraZoomLimitEnabled,
+  });
   content.appendChild(cameraZoomLimitRow);
 
-  const cameraZoomMinRow = document.createElement('label');
-  cameraZoomMinRow.className = 'settings-popup__row';
-  const cameraZoomMinLabel = document.createElement('span');
-  cameraZoomMinLabel.className = 'settings-popup__label';
   const cameraZoomMinInput = document.createElement('input');
   cameraZoomMinInput.type = 'number';
   cameraZoomMinInput.className = 'settings-popup__input';
@@ -313,14 +254,12 @@ export function createSettingsPopupDom(
     'camera zoom min'
   );
   cameraZoomMinField.classList.add('settings-popup__number-field');
-  cameraZoomMinRow.appendChild(cameraZoomMinLabel);
-  cameraZoomMinRow.appendChild(cameraZoomMinField);
+  const { row: cameraZoomMinRow, label: cameraZoomMinLabel } = createRow({
+    label: 'settings.cameraZoomLimitMin',
+    control: cameraZoomMinField,
+  });
   content.appendChild(cameraZoomMinRow);
 
-  const cameraZoomMaxRow = document.createElement('label');
-  cameraZoomMaxRow.className = 'settings-popup__row';
-  const cameraZoomMaxLabel = document.createElement('span');
-  cameraZoomMaxLabel.className = 'settings-popup__label';
   const cameraZoomMaxInput = document.createElement('input');
   cameraZoomMaxInput.type = 'number';
   cameraZoomMaxInput.className = 'settings-popup__input';
@@ -343,20 +282,20 @@ export function createSettingsPopupDom(
     'camera zoom max'
   );
   cameraZoomMaxField.classList.add('settings-popup__number-field');
-  cameraZoomMaxRow.appendChild(cameraZoomMaxLabel);
-  cameraZoomMaxRow.appendChild(cameraZoomMaxField);
+  const { row: cameraZoomMaxRow, label: cameraZoomMaxLabel } = createRow({
+    label: 'settings.cameraZoomLimitMax',
+    control: cameraZoomMaxField,
+  });
   content.appendChild(cameraZoomMaxRow);
 
-  const previewRow = document.createElement('div');
-  previewRow.className = 'settings-popup__row';
-  const previewLabel = document.createElement('span');
-  previewLabel.className = 'settings-popup__label';
   const previewButton = document.createElement('button');
   previewButton.type = 'button';
   previewButton.className = 'settings-popup__action-btn';
   previewButton.disabled = true;
-  previewRow.appendChild(previewLabel);
-  previewRow.appendChild(previewButton);
+  const { row: previewRow, label: previewLabel } = createRow({
+    label: 'settings.previewWindow',
+    control: previewButton,
+  });
   content.appendChild(previewRow);
 
   const meshReductionTooltip = document.createElement('div');
@@ -458,12 +397,12 @@ export function createSettingsPopupDom(
     cameraZoomLimitToggle,
     cameraZoomMinInput,
     cameraZoomMaxInput,
-    cameraZoomMinRow,
-    cameraZoomMaxRow,
     cameraZoomMinIncreaseButton,
     cameraZoomMinDecreaseButton,
     cameraZoomMaxIncreaseButton,
     cameraZoomMaxDecreaseButton,
+    cameraZoomMinRow,
+    cameraZoomMaxRow,
     meshReductionHelpIcon,
     thresholdHelpIcon,
     hideEdgesDuringInteractionHelpIcon,
