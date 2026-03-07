@@ -43,7 +43,12 @@ interface RowOptions {
 }
 
 export function createRow(options: RowOptions): { row: HTMLLabelElement; label: HTMLElement } {
-  const { label, control, className = 'settings-popup__row', labelClassName = 'settings-popup__label' } = options;
+  const {
+    label,
+    control,
+    className = 'settings-popup__row',
+    labelClassName = 'settings-popup__label',
+  } = options;
 
   const row = document.createElement('label');
   row.className = className;
@@ -76,15 +81,12 @@ type ToggleRowResult = {
   label: HTMLElement;
 };
 
-export function createToggleRow(options: ToggleRowOptions & { withHelp: true }): ToggleRowResult & {
-  helpIcon: HTMLImageElement;
-};
-export function createToggleRow(options: ToggleRowOptions): ToggleRowResult & {
-  helpIcon?: HTMLImageElement;
-};
-export function createToggleRow(options: ToggleRowOptions): ToggleRowResult & {
-  helpIcon?: HTMLImageElement;
-} {
+type ToggleRowReturn<WithHelp extends boolean | undefined> = ToggleRowResult &
+  (WithHelp extends true ? { helpIcon: HTMLImageElement } : { helpIcon?: HTMLImageElement });
+
+export function createToggleRow<WithHelp extends boolean | undefined>(
+  options: ToggleRowOptions & { withHelp?: WithHelp }
+): ToggleRowReturn<WithHelp> {
   const { labelKey, initialState, withHelp = false, onToggle } = options;
 
   const toggle = document.createElement('input');
@@ -105,12 +107,12 @@ export function createToggleRow(options: ToggleRowOptions): ToggleRowResult & {
     helpIcon = icon;
     // Return the inner text element for i18n updates
     const row = createRow({ label: labelEl, control: toggle });
-    return { row: row.row, toggle, label: labelText, helpIcon };
+    return { row: row.row, toggle, label: labelText, helpIcon } as ToggleRowReturn<WithHelp>;
   }
 
   const { row, label } = createRow({
     label: labelKey,
     control: toggle,
   });
-  return { row, toggle, label, helpIcon };
+  return { row, toggle, label, helpIcon } as ToggleRowReturn<WithHelp>;
 }
