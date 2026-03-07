@@ -30,6 +30,15 @@ Open the app in your browser (Vite URL shown in terminal).
 - `npm run test`: Run lint then build (project quality gate).
 - `npm run format`: Format project with Prettier.
 
+## Browser Compatibility Policy
+
+MazeEngine targets modern browsers with native `PointerEvent` support.
+
+- Supported baseline: current stable Chrome, Edge, Firefox, and Safari.
+- Mobile baseline: Safari on iOS/iPadOS 13.4+ and Chrome on Android (current stable).
+- Legacy browsers without `PointerEvent` are out of scope.
+- Toolbar/popup interactions are implemented with pointer events only (no legacy `touchstart` + `mousedown` fallback).
+
 ## Documentation
 
 - [Contributing Guide](./CONTRIBUTING.md)

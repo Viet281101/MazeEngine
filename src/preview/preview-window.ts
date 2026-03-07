@@ -76,13 +76,14 @@ export class PreviewWindow {
   private solutionPath: SolutionPath = [];
   private layout: PreviewLayout | null = null;
 
-  private onMouseMoveHandler: (e: MouseEvent) => void;
-  private onMouseUpHandler: () => void;
-  private onMouseDownHandler: (e: MouseEvent) => void;
+  private onPointerMoveHandler: (e: PointerEvent) => void;
+  private onPointerUpHandler: (e: PointerEvent) => void;
+  private onPointerDownHandler: (e: PointerEvent) => void;
   private onWheelHandler: (e: WheelEvent) => void;
   private onKeyDownHandler: (e: KeyboardEvent) => void;
-  private onContainerMouseDownHandler: () => void;
+  private onContainerPointerDownHandler: () => void;
   private dragListenersAttached: boolean = false;
+  private draggingPointerId: number | null = null;
   private unsubscribeLanguageChange: (() => void) | null = null;
 
   constructor(config: PreviewWindowConfig = {}) {
@@ -220,12 +221,12 @@ export class PreviewWindow {
     document.body.appendChild(this.container);
 
     // Setup event listeners
-    this.onMouseMoveHandler = e => this.onMouseMove(e);
-    this.onMouseUpHandler = () => this.onMouseUp();
-    this.onMouseDownHandler = e => this.onMouseDown(e);
+    this.onPointerMoveHandler = e => this.onPointerMove(e);
+    this.onPointerUpHandler = e => this.onPointerUp(e);
+    this.onPointerDownHandler = e => this.onPointerDown(e);
     this.onWheelHandler = e => this.onWheel(e);
     this.onKeyDownHandler = e => this.onKeyDown(e);
-    this.onContainerMouseDownHandler = () => {
+    this.onContainerPointerDownHandler = () => {
       this.container.focus();
     };
     this.setupEventListeners();
@@ -269,10 +270,10 @@ export class PreviewWindow {
     });
 
     // Dragging
-    this.titleBar.addEventListener('mousedown', this.onMouseDownHandler);
+    this.titleBar.addEventListener('pointerdown', this.onPointerDownHandler);
     this.canvas.addEventListener('wheel', this.onWheelHandler, { passive: false });
     this.container.addEventListener('keydown', this.onKeyDownHandler);
-    this.container.addEventListener('mousedown', this.onContainerMouseDownHandler);
+    this.container.addEventListener('pointerdown', this.onContainerPointerDownHandler);
 
     // Prevent text selection while dragging
     this.titleBar.addEventListener('selectstart', e => e.preventDefault());
@@ -282,8 +283,9 @@ export class PreviewWindow {
     if (this.dragListenersAttached) {
       return;
     }
-    document.addEventListener('mousemove', this.onMouseMoveHandler);
-    document.addEventListener('mouseup', this.onMouseUpHandler);
+    document.addEventListener('pointermove', this.onPointerMoveHandler);
+    document.addEventListener('pointerup', this.onPointerUpHandler);
+    document.addEventListener('pointercancel', this.onPointerUpHandler);
     this.dragListenersAttached = true;
   }
 
@@ -291,8 +293,9 @@ export class PreviewWindow {
     if (!this.dragListenersAttached) {
       return;
     }
-    document.removeEventListener('mousemove', this.onMouseMoveHandler);
-    document.removeEventListener('mouseup', this.onMouseUpHandler);
+    document.removeEventListener('pointermove', this.onPointerMoveHandler);
+    document.removeEventListener('pointerup', this.onPointerUpHandler);
+    document.removeEventListener('pointercancel', this.onPointerUpHandler);
     this.dragListenersAttached = false;
   }
 
@@ -332,23 +335,36 @@ export class PreviewWindow {
   }
 
   /**
-   * Mouse down handler - start dragging
+   * Pointer down handler - start dragging
    */
-  private onMouseDown(e: MouseEvent): void {
-    if (e.target === this.closeButton) return;
+  private onPointerDown(e: PointerEvent): void {
+    if (!e.isPrimary) {
+      return;
+    }
+    if (e.pointerType === 'mouse' && e.button !== 0) {
+      return;
+    }
+    if (e.target instanceof Element && e.target.closest('button')) {
+      return;
+    }
 
     this.isDragging = true;
+    this.draggingPointerId = e.pointerId;
     this.dragStartX = e.clientX - this.windowX;
     this.dragStartY = e.clientY - this.windowY;
     this.container.classList.add('dragging');
+    e.preventDefault();
     this.attachDragListeners();
   }
 
   /**
-   * Mouse move handler - update position
+   * Pointer move handler - update position
    */
-  private onMouseMove(e: MouseEvent): void {
+  private onPointerMove(e: PointerEvent): void {
     if (!this.isDragging) return;
+    if (this.draggingPointerId !== null && e.pointerId !== this.draggingPointerId) {
+      return;
+    }
 
     this.windowX = e.clientX - this.dragStartX;
     this.windowY = e.clientY - this.dragStartY;
@@ -362,14 +378,19 @@ export class PreviewWindow {
   }
 
   /**
-   * Mouse up handler - stop dragging
+   * Pointer up handler - stop dragging
    */
-  private onMouseUp(): void {
+  private onPointerUp(e: PointerEvent): void {
+    if (this.draggingPointerId !== null && e.pointerId !== this.draggingPointerId) {
+      return;
+    }
+
     if (!this.isDragging) {
       this.detachDragListeners();
       return;
     }
     this.isDragging = false;
+    this.draggingPointerId = null;
     this.container.classList.remove('dragging');
     this.detachDragListeners();
   }
@@ -590,10 +611,10 @@ export class PreviewWindow {
    * Destroy the preview window
    */
   public destroy(): void {
-    this.titleBar.removeEventListener('mousedown', this.onMouseDownHandler);
+    this.titleBar.removeEventListener('pointerdown', this.onPointerDownHandler);
     this.canvas.removeEventListener('wheel', this.onWheelHandler);
     this.container.removeEventListener('keydown', this.onKeyDownHandler);
-    this.container.removeEventListener('mousedown', this.onContainerMouseDownHandler);
+    this.container.removeEventListener('pointerdown', this.onContainerPointerDownHandler);
     this.detachDragListeners();
     if (this.hideTimeoutId !== null) {
       window.clearTimeout(this.hideTimeoutId);

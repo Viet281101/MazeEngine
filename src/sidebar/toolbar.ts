@@ -23,7 +23,7 @@ import {
   type PopupType,
   type ToolButton,
 } from './toolbar-config';
-import { getPointerPosition, isInsideRect } from './pointer-utils';
+import { isInsideRect } from './pointer-utils';
 import './toolbar.css';
 
 const POPUP_SHOW_HANDLERS: Record<PopupType, (toolbar: Toolbar) => void> = {
@@ -47,11 +47,10 @@ export class Toolbar {
   private pendingPointerX: number = 0;
   private pendingPointerY: number = 0;
 
-  private mouseMoveHandler!: (e: MouseEvent) => void;
-  private mouseLeaveHandler!: () => void;
-  private mouseDownHandler!: (e: MouseEvent | TouchEvent) => void;
-  private touchStartHandler!: (e: TouchEvent) => void;
-  private documentClickHandler!: (e: MouseEvent | TouchEvent) => void;
+  private pointerMoveHandler!: (e: PointerEvent) => void;
+  private pointerLeaveHandler!: () => void;
+  private canvasPointerUpHandler!: (e: PointerEvent) => void;
+  private documentPointerDownHandler!: (e: PointerEvent) => void;
 
   private imageCache: Map<string, HTMLImageElement> = new Map();
   private imagesLoaded: boolean = false;
@@ -206,26 +205,23 @@ export class Toolbar {
   private addEventListeners(): void {
     this.removeEventListeners();
 
-    this.mouseMoveHandler = (e: MouseEvent) => {
+    this.pointerMoveHandler = (e: PointerEvent) => {
       this.pendingPointerX = e.clientX;
       this.pendingPointerY = e.clientY;
       this.scheduleHoverUpdate();
     };
-    this.canvas.addEventListener('mousemove', this.mouseMoveHandler, { passive: true });
+    this.canvas.addEventListener('pointermove', this.pointerMoveHandler, { passive: true });
 
-    this.mouseLeaveHandler = () => {
+    this.pointerLeaveHandler = () => {
       this.hideTooltip();
     };
-    this.canvas.addEventListener('mouseleave', this.mouseLeaveHandler, { passive: true });
+    this.canvas.addEventListener('pointerleave', this.pointerLeaveHandler, { passive: true });
 
-    this.mouseDownHandler = (e: MouseEvent | TouchEvent) => this.handleCanvasClick(e);
-    this.touchStartHandler = (e: TouchEvent) => this.handleCanvasClick(e);
-    this.canvas.addEventListener('mousedown', this.mouseDownHandler);
-    this.canvas.addEventListener('touchstart', this.touchStartHandler, { passive: true });
+    this.canvasPointerUpHandler = (e: PointerEvent) => this.handleCanvasPointerUp(e);
+    this.canvas.addEventListener('pointerup', this.canvasPointerUpHandler, { passive: true });
 
-    this.documentClickHandler = (e: MouseEvent | TouchEvent) => this.handleDocumentClick(e);
-    document.addEventListener('click', this.documentClickHandler, { passive: true });
-    document.addEventListener('touchstart', this.documentClickHandler, { passive: true });
+    this.documentPointerDownHandler = (e: PointerEvent) => this.handleDocumentPointerDown(e);
+    document.addEventListener('pointerdown', this.documentPointerDownHandler, { passive: true });
   }
 
   private removeEventListeners(): void {
@@ -233,21 +229,17 @@ export class Toolbar {
       cancelAnimationFrame(this.hoverFrameId);
       this.hoverFrameId = null;
     }
-    if (this.mouseMoveHandler) {
-      this.canvas.removeEventListener('mousemove', this.mouseMoveHandler);
+    if (this.pointerMoveHandler) {
+      this.canvas.removeEventListener('pointermove', this.pointerMoveHandler);
     }
-    if (this.mouseLeaveHandler) {
-      this.canvas.removeEventListener('mouseleave', this.mouseLeaveHandler);
+    if (this.pointerLeaveHandler) {
+      this.canvas.removeEventListener('pointerleave', this.pointerLeaveHandler);
     }
-    if (this.mouseDownHandler) {
-      this.canvas.removeEventListener('mousedown', this.mouseDownHandler);
+    if (this.canvasPointerUpHandler) {
+      this.canvas.removeEventListener('pointerup', this.canvasPointerUpHandler);
     }
-    if (this.touchStartHandler) {
-      this.canvas.removeEventListener('touchstart', this.touchStartHandler);
-    }
-    if (this.documentClickHandler) {
-      document.removeEventListener('click', this.documentClickHandler);
-      document.removeEventListener('touchstart', this.documentClickHandler);
+    if (this.documentPointerDownHandler) {
+      document.removeEventListener('pointerdown', this.documentPointerDownHandler);
     }
   }
 
@@ -274,17 +266,22 @@ export class Toolbar {
     this.showTooltip(t(hovered.nameKey), x, y);
   }
 
-  private handleCanvasClick(e: MouseEvent | TouchEvent): void {
-    const point = getPointerPosition(e);
-    if (!point) return;
+  private handleCanvasPointerUp(e: PointerEvent): void {
+    if (e.pointerType === 'mouse' && e.button !== 0) {
+      return;
+    }
 
-    const button = this.findButtonAt(point.x, point.y);
+    const button = this.findButtonAt(e.clientX, e.clientY);
     if (!button) return;
 
     this.togglePopup(button.type);
   }
 
-  private handleDocumentClick(e: MouseEvent | TouchEvent): void {
+  private handleDocumentPointerDown(e: PointerEvent): void {
+    if (e.pointerType === 'mouse' && e.button !== 0) {
+      return;
+    }
+
     if (!this.popupOpen) return;
 
     const target = e.target as Node;

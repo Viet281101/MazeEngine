@@ -103,7 +103,7 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     }
   };
 
-  const handleDocumentPointerDown = (event: MouseEvent | TouchEvent) => {
+  const handleDocumentPointerDown = (event: PointerEvent) => {
     if (!pinnedTooltip) {
       return;
     }
@@ -165,14 +165,12 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
 
   const unbindHandlers = targets.map(target => bindIcon(target, getIconByTarget(target)));
 
-  document.addEventListener('mousedown', handleDocumentPointerDown, true);
-  document.addEventListener('touchstart', handleDocumentPointerDown, true);
+  document.addEventListener('pointerdown', handleDocumentPointerDown, true);
   document.addEventListener('keydown', handleDocumentKeyDown, true);
 
   return () => {
     unbindHandlers.forEach(unbind => unbind());
-    document.removeEventListener('mousedown', handleDocumentPointerDown, true);
-    document.removeEventListener('touchstart', handleDocumentPointerDown, true);
+    document.removeEventListener('pointerdown', handleDocumentPointerDown, true);
     document.removeEventListener('keydown', handleDocumentKeyDown, true);
   };
 }
