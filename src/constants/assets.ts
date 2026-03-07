@@ -2,7 +2,7 @@ function normalizeBaseUrl(baseUrl: string): string {
   return baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
 }
 
-export function resolvePublicAssetPath(relativePath: string): string {
+function resolvePublicAssetPath(relativePath: string): string {
   const normalizedBaseUrl = normalizeBaseUrl(import.meta.env.BASE_URL);
   const normalizedPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
   return `${normalizedBaseUrl}${normalizedPath}`;

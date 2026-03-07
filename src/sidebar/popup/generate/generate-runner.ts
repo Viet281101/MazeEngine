@@ -8,7 +8,11 @@ import {
 } from '../../../generator';
 import type { GenerateTaskRequest, GenerateTaskResponse } from '../../../generator/worker-protocol';
 import { t } from '../../i18n';
-import { updateMazePreservingCamera } from '../popup-maze-app-bridge';
+import {
+  canUpdateMaze,
+  getMazeAppBridge,
+  updateMazePreservingCamera,
+} from '../popup-maze-app-bridge';
 
 interface MultiLayerTopologyParams {
   layers: number;
@@ -143,8 +147,8 @@ async function generateMaze(input: RunGenerationInput): Promise<GeneratedMazeRes
 }
 
 export async function runGeneration(input: RunGenerationInput): Promise<void> {
-  const mazeApp = window.mazeApp;
-  if (!mazeApp || typeof mazeApp.updateMaze !== 'function') {
+  const mazeApp = getMazeAppBridge();
+  if (!canUpdateMaze(mazeApp)) {
     console.warn('mazeApp.updateMaze not available');
     window.alert(t('generate.appUnavailable'));
     return;

@@ -113,6 +113,7 @@ export abstract class Maze {
   private backgroundColor: THREE.Color = new THREE.Color(0x000000);
   private backgroundAlpha: number = 1;
   private settingsService: MazeSettingsService;
+  private cachedCenter: MazeCenter | null = null;
   private readonly handleContextLost: (event: Event) => void;
   private readonly handleContextRestored: () => void;
 
@@ -286,6 +287,7 @@ export abstract class Maze {
   public updateMazeData(maze: number[][][], options: { preserveCamera?: boolean } = {}): void {
     if (this.isDisposed) return;
     this.maze = maze;
+    this.cachedCenter = null;
     this.configureCameraZoomLimits();
     this.clearSolutionPath();
     if (options.preserveCamera) {
@@ -410,8 +412,11 @@ export abstract class Maze {
   }
 
   public getMazeCenter(): MazeCenter {
+    if (this.cachedCenter) {
+      return this.cachedCenter;
+    }
     const metrics = computeLayerMetrics(this.maze[0], this.cellSize);
-    return metrics?.center ?? { x: 0, z: 0 };
+    return (this.cachedCenter = metrics?.center ?? { x: 0, z: 0 });
   }
 
   public getRenderQualityInfo(): RenderQualityInfo {

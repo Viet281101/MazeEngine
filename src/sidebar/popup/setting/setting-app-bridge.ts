@@ -1,5 +1,10 @@
 import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION } from '../../../constants/maze';
-import type { MazeAppBridge } from '../../../types/maze';
+import {
+  normalizeCameraZoomMaxDistance,
+  normalizeCameraZoomMinDistance,
+  normalizeMeshReductionThreshold,
+} from '../../../utils/maze-normalizers';
+import { getMazeAppBridge } from '../popup-maze-app-bridge';
 
 interface InitialSettingsValues {
   meshReductionEnabled: boolean;
@@ -13,38 +18,6 @@ interface InitialSettingsValues {
   cameraZoomLimitEnabled: boolean;
   cameraZoomMinDistance: number;
   cameraZoomMaxDistance: number;
-}
-
-function getMazeAppBridge(): MazeAppBridge | null {
-  return window.mazeApp ?? null;
-}
-
-function clampThreshold(value: number): number {
-  return Math.max(
-    MESH_REDUCTION.MIN_THRESHOLD,
-    Math.min(
-      MESH_REDUCTION.MAX_THRESHOLD,
-      Number.isFinite(value) ? Math.floor(value) : MESH_REDUCTION.DEFAULT_THRESHOLD
-    )
-  );
-}
-
-function clampZoomMinDistance(value: number): number {
-  if (!Number.isFinite(value)) {
-    return CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE;
-  }
-  const clamped = Math.max(CAMERA_ZOOM_LIMIT.MIN_DISTANCE_MIN, value);
-  return Math.min(CAMERA_ZOOM_LIMIT.MAX_DISTANCE_MAX, clamped);
-}
-
-function clampZoomMaxDistance(value: number): number {
-  if (!Number.isFinite(value)) {
-    return CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE;
-  }
-  return Math.min(
-    CAMERA_ZOOM_LIMIT.MAX_DISTANCE_MAX,
-    Math.max(CAMERA_ZOOM_LIMIT.MIN_DISTANCE_MIN, value)
-  );
 }
 
 export function getInitialSettingsValues(): InitialSettingsValues {
@@ -111,7 +84,7 @@ export function setMeshReductionEnabled(enabled: boolean): void {
 }
 
 export function applyMeshReductionThreshold(rawValue: number): number {
-  const clamped = clampThreshold(rawValue);
+  const clamped = normalizeMeshReductionThreshold(rawValue);
   const app = getMazeAppBridge();
   if (app && typeof app.setMeshReductionThreshold === 'function') {
     app.setMeshReductionThreshold(clamped);
@@ -177,7 +150,7 @@ export function setCameraZoomLimitEnabled(enabled: boolean): void {
 }
 
 export function applyCameraZoomMinDistance(rawValue: number): number {
-  const clamped = clampZoomMinDistance(rawValue);
+  const clamped = normalizeCameraZoomMinDistance(rawValue);
   const app = getMazeAppBridge();
   if (app && typeof app.setCameraZoomMinDistance === 'function') {
     app.setCameraZoomMinDistance(clamped);
@@ -186,7 +159,7 @@ export function applyCameraZoomMinDistance(rawValue: number): number {
 }
 
 export function applyCameraZoomMaxDistance(rawValue: number): number {
-  const clamped = clampZoomMaxDistance(rawValue);
+  const clamped = normalizeCameraZoomMaxDistance(rawValue);
   const app = getMazeAppBridge();
   if (app && typeof app.setCameraZoomMaxDistance === 'function') {
     app.setCameraZoomMaxDistance(clamped);
