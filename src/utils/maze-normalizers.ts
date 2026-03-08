@@ -6,10 +6,7 @@ export function normalizeMeshReductionThreshold(
 ): number {
   const source = Number.isFinite(value) ? value : fallback;
   const floored = Math.floor(source);
-  return Math.max(
-    MESH_REDUCTION.MIN_THRESHOLD,
-    Math.min(MESH_REDUCTION.MAX_THRESHOLD, floored)
-  );
+  return Math.max(MESH_REDUCTION.MIN_THRESHOLD, Math.min(MESH_REDUCTION.MAX_THRESHOLD, floored));
 }
 
 export function normalizeCameraZoomDistance(value: number, fallback: number): number {

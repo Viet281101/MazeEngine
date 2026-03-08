@@ -5,7 +5,7 @@ import {
   subscribeLanguageChange,
   t,
   type AppLanguage,
-} from '../../i18n';
+} from '../../../i18n';
 import type { SettingsPopupDom } from './setting-dom';
 
 type LanguageTranslationKey = `settings.language.${AppLanguage}`;

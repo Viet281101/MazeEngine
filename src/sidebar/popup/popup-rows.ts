@@ -1,4 +1,4 @@
-import type { TranslationKey } from '../i18n';
+import type { TranslationKey } from '../../i18n';
 import { setI18nText } from './popup-i18n';
 import { getIconPath } from '../../constants/assets';
 

@@ -1,5 +1,5 @@
 import { MAZE_SIZE } from '../../../constants/maze';
-import { t } from '../../i18n';
+import { t } from '../../../i18n';
 import {
   getMazeAppBridge,
   getMazeDataFromApp,

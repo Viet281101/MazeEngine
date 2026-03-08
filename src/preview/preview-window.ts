@@ -6,7 +6,7 @@ import {
   type PreviewLayout,
 } from './preview-canvas-renderer';
 import { computeMarkersFromLayer } from '../maze';
-import { subscribeLanguageChange, t } from '../sidebar/i18n';
+import { subscribeLanguageChange, t } from '../i18n';
 import type { MarkerPoint, MazeData, SolutionPath } from '../types/maze';
 
 export interface PreviewWindowConfig {

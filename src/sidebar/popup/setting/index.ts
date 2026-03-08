@@ -1,4 +1,4 @@
-import { setLanguage, type AppLanguage } from '../../i18n';
+import { setLanguage, type AppLanguage } from '../../../i18n';
 import { Toolbar } from '../../toolbar';
 import { PREVIEW_WINDOW_STATUS_CHANGED_EVENT } from '../../../constants/events';
 import { watchContainerRemoval } from '../popup-lifecycle';

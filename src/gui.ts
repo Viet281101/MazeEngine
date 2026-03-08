@@ -1,6 +1,6 @@
 import * as dat from 'dat.gui';
 import type { MazeController } from './maze';
-import { subscribeLanguageChange, t, type TranslationKey } from './sidebar/i18n';
+import { subscribeLanguageChange, t, type TranslationKey } from './i18n';
 import { UI_BREAKPOINTS } from './constants/ui';
 
 export interface GUISettings {

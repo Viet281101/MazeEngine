@@ -1,6 +1,6 @@
 import type { GeneratorId, MazeTopologyId, ShaftDensity } from '../../../generator';
 import { Toolbar } from '../../toolbar';
-import { subscribeLanguageChange } from '../../i18n';
+import { subscribeLanguageChange } from '../../../i18n';
 import { watchContainerRemoval } from '../popup-lifecycle';
 import { applyI18nTexts, setI18nText } from '../popup-i18n';
 import { createLabeledNumberInput } from '../popup-inputs';

@@ -7,7 +7,7 @@ import {
   type ShaftDensity,
 } from '../../../generator';
 import type { GenerateTaskRequest, GenerateTaskResponse } from '../../../generator/worker-protocol';
-import { t } from '../../i18n';
+import { t } from '../../../i18n';
 import {
   canUpdateMaze,
   getMazeAppBridge,

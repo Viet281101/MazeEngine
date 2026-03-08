@@ -1,5 +1,11 @@
 import { MESH_REDUCTION } from '../../../constants/maze';
-import { SUPPORTED_LANGUAGES, getLanguage, t, type AppLanguage, type TranslationKey } from '../../i18n';
+import {
+  SUPPORTED_LANGUAGES,
+  getLanguage,
+  t,
+  type AppLanguage,
+  type TranslationKey,
+} from '../../../i18n';
 import { createNumberStepperField } from '../popup-inputs';
 import { createLabelWithHelp, createRow, createToggleRow } from '../popup-rows';
 
@@ -250,13 +256,13 @@ export function createSettingsPopupDom(
     withHelp: true,
   });
 
-  const {
-    toggle: cameraZoomLimitToggle,
-    label: cameraZoomLimitLabel,
-  } = appendToggleSettingRow(content, {
-    labelKey: 'settings.cameraZoomLimit',
-    initialState: initialCameraZoomLimitEnabled,
-  });
+  const { toggle: cameraZoomLimitToggle, label: cameraZoomLimitLabel } = appendToggleSettingRow(
+    content,
+    {
+      labelKey: 'settings.cameraZoomLimit',
+      initialState: initialCameraZoomLimitEnabled,
+    }
+  );
 
   const cameraZoomMinInput = document.createElement('input');
   cameraZoomMinInput.type = 'number';

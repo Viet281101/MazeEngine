@@ -5,7 +5,7 @@ import { PreviewWindow } from '../preview/preview-window';
 import { PreviewController } from './preview-controller';
 import type { MazeController } from '../maze';
 import { computeMarkersFromLayer } from '../maze';
-import { subscribeLanguageChange, t } from '../sidebar/i18n';
+import { subscribeLanguageChange, t } from '../i18n';
 import { DebugOverlay } from '../debug/debug-overlay';
 import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION } from '../constants/maze';
 import { PREVIEW_WINDOW, UI_BREAKPOINTS } from '../constants/ui';

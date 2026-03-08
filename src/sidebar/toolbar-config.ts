@@ -1,4 +1,4 @@
-import type { TranslationKey } from './i18n';
+import type { TranslationKey } from '../i18n';
 import { getIconPath } from '../constants/assets';
 
 export type PopupType = 'maze' | 'generate' | 'solve' | 'tutorial' | 'settings';

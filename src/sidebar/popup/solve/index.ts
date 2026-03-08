@@ -1,4 +1,4 @@
-import { subscribeLanguageChange, t } from '../../i18n';
+import { subscribeLanguageChange, t } from '../../../i18n';
 import { Toolbar } from '../../toolbar';
 import { watchContainerRemoval } from '../popup-lifecycle';
 import { applyI18nTexts } from '../popup-i18n';
