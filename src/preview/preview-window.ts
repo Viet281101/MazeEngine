@@ -5,6 +5,14 @@ import {
   renderPreviewMaze,
   type PreviewLayout,
 } from './preview-canvas-renderer';
+import {
+  assemblePreviewWindow,
+  createPreviewCanvas,
+  createPreviewContainer,
+  createPreviewFooter,
+  createPreviewTitleBar,
+  getPreviewCanvasContextOrThrow,
+} from './preview-dom';
 import { computeMarkersFromLayer } from '../maze';
 import { subscribeLanguageChange, t } from '../i18n';
 import type { MarkerPoint, MazeData, SolutionPath } from '../types/maze';
@@ -82,6 +90,7 @@ export class PreviewWindow {
   private onWheelHandler: (e: WheelEvent) => void;
   private onKeyDownHandler: (e: KeyboardEvent) => void;
   private onContainerPointerDownHandler: () => void;
+  private onTransitionEndHandler: (e: TransitionEvent) => void;
   private dragListenersAttached: boolean = false;
   private draggingPointerId: number | null = null;
   private unsubscribeLanguageChange: (() => void) | null = null;
@@ -99,69 +108,22 @@ export class PreviewWindow {
     this.lastViewportWidth = window.innerWidth;
     this.lastViewportHeight = window.innerHeight;
 
-    // Create container
-    this.container = document.createElement('div');
-    this.container.className = 'preview-window';
-    this.container.tabIndex = 0;
-    this.container.style.width = `${this.width}px`;
-    this.container.style.height = `${this.height}px`;
-    this.container.style.left = `${this.windowX}px`;
-    this.container.style.top = `${this.windowY}px`;
-    this.container.style.setProperty('--preview-bg', PREVIEW_COLORS.background);
-    this.container.style.setProperty('--preview-surface', PREVIEW_COLORS.surface);
-    this.container.style.setProperty('--preview-surface-top', PREVIEW_COLORS.surfaceTop);
-    this.container.style.setProperty('--preview-wall', PREVIEW_COLORS.wall);
-    this.container.style.setProperty('--preview-path', PREVIEW_COLORS.path);
-    this.container.style.setProperty('--preview-connector', PREVIEW_COLORS.connector);
-    this.container.style.setProperty('--preview-grid', PREVIEW_COLORS.grid);
-    this.container.style.setProperty('--preview-border', PREVIEW_COLORS.border);
-    this.container.style.setProperty('--preview-border-soft', PREVIEW_COLORS.borderSoft);
-    this.container.style.setProperty('--preview-footer-border', PREVIEW_COLORS.footerBorder);
-    this.container.style.setProperty('--preview-legend-bg', PREVIEW_COLORS.legendBg);
-    this.container.style.setProperty('--preview-button-bg', PREVIEW_COLORS.buttonBg);
-    this.container.style.setProperty('--preview-button-border', PREVIEW_COLORS.buttonBorder);
-    this.container.style.setProperty('--preview-button-hover', PREVIEW_COLORS.buttonHover);
-    this.container.style.setProperty('--preview-button-active', PREVIEW_COLORS.buttonActive);
-    this.container.style.setProperty(
-      '--preview-button-active-border',
-      PREVIEW_COLORS.buttonActiveBorder
-    );
-    this.container.style.setProperty('--preview-close-active', PREVIEW_COLORS.closeActive);
-    this.container.style.setProperty('--preview-resize-grip', PREVIEW_COLORS.resizeGrip);
-    this.container.style.setProperty('--preview-start', PREVIEW_COLORS.markerStart);
-    this.container.style.setProperty('--preview-end', PREVIEW_COLORS.markerEnd);
-    this.container.style.setProperty('--preview-marker-both', PREVIEW_COLORS.markerBoth);
-    this.container.style.setProperty('--preview-marker-stroke', PREVIEW_COLORS.markerStroke);
-    this.container.style.setProperty('--preview-marker-text', PREVIEW_COLORS.markerText);
-    this.container.style.setProperty('--preview-hide-duration', `${this.hideTransitionMs}ms`);
+    this.container = createPreviewContainer({
+      width: this.width,
+      height: this.height,
+      x: this.windowX,
+      y: this.windowY,
+      hideTransitionMs: this.hideTransitionMs,
+    });
 
-    // Create title bar
-    this.titleBar = document.createElement('div');
-    this.titleBar.className = 'preview-titlebar';
-    this.titleText = document.createElement('span');
-    this.titleText.className = 'preview-title-text';
-    this.titleText.textContent = config.title ?? t('preview.title');
-
-    // Create close button
-    this.closeButton = document.createElement('button');
-    this.closeButton.className = 'preview-close-btn';
-    this.closeButton.textContent = 'x';
-
-    // Create hide button
-    this.hideButton = document.createElement('button');
-    this.hideButton.className = 'preview-hide-btn';
-    this.hideButton.type = 'button';
-    this.hideButton.setAttribute('title', t('preview.hide'));
-    this.hideButton.textContent = '-';
-
-    // Create grid toggle button
-    this.gridToggleButton = document.createElement('button');
-    this.gridToggleButton.className = 'preview-grid-btn';
-    this.gridToggleButton.type = 'button';
-    this.gridToggleButton.setAttribute('aria-pressed', String(this.showGrid));
-    this.gridToggleButton.setAttribute('title', t('preview.toggleGrid'));
-    this.gridToggleButton.textContent = t('preview.grid');
-    this.gridToggleButton.classList.toggle('active', this.showGrid);
+    const titleBarElements = createPreviewTitleBar({
+      title: config.title ?? t('preview.title'),
+      hideTitle: t('preview.hide'),
+    });
+    this.titleBar = titleBarElements.titleBar;
+    this.titleText = titleBarElements.titleText;
+    this.closeButton = titleBarElements.closeButton;
+    this.hideButton = titleBarElements.hideButton;
 
     // Create legend
     this.legend = document.createElement('div');
@@ -172,53 +134,28 @@ export class PreviewWindow {
     this.legendStartLabel = this.createLegendItem('start', t('preview.start'));
     this.legendEndLabel = this.createLegendItem('end', t('preview.end'));
 
-    // Create footer
-    this.footer = document.createElement('div');
-    this.footer.className = 'preview-footer';
-    this.footer.appendChild(this.gridToggleButton);
-    const layerControls = document.createElement('div');
-    layerControls.className = 'preview-layer-controls';
-    this.layerPrevButton = document.createElement('button');
-    this.layerPrevButton.className = 'preview-layer-btn';
-    this.layerPrevButton.type = 'button';
-    this.layerPrevButton.textContent = '<';
-    this.layerNextButton = document.createElement('button');
-    this.layerNextButton.className = 'preview-layer-btn';
-    this.layerNextButton.type = 'button';
-    this.layerNextButton.textContent = '>';
-    this.layerLabel = document.createElement('span');
-    this.layerLabel.className = 'preview-layer-label';
-    layerControls.appendChild(this.layerPrevButton);
-    layerControls.appendChild(this.layerLabel);
-    layerControls.appendChild(this.layerNextButton);
-    this.footer.appendChild(layerControls);
+    const footerElements = createPreviewFooter({
+      showGrid: this.showGrid,
+      gridLabel: t('preview.grid'),
+      gridTitle: t('preview.toggleGrid'),
+    });
+    this.footer = footerElements.footer;
+    this.gridToggleButton = footerElements.gridToggleButton;
+    this.layerPrevButton = footerElements.layerPrevButton;
+    this.layerLabel = footerElements.layerLabel;
+    this.layerNextButton = footerElements.layerNextButton;
 
-    // Create canvas
-    this.canvas = document.createElement('canvas');
-    this.canvas.className = 'preview-canvas';
-    this.canvas.width = this.canvasWidth;
-    this.canvas.height = this.canvasHeight;
-
-    const context = this.canvas.getContext('2d');
-    if (!context) {
-      throw new Error('Could not get 2D context');
-    }
-    this.ctx = context;
+    this.canvas = createPreviewCanvas(this.canvasWidth, this.canvasHeight);
+    this.ctx = getPreviewCanvasContextOrThrow(this.canvas);
     this.ctx.imageSmoothingEnabled = false;
 
-    // Assemble window
-    const titleButtons = document.createElement('div');
-    titleButtons.className = 'preview-title-actions';
-    titleButtons.appendChild(this.hideButton);
-    titleButtons.appendChild(this.closeButton);
-
-    this.titleBar.appendChild(this.titleText);
-    this.titleBar.appendChild(titleButtons);
-    this.container.appendChild(this.titleBar);
-    this.container.appendChild(this.legend);
-    this.container.appendChild(this.canvas);
-    this.container.appendChild(this.footer);
-    document.body.appendChild(this.container);
+    assemblePreviewWindow({
+      container: this.container,
+      titleBar: this.titleBar,
+      legend: this.legend,
+      canvas: this.canvas,
+      footer: this.footer,
+    });
 
     // Setup event listeners
     this.onPointerMoveHandler = e => this.onPointerMove(e);
@@ -229,6 +166,7 @@ export class PreviewWindow {
     this.onContainerPointerDownHandler = () => {
       this.container.focus();
     };
+    this.onTransitionEndHandler = e => this.onHideTransitionEnd(e);
     this.setupEventListeners();
     this.unsubscribeLanguageChange = subscribeLanguageChange(() => this.applyTranslations());
     this.applyTranslations();
@@ -274,6 +212,7 @@ export class PreviewWindow {
     this.canvas.addEventListener('wheel', this.onWheelHandler, { passive: false });
     this.container.addEventListener('keydown', this.onKeyDownHandler);
     this.container.addEventListener('pointerdown', this.onContainerPointerDownHandler);
+    this.container.addEventListener('transitionend', this.onTransitionEndHandler);
 
     // Prevent text selection while dragging
     this.titleBar.addEventListener('selectstart', e => e.preventDefault());
@@ -506,10 +445,7 @@ export class PreviewWindow {
     if (this.isClosed) return;
     this.isVisible = true;
     this.isHiding = false;
-    if (this.hideTimeoutId !== null) {
-      window.clearTimeout(this.hideTimeoutId);
-      this.hideTimeoutId = null;
-    }
+    this.clearHideFallbackTimer();
     this.container.classList.remove('is-hiding');
     this.container.style.display = 'block';
   }
@@ -526,14 +462,7 @@ export class PreviewWindow {
     }
 
     const finalizeHide = () => {
-      if (!this.isHiding || this.isClosed) return;
-      this.isHiding = false;
-      this.container.style.display = 'none';
-      this.container.classList.remove('is-hiding');
-      if (this.hideTimeoutId !== null) {
-        window.clearTimeout(this.hideTimeoutId);
-        this.hideTimeoutId = null;
-      }
+      this.finalizeHideTransition();
     };
 
     this.container.classList.add('is-hiding');
@@ -597,10 +526,7 @@ export class PreviewWindow {
     this.isClosed = true;
     this.isVisible = false;
     this.isHiding = false;
-    if (this.hideTimeoutId !== null) {
-      window.clearTimeout(this.hideTimeoutId);
-      this.hideTimeoutId = null;
-    }
+    this.clearHideFallbackTimer();
     if (this.onClose) {
       this.onClose();
     }
@@ -615,16 +541,39 @@ export class PreviewWindow {
     this.canvas.removeEventListener('wheel', this.onWheelHandler);
     this.container.removeEventListener('keydown', this.onKeyDownHandler);
     this.container.removeEventListener('pointerdown', this.onContainerPointerDownHandler);
+    this.container.removeEventListener('transitionend', this.onTransitionEndHandler);
     this.detachDragListeners();
-    if (this.hideTimeoutId !== null) {
-      window.clearTimeout(this.hideTimeoutId);
-      this.hideTimeoutId = null;
-    }
+    this.clearHideFallbackTimer();
     if (this.unsubscribeLanguageChange) {
       this.unsubscribeLanguageChange();
       this.unsubscribeLanguageChange = null;
     }
     this.container.remove();
+  }
+
+  private onHideTransitionEnd(event: TransitionEvent): void {
+    if (event.target !== this.container) {
+      return;
+    }
+    if (event.propertyName !== 'opacity') {
+      return;
+    }
+    this.finalizeHideTransition();
+  }
+
+  private finalizeHideTransition(): void {
+    if (!this.isHiding || this.isClosed) return;
+    this.isHiding = false;
+    this.container.style.display = 'none';
+    this.container.classList.remove('is-hiding');
+    this.clearHideFallbackTimer();
+  }
+
+  private clearHideFallbackTimer(): void {
+    if (this.hideTimeoutId !== null) {
+      window.clearTimeout(this.hideTimeoutId);
+      this.hideTimeoutId = null;
+    }
   }
 
   private setActiveLayer(nextIndex: number, forceRender: boolean = true): void {

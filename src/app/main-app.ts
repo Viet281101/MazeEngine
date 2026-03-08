@@ -18,6 +18,7 @@ import {
 import type { WebGLRenderer } from 'three';
 import { createInitialMazeData, createSampleMultiLayerMazeData } from './default-mazes';
 import { MeshReductionSettingsStorage } from './mesh-settings-store';
+import { DatGuiSettingsStorage, type DatGuiSettings } from './gui-settings-store';
 import type {
   MarkerPoint,
   MazeAppBridge,
@@ -45,6 +46,7 @@ export class MainApp implements MazeController, MazeAppBridge {
   private readonly debugOverlay: DebugOverlay;
   private readonly renderListener: () => void;
   private readonly settingsStorage: MeshReductionSettingsStorage;
+  private readonly datGuiSettingsStorage: DatGuiSettingsStorage;
   private readonly resizeHandler: () => void;
   private readonly keydownHandler: (event: KeyboardEvent) => void;
 
@@ -65,12 +67,17 @@ export class MainApp implements MazeController, MazeAppBridge {
   private cameraZoomMinDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE;
   private cameraZoomMaxDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE;
   private unsubscribeLanguageChange: (() => void) | null = null;
+  private pendingDatGuiSettingsToSave: Partial<DatGuiSettings> = {};
+  private datGuiSaveTimerId: number | null = null;
+  private datGuiSaveIdleId: number | null = null;
 
   constructor() {
     this.canvas = this.getCanvasOrThrow();
     this.toolbar = new Toolbar();
     this.settingsStorage = new MeshReductionSettingsStorage();
+    this.datGuiSettingsStorage = new DatGuiSettingsStorage();
     this.loadMeshReductionSettings();
+    const initialDatGuiSettings = this.loadDatGuiSettings();
 
     this.maze = this.createInitialMaze();
     this.applyMeshReductionSettingsToMaze();
@@ -80,6 +87,20 @@ export class MainApp implements MazeController, MazeAppBridge {
       scale: 1.4,
       mobileBreakpoint: this.mobileBreakpoint,
       autoHide: true,
+      initialSettings: initialDatGuiSettings,
+      onSettingChange: (key, value) => {
+        switch (key) {
+          case 'backgroundColor':
+          case 'wallColor':
+          case 'floorColor':
+            this.queueDatGuiSettingSave(key, value as string);
+            break;
+          case 'wallOpacity':
+          case 'floorOpacity':
+            this.queueDatGuiSettingSave(key, value as number);
+            break;
+        }
+      },
     });
     this.initializeVisibilityByViewport();
     this.previewController = new PreviewController({
@@ -105,7 +126,7 @@ export class MainApp implements MazeController, MazeAppBridge {
 
     this.applyDebugOverlayVisible(this.debugOverlayVisible);
     this.applyPreviewVisible(this.previewVisibleByViewport);
-    this.maze.setBackgroundColor(this.guiController.settings.backgroundColor);
+    this.applyGUISettings();
     this.updatePreview();
 
     this.resizeHandler = () => this.onWindowResize();
@@ -144,6 +165,63 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.cameraZoomLimitEnabled = loaded.cameraZoomLimitEnabled;
     this.cameraZoomMinDistance = loaded.cameraZoomMinDistance;
     this.cameraZoomMaxDistance = loaded.cameraZoomMaxDistance;
+  }
+
+  private loadDatGuiSettings(): DatGuiSettings {
+    return this.datGuiSettingsStorage.load({
+      backgroundColor: '#999999',
+      wallColor: '#808080',
+      floorColor: '#C0C0C0',
+      wallOpacity: 1.0,
+      floorOpacity: 1.0,
+    });
+  }
+
+  private queueDatGuiSettingSave<K extends keyof DatGuiSettings>(
+    key: K,
+    value: DatGuiSettings[K]
+  ): void {
+    this.pendingDatGuiSettingsToSave[key] = value;
+    if (this.datGuiSaveIdleId !== null || this.datGuiSaveTimerId !== null) {
+      return;
+    }
+
+    if (typeof window.requestIdleCallback === 'function') {
+      this.datGuiSaveIdleId = window.requestIdleCallback(
+        () => {
+          this.datGuiSaveIdleId = null;
+          this.flushDatGuiSettingsSave();
+        },
+        { timeout: 250 }
+      );
+      return;
+    }
+
+    this.datGuiSaveTimerId = window.setTimeout(() => {
+      this.datGuiSaveTimerId = null;
+      this.flushDatGuiSettingsSave();
+    }, 150);
+  }
+
+  private flushDatGuiSettingsSave(): void {
+    if (this.datGuiSaveIdleId !== null && typeof window.cancelIdleCallback === 'function') {
+      window.cancelIdleCallback(this.datGuiSaveIdleId);
+      this.datGuiSaveIdleId = null;
+    }
+    if (this.datGuiSaveTimerId !== null) {
+      window.clearTimeout(this.datGuiSaveTimerId);
+      this.datGuiSaveTimerId = null;
+    }
+
+    const pending = this.pendingDatGuiSettingsToSave;
+    this.pendingDatGuiSettingsToSave = {};
+
+    (Object.keys(pending) as Array<keyof DatGuiSettings>).forEach(key => {
+      const value = pending[key];
+      if (value !== undefined) {
+        this.datGuiSettingsStorage.save(key, value);
+      }
+    });
   }
 
   private applyMeshReductionSettingsToMaze(): void {
@@ -316,7 +394,13 @@ export class MainApp implements MazeController, MazeAppBridge {
    * Apply current GUI settings to maze
    */
   private applyGUISettings(): void {
-    this.maze.setBackgroundColor(this.guiController.settings.backgroundColor);
+    const { backgroundColor, wallColor, floorColor, wallOpacity, floorOpacity } =
+      this.guiController.settings;
+    this.maze.setBackgroundColor(backgroundColor);
+    this.maze.updateWallColor(wallColor);
+    this.maze.updateFloorColor(floorColor);
+    this.maze.updateWallOpacity(wallOpacity);
+    this.maze.updateFloorOpacity(floorOpacity);
     this.maze.toggleEdges(this.edgesVisible);
   }
 
@@ -499,6 +583,7 @@ export class MainApp implements MazeController, MazeAppBridge {
    * Cleanup app on destroyed
    */
   public destroy(): void {
+    this.flushDatGuiSettingsSave();
     this.unregisterGlobalListeners();
 
     this.toolbar.destroy();
