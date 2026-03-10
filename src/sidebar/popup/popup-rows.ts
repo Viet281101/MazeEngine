@@ -2,7 +2,7 @@ import type { TranslationKey } from '../../i18n';
 import { setI18nText } from './popup-i18n';
 import { getIconPath } from '../../constants/assets';
 
-type RowControl = HTMLInputElement | HTMLSelectElement | HTMLDivElement | HTMLButtonElement;
+type RowControl = HTMLElement;
 
 // Moved from setting-dom.ts to be reusable
 function createHelpIcon(): HTMLImageElement {
@@ -40,17 +40,26 @@ interface RowOptions {
   control: RowControl;
   className?: string;
   labelClassName?: string;
+  rowTag?: 'label' | 'div';
 }
 
-export function createRow(options: RowOptions): { row: HTMLLabelElement; label: HTMLElement } {
+/* eslint-disable no-redeclare */
+export function createRow(
+  options: RowOptions & { rowTag?: 'label' }
+): { row: HTMLLabelElement; label: HTMLElement };
+export function createRow(
+  options: RowOptions & { rowTag: 'div' }
+): { row: HTMLDivElement; label: HTMLElement };
+export function createRow(options: RowOptions): { row: HTMLElement; label: HTMLElement } {
   const {
     label,
     control,
     className = 'settings-popup__row',
     labelClassName = 'settings-popup__label',
+    rowTag = 'label',
   } = options;
 
-  const row = document.createElement('label');
+  const row = document.createElement(rowTag);
   row.className = className;
 
   let labelEl: HTMLElement;
@@ -67,6 +76,7 @@ export function createRow(options: RowOptions): { row: HTMLLabelElement; label: 
 
   return { row, label: labelEl };
 }
+/* eslint-enable no-redeclare */
 
 interface ToggleRowOptions {
   labelKey: TranslationKey;

@@ -22,7 +22,10 @@ export class DatGuiSettingsStorage {
       wallColor: this.loadColor(DatGuiSettingsStorage.WALL_COLOR_KEY, defaults.wallColor),
       floorColor: this.loadColor(DatGuiSettingsStorage.FLOOR_COLOR_KEY, defaults.floorColor),
       wallOpacity: this.loadOpacity(DatGuiSettingsStorage.WALL_OPACITY_KEY, defaults.wallOpacity),
-      floorOpacity: this.loadOpacity(DatGuiSettingsStorage.FLOOR_OPACITY_KEY, defaults.floorOpacity),
+      floorOpacity: this.loadOpacity(
+        DatGuiSettingsStorage.FLOOR_OPACITY_KEY,
+        defaults.floorOpacity
+      ),
     };
   }
 
