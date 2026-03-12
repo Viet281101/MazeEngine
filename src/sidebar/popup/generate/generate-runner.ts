@@ -2,6 +2,7 @@ import {
   executeGenerator,
   type GeneratedMazeResult,
   type GeneratorId,
+  type MazeComplexity,
   type GeneratorRunInput,
   type MazeTopologyId,
   type ShaftDensity,
@@ -25,6 +26,8 @@ interface RunGenerationInput {
   rows: number;
   cols: number;
   northBias: number;
+  randomizeStartEnd: boolean;
+  complexity: MazeComplexity;
   multiLayerParams?: MultiLayerTopologyParams;
 }
 
@@ -129,7 +132,11 @@ async function generateMaze(input: RunGenerationInput): Promise<GeneratedMazeRes
   const generatorInput: GeneratorRunInput = {
     rows: input.rows,
     cols: input.cols,
-    params: { northBias: input.northBias },
+    params: {
+      northBias: input.northBias,
+      randomizeStartEnd: input.randomizeStartEnd,
+      complexity: input.complexity,
+    },
     topologyParams: input.topology === 'multiLayerRect' ? input.multiLayerParams : undefined,
   };
   const client = getWorkerClient();

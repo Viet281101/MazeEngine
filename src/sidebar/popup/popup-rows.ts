@@ -44,12 +44,14 @@ interface RowOptions {
 }
 
 /* eslint-disable no-redeclare */
-export function createRow(
-  options: RowOptions & { rowTag?: 'label' }
-): { row: HTMLLabelElement; label: HTMLElement };
-export function createRow(
-  options: RowOptions & { rowTag: 'div' }
-): { row: HTMLDivElement; label: HTMLElement };
+export function createRow(options: RowOptions & { rowTag?: 'label' }): {
+  row: HTMLLabelElement;
+  label: HTMLElement;
+};
+export function createRow(options: RowOptions & { rowTag: 'div' }): {
+  row: HTMLDivElement;
+  label: HTMLElement;
+};
 export function createRow(options: RowOptions): { row: HTMLElement; label: HTMLElement } {
   const {
     label,

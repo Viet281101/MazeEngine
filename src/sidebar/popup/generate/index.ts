@@ -1,4 +1,4 @@
-import type { GeneratorId, MazeTopologyId, ShaftDensity } from '../../../generator';
+import type { GeneratorId, MazeComplexity, MazeTopologyId, ShaftDensity } from '../../../generator';
 import { Toolbar } from '../../toolbar';
 import { subscribeLanguageChange } from '../../../i18n';
 import { watchContainerRemoval } from '../popup-lifecycle';
@@ -189,7 +189,9 @@ class GeneratePopup {
               action.generatorId,
               action.rows,
               action.cols,
-              action.northBias
+              action.northBias,
+              action.randomizeStartEnd,
+              action.complexity
             ),
         });
         panel.appendChild(row);
@@ -205,7 +207,9 @@ class GeneratePopup {
     generatorId: GeneratorId,
     rows: number,
     cols: number,
-    northBias: number
+    northBias: number,
+    randomizeStartEnd: boolean,
+    complexity: MazeComplexity
   ): Promise<void> {
     await runGeneration({
       generatorId,
@@ -213,6 +217,8 @@ class GeneratePopup {
       rows,
       cols,
       northBias,
+      randomizeStartEnd,
+      complexity,
       multiLayerParams: {
         layers: clamp(
           this.topologyParams.layers,

@@ -1,4 +1,4 @@
-import type { GeneratorId } from '../../../generator';
+import type { GeneratorId, MazeComplexity } from '../../../generator';
 import { MAZE_SIZE } from '../../../constants/maze';
 import { createI18nButton } from '../popup-elements';
 import { createLabeledNumberInput } from '../popup-inputs';
@@ -10,6 +10,8 @@ interface GenerateAction {
   rows: number;
   cols: number;
   northBias: number;
+  randomizeStartEnd: boolean;
+  complexity: MazeComplexity;
 }
 
 interface CreateGeneratorRowOptions {
@@ -84,6 +86,73 @@ export function createGeneratorRow(options: CreateGeneratorRowOptions): HTMLElem
   }
   panel.appendChild(sizeRow);
 
+  let randomizeInput: HTMLInputElement | null = null;
+  let complexitySelect: HTMLSelectElement | null = null;
+  if (generator.id === 'binaryTree') {
+    const moreSetup = document.createElement('details');
+    moreSetup.className = 'generate-popup__more';
+
+    const moreSummary = document.createElement('summary');
+    moreSummary.className = 'generate-popup__more-summary';
+
+    const moreTitle = document.createElement('span');
+    moreTitle.className = 'generate-popup__more-title';
+    setI18nText(moreTitle, 'generate.moreSetup');
+
+    const moreIcon = document.createElement('span');
+    moreIcon.className = 'generate-popup__more-icon';
+    moreIcon.textContent = '+';
+
+    moreSummary.appendChild(moreTitle);
+    moreSummary.appendChild(moreIcon);
+    moreSetup.appendChild(moreSummary);
+
+    const morePanel = document.createElement('div');
+    morePanel.className = 'generate-popup__more-panel';
+
+    const randomizeRow = document.createElement('label');
+    randomizeRow.className = 'generate-popup__toggle';
+
+    randomizeInput = document.createElement('input');
+    randomizeInput.type = 'checkbox';
+    randomizeInput.className = 'generate-popup__toggle-input';
+    randomizeInput.checked = false;
+
+    const randomizeLabel = document.createElement('span');
+    randomizeLabel.className = 'generate-popup__toggle-label';
+    setI18nText(randomizeLabel, 'generate.randomizeStartEnd');
+
+    randomizeRow.appendChild(randomizeInput);
+    randomizeRow.appendChild(randomizeLabel);
+    morePanel.appendChild(randomizeRow);
+
+    const complexityRow = document.createElement('label');
+    complexityRow.className = 'generate-popup__select-row';
+
+    const complexityLabel = document.createElement('span');
+    complexityLabel.className = 'generate-popup__select-label';
+    setI18nText(complexityLabel, 'generate.complexity');
+
+    const complexitySelectEl = document.createElement('select');
+    complexitySelectEl.className = 'generate-popup__select';
+
+    (['low', 'normal', 'high'] as MazeComplexity[]).forEach(value => {
+      const option = document.createElement('option');
+      option.value = value;
+      setI18nText(option, `generate.complexity.${value}`);
+      complexitySelectEl.appendChild(option);
+    });
+    complexitySelectEl.value = 'normal';
+    complexitySelect = complexitySelectEl;
+
+    complexityRow.appendChild(complexityLabel);
+    complexityRow.appendChild(complexitySelectEl);
+    morePanel.appendChild(complexityRow);
+
+    moreSetup.appendChild(morePanel);
+    panel.appendChild(moreSetup);
+  }
+
   const actionRow = document.createElement('div');
   actionRow.className = 'generate-popup__action-row';
 
@@ -132,6 +201,8 @@ export function createGeneratorRow(options: CreateGeneratorRowOptions): HTMLElem
           rows,
           cols,
           northBias: biasPercent / 100,
+          randomizeStartEnd: randomizeInput?.checked ?? false,
+          complexity: (complexitySelect?.value as MazeComplexity) ?? 'normal',
         });
       } finally {
         isGenerating = false;
@@ -146,6 +217,12 @@ export function createGeneratorRow(options: CreateGeneratorRowOptions): HTMLElem
     colsInput.input.disabled = true;
     if (biasInput) {
       biasInput.input.disabled = true;
+    }
+    if (randomizeInput) {
+      randomizeInput.disabled = true;
+    }
+    if (complexitySelect) {
+      complexitySelect.disabled = true;
     }
     generateBtn.disabled = true;
   }

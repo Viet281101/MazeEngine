@@ -1,4 +1,6 @@
 import { generateBinaryTreeMaze } from '../algorithms/binary-tree';
+import type { GeneratedMazeResult } from '../algorithms/binary-tree';
+import { applyCommonMazeRules, DEFAULT_GENERATION_ATTEMPTS } from './maze-rules';
 import { getTopologyAdapter } from './topology-adapters';
 import type { GeneratorDefinition, GeneratorId, GeneratorRunInput, MazeTopologyId } from './types';
 
@@ -14,6 +16,8 @@ export const GENERATOR_CATALOG: readonly GeneratorDefinition[] = [
     run: input =>
       generateBinaryTreeMaze(input.rows, input.cols, {
         northBias: input.params?.northBias,
+        randomizeStartEnd: input.params?.randomizeStartEnd,
+        complexity: input.params?.complexity,
         layers: input.topologyParams?.layers,
         shaftDensity: input.topologyParams?.shaftDensity,
       }),
@@ -67,6 +71,17 @@ export function executeGenerator(
   }
   const topologyAdapter = getTopologyAdapter(topology);
   const adaptedInput = topologyAdapter.adaptInput(input);
-  const generated = generator.run(adaptedInput);
-  return topologyAdapter.adaptOutput(generated, adaptedInput);
+  let lastOutput: GeneratedMazeResult | null = null;
+  for (let attempt = 0; attempt < DEFAULT_GENERATION_ATTEMPTS; attempt += 1) {
+    const generated = generator.run(adaptedInput);
+    const adaptedOutput = topologyAdapter.adaptOutput(generated, adaptedInput);
+    const ruleResult = applyCommonMazeRules(adaptedOutput, topology, {
+      complexity: adaptedInput.params?.complexity,
+    });
+    lastOutput = adaptedOutput;
+    if (ruleResult.ok) {
+      return adaptedOutput;
+    }
+  }
+  return lastOutput;
 }

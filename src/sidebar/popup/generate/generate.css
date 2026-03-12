@@ -135,6 +135,87 @@
   flex-wrap: wrap;
 }
 
+.generate-popup__more {
+  border: 1px solid #2f4453;
+  border-radius: 6px;
+  background: #16232b;
+  overflow: hidden;
+}
+
+.generate-popup__more-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.generate-popup__more-summary::-webkit-details-marker {
+  display: none;
+}
+
+.generate-popup__more-title {
+  font-size: 14px;
+  color: #d2e2ea;
+}
+
+.generate-popup__more-icon {
+  font-size: 16px;
+  color: #7fc8b2;
+  transition: transform 0.2s ease;
+}
+
+.generate-popup__more[open] .generate-popup__more-icon {
+  transform: rotate(45deg);
+}
+
+.generate-popup__more-panel {
+  border-top: 1px solid #2f4453;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.generate-popup__toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #d8e6ee;
+  cursor: pointer;
+}
+
+.generate-popup__toggle-input {
+  width: 16px;
+  height: 16px;
+  accent-color: #0f7f61;
+}
+
+.generate-popup__select-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.generate-popup__select-label {
+  font-size: 14px;
+  color: #d8e6ee;
+}
+
+.generate-popup__select {
+  border: 1px solid #3a5566;
+  border-radius: 5px;
+  background: #0f1b22;
+  color: #f4fbff;
+  font-size: 14px;
+  padding: 6px 10px;
+}
+
 .generate-popup__input {
   display: flex;
   align-items: center;

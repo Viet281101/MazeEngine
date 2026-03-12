@@ -1,5 +1,6 @@
 import { MAZE_SIZE, MULTI_LAYER_MAZE } from '../../constants/maze';
-import type { ShaftDensity } from '../core/types';
+import { applyCommonMazeRules, DEFAULT_GENERATION_ATTEMPTS } from '../core/maze-rules';
+import type { MazeComplexity, ShaftDensity } from '../core/types';
 
 export interface MazeMarker {
   row: number;
@@ -18,6 +19,13 @@ export interface GeneratedMazeResult {
 interface GridCell {
   row: number;
   col: number;
+}
+
+interface EntrancePlacement {
+  row: number;
+  col: number;
+  innerRow: number;
+  innerCol: number;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -44,6 +52,76 @@ function normalizeShaftDensity(value: ShaftDensity | undefined): ShaftDensity {
   return 'normal';
 }
 
+function normalizeComplexity(value: MazeComplexity | undefined): MazeComplexity {
+  if (value === 'low' || value === 'high') {
+    return value;
+  }
+  return 'normal';
+}
+
+function resolveFixedStartPlacement(rows: number): EntrancePlacement {
+  return { row: rows - 1, col: 1, innerRow: rows - 2, innerCol: 1 };
+}
+
+function resolveFixedEndPlacement(rows: number, cols: number): EntrancePlacement {
+  return { row: 0, col: cols - 2, innerRow: 1, innerCol: cols - 2 };
+}
+
+function collectEntranceCandidates(rows: number, cols: number): EntrancePlacement[] {
+  const candidates: EntrancePlacement[] = [];
+  if (rows < 3 || cols < 3) {
+    return candidates;
+  }
+
+  for (let col = 1; col < cols - 1; col += 1) {
+    if (col % 2 === 0) {
+      continue;
+    }
+    candidates.push({ row: 0, col, innerRow: 1, innerCol: col });
+    candidates.push({ row: rows - 1, col, innerRow: rows - 2, innerCol: col });
+  }
+
+  for (let row = 1; row < rows - 1; row += 1) {
+    if (row % 2 === 0) {
+      continue;
+    }
+    candidates.push({ row, col: 0, innerRow: row, innerCol: 1 });
+    candidates.push({ row, col: cols - 1, innerRow: row, innerCol: cols - 2 });
+  }
+
+  return candidates;
+}
+
+function pickRandomEntrancePair(
+  rows: number,
+  cols: number
+): { start: EntrancePlacement; end: EntrancePlacement } {
+  const candidates = collectEntranceCandidates(rows, cols);
+  const fallbackStart = resolveFixedStartPlacement(rows);
+  const fallbackEnd = resolveFixedEndPlacement(rows, cols);
+  if (candidates.length < 2) {
+    return { start: fallbackStart, end: fallbackEnd };
+  }
+
+  const startIndex = Math.floor(Math.random() * candidates.length);
+  let endIndex = Math.floor(Math.random() * candidates.length);
+  if (candidates.length > 1) {
+    while (endIndex === startIndex) {
+      endIndex = Math.floor(Math.random() * candidates.length);
+    }
+  }
+
+  return {
+    start: candidates[startIndex] ?? fallbackStart,
+    end: candidates[endIndex] ?? fallbackEnd,
+  };
+}
+
+function openEntrance(layer: number[][], placement: EntrancePlacement): void {
+  layer[placement.row][placement.col] = 0;
+  layer[placement.innerRow][placement.innerCol] = 0;
+}
+
 /**
  * Generate a single-layer perfect maze using Binary Tree algorithm.
  */
@@ -55,14 +133,11 @@ export interface BinaryTreeOptions {
   northBias?: number;
   layers?: number;
   shaftDensity?: ShaftDensity;
+  randomizeStartEnd?: boolean;
+  complexity?: MazeComplexity;
 }
 
-function carveBinaryTreeLayer(
-  rows: number,
-  cols: number,
-  northBias: number,
-  options: { openStartEntrance: boolean; openEndExit: boolean }
-): number[][] {
+function carveBinaryTreeLayer(rows: number, cols: number, northBias: number): number[][] {
   const layer = createWallGrid(rows, cols);
 
   for (let row = 1; row < rows - 1; row += 1) {
@@ -93,15 +168,6 @@ function carveBinaryTreeLayer(
         layer[row][col + 1] = 0;
       }
     }
-  }
-
-  if (options.openStartEntrance) {
-    layer[rows - 1][1] = 0;
-    layer[rows - 2][1] = 0;
-  }
-  if (options.openEndExit) {
-    layer[0][cols - 2] = 0;
-    layer[1][cols - 2] = 0;
   }
 
   return layer;
@@ -268,6 +334,46 @@ function applyVerticalConnectors(
   }
 }
 
+function generateBinaryTreeMazeCore(
+  rows: number,
+  cols: number,
+  northBias: number,
+  layerCount: number,
+  shaftDensity: ShaftDensity,
+  startPlacement: EntrancePlacement,
+  endPlacement: EntrancePlacement
+): GeneratedMazeResult {
+  const layers: number[][][] = [];
+  for (let layerIndex = 0; layerIndex < layerCount; layerIndex += 1) {
+    const biasJitter = (Math.random() - 0.5) * 0.36;
+    const layerBias = clamp(northBias + biasJitter, 0.05, 0.95);
+    layers.push(carveBinaryTreeLayer(rows, cols, layerBias));
+  }
+
+  const start: MazeMarker = {
+    row: startPlacement.row,
+    col: startPlacement.col,
+    layerIndex: 0,
+  };
+  const end: MazeMarker = {
+    row: endPlacement.row,
+    col: endPlacement.col,
+    layerIndex: layerCount - 1,
+  };
+  openEntrance(layers[start.layerIndex ?? 0] as number[][], startPlacement);
+  openEntrance(layers[end.layerIndex ?? 0] as number[][], endPlacement);
+
+  applyVerticalConnectors(layers, shaftDensity, { start, end });
+
+  return {
+    maze: layers,
+    markers: {
+      start,
+      end,
+    },
+  };
+}
+
 export function generateBinaryTreeMaze(
   inputRows: number,
   inputCols: number,
@@ -282,31 +388,42 @@ export function generateBinaryTreeMaze(
   );
   const layerCount = normalizeLayerCount(options.layers);
   const shaftDensity = normalizeShaftDensity(options.shaftDensity);
+  const randomizeStartEnd = options.randomizeStartEnd === true;
+  const complexity = normalizeComplexity(options.complexity);
+  const topology = layerCount > 1 ? 'multiLayerRect' : 'singleLayerRect';
 
-  const layers: number[][][] = [];
-  for (let layerIndex = 0; layerIndex < layerCount; layerIndex += 1) {
-    const biasJitter = (Math.random() - 0.5) * 0.36;
-    const layerBias = clamp(northBias + biasJitter, 0.05, 0.95);
-    layers.push(
-      carveBinaryTreeLayer(rows, cols, layerBias, {
-        openStartEntrance: layerIndex === 0,
-        openEndExit: layerIndex === layerCount - 1,
-      })
+  const { start: startPlacement, end: endPlacement } = randomizeStartEnd
+    ? pickRandomEntrancePair(rows, cols)
+    : { start: resolveFixedStartPlacement(rows), end: resolveFixedEndPlacement(rows, cols) };
+
+  let lastOutput: GeneratedMazeResult | null = null;
+  for (let attempt = 0; attempt < DEFAULT_GENERATION_ATTEMPTS; attempt += 1) {
+    const generated = generateBinaryTreeMazeCore(
+      rows,
+      cols,
+      northBias,
+      layerCount,
+      shaftDensity,
+      startPlacement,
+      endPlacement
     );
+    const ruleResult = applyCommonMazeRules(generated, topology, { complexity });
+    lastOutput = generated;
+    if (ruleResult.ok) {
+      return generated;
+    }
   }
 
-  const start: MazeMarker = { row: rows - 1, col: 1, layerIndex: 0 };
-  const end: MazeMarker = { row: 0, col: cols - 2, layerIndex: layerCount - 1 };
-  layers[start.layerIndex ?? 0][start.row][start.col] = 0;
-  layers[end.layerIndex ?? 0][end.row][end.col] = 0;
-
-  applyVerticalConnectors(layers, shaftDensity, { start, end });
-
-  return {
-    maze: layers,
-    markers: {
-      start,
-      end,
-    },
-  };
+  return (
+    lastOutput ??
+    generateBinaryTreeMazeCore(
+      rows,
+      cols,
+      northBias,
+      layerCount,
+      shaftDensity,
+      startPlacement,
+      endPlacement
+    )
+  );
 }
