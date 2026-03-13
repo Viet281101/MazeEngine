@@ -1,13 +1,14 @@
 import {
+  SUPPORTED_LANGUAGES,
   getLanguage,
   prefetchLanguage,
   subscribeLanguageChange,
   t,
   type AppLanguage,
-} from '../../i18n';
+} from '../../../i18n';
 import type { SettingsPopupDom } from './setting-dom';
 
-const LANGUAGE_OPTIONS: readonly AppLanguage[] = ['vi', 'en', 'fr'];
+type LanguageTranslationKey = `settings.language.${AppLanguage}`;
 
 export function applySettingsTranslations(dom: SettingsPopupDom): void {
   dom.languageLabel.textContent = t('settings.language');
@@ -40,9 +41,11 @@ export function applySettingsTranslations(dom: SettingsPopupDom): void {
   dom.cameraZoomMaxIncreaseButton.setAttribute('aria-label', t('settings.cameraZoomMaxIncrease'));
   dom.cameraZoomMaxDecreaseButton.setAttribute('aria-label', t('settings.cameraZoomMaxDecrease'));
 
-  dom.languageOptions.vi.textContent = t('settings.language.vi');
-  dom.languageOptions.en.textContent = t('settings.language.en');
-  dom.languageOptions.fr.textContent = t('settings.language.fr');
+  SUPPORTED_LANGUAGES.forEach(language => {
+    dom.languageOptions[language].textContent = t(
+      `settings.language.${language}` as LanguageTranslationKey
+    );
+  });
   dom.select.value = getLanguage();
 }
 
@@ -54,7 +57,7 @@ export function setupLanguagePrefetch(select: HTMLSelectElement): () => void {
     }
     prefetched = true;
     const current = getLanguage();
-    LANGUAGE_OPTIONS.filter(language => language !== current).forEach(language => {
+    SUPPORTED_LANGUAGES.filter(language => language !== current).forEach(language => {
       void prefetchLanguage(language);
     });
   };

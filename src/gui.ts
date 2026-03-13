@@ -1,6 +1,6 @@
 import * as dat from 'dat.gui';
 import type { MazeController } from './maze';
-import { subscribeLanguageChange, t, type TranslationKey } from './sidebar/i18n';
+import { subscribeLanguageChange, t, type TranslationKey } from './i18n';
 import { UI_BREAKPOINTS } from './constants/ui';
 
 export interface GUISettings {
@@ -18,7 +18,16 @@ interface GUIConfig {
   scale?: number;
   mobileBreakpoint?: number;
   autoHide?: boolean;
+  initialSettings?: Partial<GUISettings>;
+  onSettingChange?: <K extends keyof GUISettings>(key: K, value: GUISettings[K]) => void;
 }
+
+type LiveVisualSettingKey =
+  | 'backgroundColor'
+  | 'wallColor'
+  | 'floorColor'
+  | 'wallOpacity'
+  | 'floorOpacity';
 
 /**
  * GUIController - Manage dat.GUI interface
@@ -39,6 +48,12 @@ export class GUIController {
   private controllerLabelKeys: Partial<Record<keyof GUISettings, TranslationKey>> = {};
   private unsubscribeLanguageChange: (() => void) | null = null;
   private resizeHandler: (() => void) | null = null;
+  private pendingVisualUpdates: Partial<Pick<GUISettings, LiveVisualSettingKey>> = {};
+  private flushVisualUpdatesRafId: number | null = null;
+  private readonly onSettingChange?: <K extends keyof GUISettings>(
+    key: K,
+    value: GUISettings[K]
+  ) => void;
 
   constructor(mazeController: MazeController, config: GUIConfig = {}) {
     this.mazeController = mazeController;
@@ -47,6 +62,7 @@ export class GUIController {
     this.mobileBreakpoint = config.mobileBreakpoint ?? UI_BREAKPOINTS.MOBILE;
     this.guiScale = config.scale ?? 1.4;
     this.autoHide = config.autoHide ?? true;
+    this.onSettingChange = config.onSettingChange;
 
     // Default settings
     this.settings = {
@@ -59,6 +75,7 @@ export class GUIController {
       showDebug: true,
       showPreview: true,
     };
+    Object.assign(this.settings, config.initialSettings);
 
     this.gui = new dat.GUI();
     this.initializeGUI();
@@ -103,7 +120,7 @@ export class GUIController {
     const bgController = this.gui.addColor(this.settings, 'backgroundColor');
     this.setControllerLabel(bgController, 'gui.backgroundColor');
     bgController.onChange((value: string) => {
-      this.mazeController.setBackgroundColor(value);
+      this.queueVisualUpdate('backgroundColor', value);
     });
     this.controllers.set('backgroundColor', bgController);
     this.controllerLabelKeys.backgroundColor = 'gui.backgroundColor';
@@ -112,7 +129,7 @@ export class GUIController {
     const wallColorController = this.gui.addColor(this.settings, 'wallColor');
     this.setControllerLabel(wallColorController, 'gui.wallColor');
     wallColorController.onChange((value: string) => {
-      this.mazeController.updateWallColor(value);
+      this.queueVisualUpdate('wallColor', value);
     });
     this.controllers.set('wallColor', wallColorController);
     this.controllerLabelKeys.wallColor = 'gui.wallColor';
@@ -121,7 +138,7 @@ export class GUIController {
     const floorColorController = this.gui.addColor(this.settings, 'floorColor');
     this.setControllerLabel(floorColorController, 'gui.floorColor');
     floorColorController.onChange((value: string) => {
-      this.mazeController.updateFloorColor(value);
+      this.queueVisualUpdate('floorColor', value);
     });
     this.controllers.set('floorColor', floorColorController);
     this.controllerLabelKeys.floorColor = 'gui.floorColor';
@@ -135,7 +152,7 @@ export class GUIController {
     const wallOpacityController = this.gui.add(this.settings, 'wallOpacity', 0, 1, 0.01);
     this.setControllerLabel(wallOpacityController, 'gui.wallOpacity');
     wallOpacityController.onChange((value: number) => {
-      this.mazeController.updateWallOpacity(value);
+      this.queueVisualUpdate('wallOpacity', value);
     });
     this.controllers.set('wallOpacity', wallOpacityController);
     this.controllerLabelKeys.wallOpacity = 'gui.wallOpacity';
@@ -144,7 +161,7 @@ export class GUIController {
     const floorOpacityController = this.gui.add(this.settings, 'floorOpacity', 0, 1, 0.01);
     this.setControllerLabel(floorOpacityController, 'gui.floorOpacity');
     floorOpacityController.onChange((value: number) => {
-      this.mazeController.updateFloorOpacity(value);
+      this.queueVisualUpdate('floorOpacity', value);
     });
     this.controllers.set('floorOpacity', floorOpacityController);
     this.controllerLabelKeys.floorOpacity = 'gui.floorOpacity';
@@ -208,6 +225,49 @@ export class GUIController {
     }
   }
 
+  private notifySettingChange<K extends keyof GUISettings>(key: K, value: GUISettings[K]): void {
+    if (this.onSettingChange) {
+      this.onSettingChange(key, value);
+    }
+  }
+
+  private queueVisualUpdate<K extends LiveVisualSettingKey>(key: K, value: GUISettings[K]): void {
+    this.pendingVisualUpdates[key] = value;
+    if (this.flushVisualUpdatesRafId !== null) {
+      return;
+    }
+    this.flushVisualUpdatesRafId = window.requestAnimationFrame(() => {
+      this.flushVisualUpdatesRafId = null;
+      this.flushVisualUpdates();
+    });
+  }
+
+  private flushVisualUpdates(): void {
+    const pending = this.pendingVisualUpdates;
+    this.pendingVisualUpdates = {};
+
+    if (pending.backgroundColor !== undefined) {
+      this.mazeController.setBackgroundColor(pending.backgroundColor);
+      this.notifySettingChange('backgroundColor', pending.backgroundColor);
+    }
+    if (pending.wallColor !== undefined) {
+      this.mazeController.updateWallColor(pending.wallColor);
+      this.notifySettingChange('wallColor', pending.wallColor);
+    }
+    if (pending.floorColor !== undefined) {
+      this.mazeController.updateFloorColor(pending.floorColor);
+      this.notifySettingChange('floorColor', pending.floorColor);
+    }
+    if (pending.wallOpacity !== undefined) {
+      this.mazeController.updateWallOpacity(pending.wallOpacity);
+      this.notifySettingChange('wallOpacity', pending.wallOpacity);
+    }
+    if (pending.floorOpacity !== undefined) {
+      this.mazeController.updateFloorOpacity(pending.floorOpacity);
+      this.notifySettingChange('floorOpacity', pending.floorOpacity);
+    }
+  }
+
   /**
    * Enable/disable a controller input
    */
@@ -248,6 +308,12 @@ export class GUIController {
    * Destroy GUI
    */
   public destroy(): void {
+    if (this.flushVisualUpdatesRafId !== null) {
+      window.cancelAnimationFrame(this.flushVisualUpdatesRafId);
+      this.flushVisualUpdatesRafId = null;
+    }
+    this.pendingVisualUpdates = {};
+
     // Clear controllers map
     this.controllers.clear();
 

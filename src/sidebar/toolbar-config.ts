@@ -1,4 +1,4 @@
-import type { TranslationKey } from './i18n';
+import type { TranslationKey } from '../i18n';
 import { getIconPath } from '../constants/assets';
 
 export type PopupType = 'maze' | 'generate' | 'solve' | 'tutorial' | 'settings';
@@ -39,7 +39,7 @@ export const POPUP_CONTROL_CLOSE_LEFT_DESKTOP = '400px';
 export const POPUP_CONTROL_HIDE_LEFT_MOBILE = 'calc(50% + 120px)';
 export const POPUP_CONTROL_HIDE_LEFT_DESKTOP = '360px';
 
-export const POPUP_ORDER: PopupType[] = ['maze', 'generate', 'solve', 'tutorial', 'settings'];
+const POPUP_ORDER: PopupType[] = ['maze', 'generate', 'solve', 'tutorial', 'settings'];
 
 const POPUP_DESCRIPTORS: Record<PopupType, PopupDescriptor> = {
   maze: {

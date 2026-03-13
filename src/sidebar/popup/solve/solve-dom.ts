@@ -1,4 +1,6 @@
 import { setI18nText } from '../popup-i18n';
+import { createRow } from '../popup-rows';
+import type { TranslationKey } from '../../../i18n';
 import {
   SOLVE_ALGORITHMS_BY_CATEGORY,
   type SolveAlgorithmCategory,
@@ -33,6 +35,36 @@ const CATEGORY_LABEL_KEYS: Record<
   metaheuristic: 'solve.category.metaheuristic',
 };
 
+function createInfoValueRow(labelKey: TranslationKey): {
+  row: HTMLDivElement;
+  value: HTMLSpanElement;
+} {
+  const value = document.createElement('span');
+  value.className = 'solve-popup__value';
+  const { row } = createRow({
+    label: labelKey,
+    control: value,
+    className: 'solve-popup__row',
+    labelClassName: 'solve-popup__label',
+    rowTag: 'div',
+  });
+  return { row: row as HTMLDivElement, value };
+}
+
+function createInsightSection(options: {
+  labelKey: TranslationKey;
+  value: HTMLElement;
+}): HTMLDivElement {
+  const section = document.createElement('div');
+  section.className = 'solve-popup__insight-section';
+  const label = document.createElement('h4');
+  label.className = 'solve-popup__insight-label';
+  setI18nText(label, options.labelKey);
+  section.appendChild(label);
+  section.appendChild(options.value);
+  return section;
+}
+
 export function createSolvePopupDom(
   popupContainer: HTMLElement,
   selectedCategory: SolveAlgorithmCategory
@@ -43,37 +75,13 @@ export function createSolvePopupDom(
   const infoBox = document.createElement('section');
   infoBox.className = 'solve-popup__box solve-popup__box--info';
 
-  const topologyRow = document.createElement('div');
-  topologyRow.className = 'solve-popup__row';
-  const topologyLabel = document.createElement('span');
-  topologyLabel.className = 'solve-popup__label';
-  setI18nText(topologyLabel, 'solve.topologyDetected');
-  const topologyValue = document.createElement('span');
-  topologyValue.className = 'solve-popup__value';
-  topologyRow.appendChild(topologyLabel);
-  topologyRow.appendChild(topologyValue);
+  const { row: topologyRow, value: topologyValue } = createInfoValueRow('solve.topologyDetected');
   infoBox.appendChild(topologyRow);
 
-  const sizeRow = document.createElement('div');
-  sizeRow.className = 'solve-popup__row';
-  const sizeLabel = document.createElement('span');
-  sizeLabel.className = 'solve-popup__label';
-  setI18nText(sizeLabel, 'solve.mazeSize');
-  const sizeValue = document.createElement('span');
-  sizeValue.className = 'solve-popup__value';
-  sizeRow.appendChild(sizeLabel);
-  sizeRow.appendChild(sizeValue);
+  const { row: sizeRow, value: sizeValue } = createInfoValueRow('solve.mazeSize');
   infoBox.appendChild(sizeRow);
 
-  const markerRow = document.createElement('div');
-  markerRow.className = 'solve-popup__row';
-  const markerLabel = document.createElement('span');
-  markerLabel.className = 'solve-popup__label';
-  setI18nText(markerLabel, 'solve.markers');
-  const markerValue = document.createElement('span');
-  markerValue.className = 'solve-popup__value';
-  markerRow.appendChild(markerLabel);
-  markerRow.appendChild(markerValue);
+  const { row: markerRow, value: markerValue } = createInfoValueRow('solve.markers');
   infoBox.appendChild(markerRow);
 
   const note = document.createElement('p');
@@ -85,11 +93,6 @@ export function createSolvePopupDom(
   const algorithmBox = document.createElement('section');
   algorithmBox.className = 'solve-popup__box solve-popup__box--algorithm';
 
-  const categoryRow = document.createElement('label');
-  categoryRow.className = 'solve-popup__row';
-  const categoryLabel = document.createElement('span');
-  categoryLabel.className = 'solve-popup__label';
-  setI18nText(categoryLabel, 'solve.algorithmCategory');
   const categorySelect = document.createElement('select');
   categorySelect.className = 'solve-popup__select';
   (Object.keys(SOLVE_ALGORITHMS_BY_CATEGORY) as SolveAlgorithmCategory[]).forEach(category => {
@@ -99,19 +102,22 @@ export function createSolvePopupDom(
     categorySelect.appendChild(option);
   });
   categorySelect.value = selectedCategory;
-  categoryRow.appendChild(categoryLabel);
-  categoryRow.appendChild(categorySelect);
+  const { row: categoryRow } = createRow({
+    label: 'solve.algorithmCategory',
+    control: categorySelect,
+    className: 'solve-popup__row',
+    labelClassName: 'solve-popup__label',
+  });
   algorithmBox.appendChild(categoryRow);
 
-  const algorithmRow = document.createElement('label');
-  algorithmRow.className = 'solve-popup__row';
-  const algorithmLabel = document.createElement('span');
-  algorithmLabel.className = 'solve-popup__label';
-  setI18nText(algorithmLabel, 'solve.algorithm');
   const algorithmSelect = document.createElement('select');
   algorithmSelect.className = 'solve-popup__select';
-  algorithmRow.appendChild(algorithmLabel);
-  algorithmRow.appendChild(algorithmSelect);
+  const { row: algorithmRow } = createRow({
+    label: 'solve.algorithm',
+    control: algorithmSelect,
+    className: 'solve-popup__row',
+    labelClassName: 'solve-popup__label',
+  });
   algorithmBox.appendChild(algorithmRow);
   content.appendChild(algorithmBox);
 
@@ -129,49 +135,41 @@ export function createSolvePopupDom(
   const insightPanel = document.createElement('div');
   insightPanel.className = 'solve-popup__insight-panel';
 
-  const complexitySection = document.createElement('div');
-  complexitySection.className = 'solve-popup__insight-section';
-  const complexityLabel = document.createElement('h4');
-  complexityLabel.className = 'solve-popup__insight-label';
-  setI18nText(complexityLabel, 'solve.algorithmTimeComplexity');
   const insightComplexityValue = document.createElement('span');
   insightComplexityValue.className = 'solve-popup__insight-complexity';
-  complexitySection.appendChild(complexityLabel);
-  complexitySection.appendChild(insightComplexityValue);
-  insightPanel.appendChild(complexitySection);
+  insightPanel.appendChild(
+    createInsightSection({
+      labelKey: 'solve.algorithmTimeComplexity',
+      value: insightComplexityValue,
+    })
+  );
 
-  const overviewSection = document.createElement('div');
-  overviewSection.className = 'solve-popup__insight-section';
-  const overviewLabel = document.createElement('h4');
-  overviewLabel.className = 'solve-popup__insight-label';
-  setI18nText(overviewLabel, 'solve.algorithmOverview');
   const insightOverviewValue = document.createElement('p');
   insightOverviewValue.className = 'solve-popup__insight-text';
-  overviewSection.appendChild(overviewLabel);
-  overviewSection.appendChild(insightOverviewValue);
-  insightPanel.appendChild(overviewSection);
+  insightPanel.appendChild(
+    createInsightSection({
+      labelKey: 'solve.algorithmOverview',
+      value: insightOverviewValue,
+    })
+  );
 
-  const prosSection = document.createElement('div');
-  prosSection.className = 'solve-popup__insight-section';
-  const prosLabel = document.createElement('h4');
-  prosLabel.className = 'solve-popup__insight-label';
-  setI18nText(prosLabel, 'solve.algorithmPros');
   const insightProsList = document.createElement('ul');
   insightProsList.className = 'solve-popup__insight-list';
-  prosSection.appendChild(prosLabel);
-  prosSection.appendChild(insightProsList);
-  insightPanel.appendChild(prosSection);
+  insightPanel.appendChild(
+    createInsightSection({
+      labelKey: 'solve.algorithmPros',
+      value: insightProsList,
+    })
+  );
 
-  const consSection = document.createElement('div');
-  consSection.className = 'solve-popup__insight-section';
-  const consLabel = document.createElement('h4');
-  consLabel.className = 'solve-popup__insight-label';
-  setI18nText(consLabel, 'solve.algorithmCons');
   const insightConsList = document.createElement('ul');
   insightConsList.className = 'solve-popup__insight-list';
-  consSection.appendChild(consLabel);
-  consSection.appendChild(insightConsList);
-  insightPanel.appendChild(consSection);
+  insightPanel.appendChild(
+    createInsightSection({
+      labelKey: 'solve.algorithmCons',
+      value: insightConsList,
+    })
+  );
 
   insightBox.appendChild(insightPanel);
   content.appendChild(insightBox);

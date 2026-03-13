@@ -14,6 +14,7 @@ export type {
   GeneratorDefinition,
   GeneratorId,
   GeneratorRunInput,
+  MazeComplexity,
   MazeTopologyId,
   ShaftDensity,
 } from './core/types';

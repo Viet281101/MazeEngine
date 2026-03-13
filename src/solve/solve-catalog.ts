@@ -52,6 +52,8 @@ const categoryEntries = Object.entries(CATEGORY_FILE_KEYS) as [
   readonly SolveAlgorithmFileKey[],
 ][];
 
+// NOTE: This catalog intentionally includes algorithms planned for future feature tasks.
+// Some algorithm implementation files are placeholders while UI/content is prepared in advance.
 export const SOLVE_ALGORITHMS_BY_CATEGORY: Readonly<
   Record<SolveAlgorithmCategory, readonly SolveAlgorithmDefinition[]>
 > = categoryEntries.reduce(
@@ -66,13 +68,3 @@ export const SOLVE_ALGORITHMS_BY_CATEGORY: Readonly<
   },
   {} as Record<SolveAlgorithmCategory, readonly SolveAlgorithmDefinition[]>
 );
-
-export const SOLVE_ALGORITHM_CATALOG: readonly SolveAlgorithmDefinition[] = categoryEntries.flatMap(
-  ([category]) => SOLVE_ALGORITHMS_BY_CATEGORY[category]
-);
-
-export function getSolveAlgorithmById(
-  id: SolveAlgorithmFileKey
-): SolveAlgorithmDefinition | undefined {
-  return SOLVE_ALGORITHM_CATALOG.find(algorithm => algorithm.id === id);
-}

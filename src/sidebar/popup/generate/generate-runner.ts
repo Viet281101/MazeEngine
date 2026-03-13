@@ -2,13 +2,18 @@ import {
   executeGenerator,
   type GeneratedMazeResult,
   type GeneratorId,
+  type MazeComplexity,
   type GeneratorRunInput,
   type MazeTopologyId,
   type ShaftDensity,
 } from '../../../generator';
 import type { GenerateTaskRequest, GenerateTaskResponse } from '../../../generator/worker-protocol';
-import { t } from '../../i18n';
-import { updateMazePreservingCamera } from '../popup-maze-app-bridge';
+import { t } from '../../../i18n';
+import {
+  canUpdateMaze,
+  getMazeAppBridge,
+  updateMazePreservingCamera,
+} from '../popup-maze-app-bridge';
 
 interface MultiLayerTopologyParams {
   layers: number;
@@ -21,6 +26,14 @@ interface RunGenerationInput {
   rows: number;
   cols: number;
   northBias: number;
+  randomizeStartEnd: boolean;
+  randomizeStartEndLayers: boolean;
+  forceDifferentLayers: boolean;
+  minConnectorDistance: number;
+  minConnectorsPerTransition: number;
+  maxConnectorsPerTransition: number;
+  noConnectorOnBorder: boolean;
+  complexity: MazeComplexity;
   multiLayerParams?: MultiLayerTopologyParams;
 }
 
@@ -125,7 +138,17 @@ async function generateMaze(input: RunGenerationInput): Promise<GeneratedMazeRes
   const generatorInput: GeneratorRunInput = {
     rows: input.rows,
     cols: input.cols,
-    params: { northBias: input.northBias },
+    params: {
+      northBias: input.northBias,
+      randomizeStartEnd: input.randomizeStartEnd,
+      randomizeStartEndLayers: input.randomizeStartEndLayers,
+      forceDifferentLayers: input.forceDifferentLayers,
+      minConnectorDistance: input.minConnectorDistance,
+      minConnectorsPerTransition: input.minConnectorsPerTransition,
+      maxConnectorsPerTransition: input.maxConnectorsPerTransition,
+      noConnectorOnBorder: input.noConnectorOnBorder,
+      complexity: input.complexity,
+    },
     topologyParams: input.topology === 'multiLayerRect' ? input.multiLayerParams : undefined,
   };
   const client = getWorkerClient();
@@ -143,8 +166,8 @@ async function generateMaze(input: RunGenerationInput): Promise<GeneratedMazeRes
 }
 
 export async function runGeneration(input: RunGenerationInput): Promise<void> {
-  const mazeApp = window.mazeApp;
-  if (!mazeApp || typeof mazeApp.updateMaze !== 'function') {
+  const mazeApp = getMazeAppBridge();
+  if (!canUpdateMaze(mazeApp)) {
     console.warn('mazeApp.updateMaze not available');
     window.alert(t('generate.appUnavailable'));
     return;
