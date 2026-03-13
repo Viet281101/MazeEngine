@@ -27,6 +27,12 @@ interface RunGenerationInput {
   cols: number;
   northBias: number;
   randomizeStartEnd: boolean;
+  randomizeStartEndLayers: boolean;
+  forceDifferentLayers: boolean;
+  minConnectorDistance: number;
+  minConnectorsPerTransition: number;
+  maxConnectorsPerTransition: number;
+  noConnectorOnBorder: boolean;
   complexity: MazeComplexity;
   multiLayerParams?: MultiLayerTopologyParams;
 }
@@ -135,6 +141,12 @@ async function generateMaze(input: RunGenerationInput): Promise<GeneratedMazeRes
     params: {
       northBias: input.northBias,
       randomizeStartEnd: input.randomizeStartEnd,
+      randomizeStartEndLayers: input.randomizeStartEndLayers,
+      forceDifferentLayers: input.forceDifferentLayers,
+      minConnectorDistance: input.minConnectorDistance,
+      minConnectorsPerTransition: input.minConnectorsPerTransition,
+      maxConnectorsPerTransition: input.maxConnectorsPerTransition,
+      noConnectorOnBorder: input.noConnectorOnBorder,
       complexity: input.complexity,
     },
     topologyParams: input.topology === 'multiLayerRect' ? input.multiLayerParams : undefined,

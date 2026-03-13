@@ -141,6 +141,7 @@ class GeneratePopup {
     shaftDensitySelect.value = this.topologyParams.shaftDensity;
     shaftDensitySelect.addEventListener('change', () => {
       this.topologyParams.shaftDensity = shaftDensitySelect.value as ShaftDensity;
+      this.applyConnectorDefaultsForActivePanel();
     });
     shaftDensityWrap.appendChild(shaftDensityLabel);
     shaftDensityWrap.appendChild(shaftDensitySelect);
@@ -161,6 +162,55 @@ class GeneratePopup {
     if (!isOnlyActivePanelMounted) {
       this.listContainer.replaceChildren(activePanel);
     }
+    this.applyConnectorDefaultsForActivePanel();
+  }
+
+  private getConnectorDefaultsByDensity(density: ShaftDensity): {
+    min: number;
+    max: number;
+  } {
+    switch (density) {
+      case 'sparse':
+        return { min: 1, max: 3 };
+      case 'dense':
+        return { min: 2, max: 8 };
+      case 'normal':
+      default:
+        return { min: 1, max: 5 };
+    }
+  }
+
+  private applyConnectorDefaultsForActivePanel(): void {
+    if (!this.listContainer || this.activeTopology !== 'multiLayerRect') {
+      return;
+    }
+    const panel = this.getOrCreateTopologyPanel(this.activeTopology);
+    if (!panel) {
+      return;
+    }
+    const defaults = this.getConnectorDefaultsByDensity(this.topologyParams.shaftDensity);
+
+    const minInputs = panel.querySelectorAll<HTMLInputElement>('input[data-connector-limit="min"]');
+    minInputs.forEach(input => {
+      if (input.dataset.userEdited === 'true') {
+        return;
+      }
+      if (input.dataset.connectorSource === 'complexity') {
+        return;
+      }
+      input.value = String(defaults.min);
+    });
+
+    const maxInputs = panel.querySelectorAll<HTMLInputElement>('input[data-connector-limit="max"]');
+    maxInputs.forEach(input => {
+      if (input.dataset.userEdited === 'true') {
+        return;
+      }
+      if (input.dataset.connectorSource === 'complexity') {
+        return;
+      }
+      input.value = String(defaults.max);
+    });
   }
 
   private getOrCreateTopologyPanel(topology: MazeTopologyId): HTMLDivElement {
@@ -183,6 +233,7 @@ class GeneratePopup {
         const row = createGeneratorRow({
           generator,
           expanded: index === 0,
+          topology,
           onGenerate: action =>
             this.generateById(
               topology,
@@ -191,6 +242,12 @@ class GeneratePopup {
               action.cols,
               action.northBias,
               action.randomizeStartEnd,
+              action.randomizeStartEndLayers,
+              action.forceDifferentLayers,
+              action.minConnectorDistance,
+              action.minConnectorsPerTransition,
+              action.maxConnectorsPerTransition,
+              action.noConnectorOnBorder,
               action.complexity
             ),
         });
@@ -209,6 +266,12 @@ class GeneratePopup {
     cols: number,
     northBias: number,
     randomizeStartEnd: boolean,
+    randomizeStartEndLayers: boolean,
+    forceDifferentLayers: boolean,
+    minConnectorDistance: number,
+    minConnectorsPerTransition: number,
+    maxConnectorsPerTransition: number,
+    noConnectorOnBorder: boolean,
     complexity: MazeComplexity
   ): Promise<void> {
     await runGeneration({
@@ -218,6 +281,12 @@ class GeneratePopup {
       cols,
       northBias,
       randomizeStartEnd,
+      randomizeStartEndLayers,
+      forceDifferentLayers,
+      minConnectorDistance,
+      minConnectorsPerTransition,
+      maxConnectorsPerTransition,
+      noConnectorOnBorder,
       complexity,
       multiLayerParams: {
         layers: clamp(

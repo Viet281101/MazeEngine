@@ -24,6 +24,12 @@ export interface GeneratorRunInput {
   params?: {
     northBias?: number;
     randomizeStartEnd?: boolean;
+    randomizeStartEndLayers?: boolean;
+    forceDifferentLayers?: boolean;
+    minConnectorDistance?: number;
+    minConnectorsPerTransition?: number;
+    maxConnectorsPerTransition?: number;
+    noConnectorOnBorder?: boolean;
     complexity?: MazeComplexity;
   };
   topologyParams?: {

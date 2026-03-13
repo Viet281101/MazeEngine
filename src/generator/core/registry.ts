@@ -17,6 +17,12 @@ export const GENERATOR_CATALOG: readonly GeneratorDefinition[] = [
       generateBinaryTreeMaze(input.rows, input.cols, {
         northBias: input.params?.northBias,
         randomizeStartEnd: input.params?.randomizeStartEnd,
+        randomizeStartEndLayers: input.params?.randomizeStartEndLayers,
+        forceDifferentLayers: input.params?.forceDifferentLayers,
+        minConnectorDistance: input.params?.minConnectorDistance,
+        minConnectorsPerTransition: input.params?.minConnectorsPerTransition,
+        maxConnectorsPerTransition: input.params?.maxConnectorsPerTransition,
+        noConnectorOnBorder: input.params?.noConnectorOnBorder,
         complexity: input.params?.complexity,
         layers: input.topologyParams?.layers,
         shaftDensity: input.topologyParams?.shaftDensity,
@@ -77,6 +83,10 @@ export function executeGenerator(
     const adaptedOutput = topologyAdapter.adaptOutput(generated, adaptedInput);
     const ruleResult = applyCommonMazeRules(adaptedOutput, topology, {
       complexity: adaptedInput.params?.complexity,
+      minConnectorDistance: adaptedInput.params?.minConnectorDistance,
+      minConnectorsPerTransition: adaptedInput.params?.minConnectorsPerTransition,
+      maxConnectorsPerTransition: adaptedInput.params?.maxConnectorsPerTransition,
+      noConnectorOnBorder: adaptedInput.params?.noConnectorOnBorder,
     });
     lastOutput = adaptedOutput;
     if (ruleResult.ok) {

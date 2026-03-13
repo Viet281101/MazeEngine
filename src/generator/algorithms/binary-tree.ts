@@ -59,6 +59,19 @@ function normalizeComplexity(value: MazeComplexity | undefined): MazeComplexity 
   return 'normal';
 }
 
+function resolveShaftDensityByComplexity(
+  shaftDensity: ShaftDensity,
+  complexity: MazeComplexity
+): ShaftDensity {
+  if (complexity === 'low') {
+    return 'sparse';
+  }
+  if (complexity === 'high') {
+    return 'dense';
+  }
+  return shaftDensity;
+}
+
 function resolveFixedStartPlacement(rows: number): EntrancePlacement {
   return { row: rows - 1, col: 1, innerRow: rows - 2, innerCol: 1 };
 }
@@ -134,6 +147,12 @@ export interface BinaryTreeOptions {
   layers?: number;
   shaftDensity?: ShaftDensity;
   randomizeStartEnd?: boolean;
+  randomizeStartEndLayers?: boolean;
+  forceDifferentLayers?: boolean;
+  minConnectorDistance?: number;
+  minConnectorsPerTransition?: number;
+  maxConnectorsPerTransition?: number;
+  noConnectorOnBorder?: boolean;
   complexity?: MazeComplexity;
 }
 
@@ -341,7 +360,9 @@ function generateBinaryTreeMazeCore(
   layerCount: number,
   shaftDensity: ShaftDensity,
   startPlacement: EntrancePlacement,
-  endPlacement: EntrancePlacement
+  endPlacement: EntrancePlacement,
+  startLayerIndex: number,
+  endLayerIndex: number
 ): GeneratedMazeResult {
   const layers: number[][][] = [];
   for (let layerIndex = 0; layerIndex < layerCount; layerIndex += 1) {
@@ -353,12 +374,12 @@ function generateBinaryTreeMazeCore(
   const start: MazeMarker = {
     row: startPlacement.row,
     col: startPlacement.col,
-    layerIndex: 0,
+    layerIndex: startLayerIndex,
   };
   const end: MazeMarker = {
     row: endPlacement.row,
     col: endPlacement.col,
-    layerIndex: layerCount - 1,
+    layerIndex: endLayerIndex,
   };
   openEntrance(layers[start.layerIndex ?? 0] as number[][], startPlacement);
   openEntrance(layers[end.layerIndex ?? 0] as number[][], endPlacement);
@@ -387,14 +408,33 @@ export function generateBinaryTreeMaze(
     1
   );
   const layerCount = normalizeLayerCount(options.layers);
-  const shaftDensity = normalizeShaftDensity(options.shaftDensity);
+  const baseShaftDensity = normalizeShaftDensity(options.shaftDensity);
   const randomizeStartEnd = options.randomizeStartEnd === true;
+  const randomizeStartEndLayers = options.randomizeStartEndLayers === true;
+  const forceDifferentLayers = options.forceDifferentLayers === true;
+  const minConnectorDistance = options.minConnectorDistance;
+  const minConnectorsPerTransition = options.minConnectorsPerTransition;
+  const maxConnectorsPerTransition = options.maxConnectorsPerTransition;
+  const noConnectorOnBorder = options.noConnectorOnBorder === true;
   const complexity = normalizeComplexity(options.complexity);
   const topology = layerCount > 1 ? 'multiLayerRect' : 'singleLayerRect';
+  const shaftDensity = resolveShaftDensityByComplexity(baseShaftDensity, complexity);
 
   const { start: startPlacement, end: endPlacement } = randomizeStartEnd
     ? pickRandomEntrancePair(rows, cols)
     : { start: resolveFixedStartPlacement(rows), end: resolveFixedEndPlacement(rows, cols) };
+
+  let startLayerIndex = 0;
+  let endLayerIndex = layerCount - 1;
+  if (randomizeStartEndLayers && layerCount > 1) {
+    startLayerIndex = Math.floor(Math.random() * layerCount);
+    endLayerIndex = Math.floor(Math.random() * layerCount);
+    if (forceDifferentLayers && layerCount > 1) {
+      while (endLayerIndex === startLayerIndex) {
+        endLayerIndex = Math.floor(Math.random() * layerCount);
+      }
+    }
+  }
 
   let lastOutput: GeneratedMazeResult | null = null;
   for (let attempt = 0; attempt < DEFAULT_GENERATION_ATTEMPTS; attempt += 1) {
@@ -405,9 +445,17 @@ export function generateBinaryTreeMaze(
       layerCount,
       shaftDensity,
       startPlacement,
-      endPlacement
+      endPlacement,
+      startLayerIndex,
+      endLayerIndex
     );
-    const ruleResult = applyCommonMazeRules(generated, topology, { complexity });
+    const ruleResult = applyCommonMazeRules(generated, topology, {
+      complexity,
+      minConnectorDistance,
+      minConnectorsPerTransition,
+      maxConnectorsPerTransition,
+      noConnectorOnBorder,
+    });
     lastOutput = generated;
     if (ruleResult.ok) {
       return generated;
@@ -423,7 +471,9 @@ export function generateBinaryTreeMaze(
       layerCount,
       shaftDensity,
       startPlacement,
-      endPlacement
+      endPlacement,
+      startLayerIndex,
+      endLayerIndex
     )
   );
 }

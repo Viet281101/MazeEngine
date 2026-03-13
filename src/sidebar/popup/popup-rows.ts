@@ -1,19 +1,8 @@
 import type { TranslationKey } from '../../i18n';
 import { setI18nText } from './popup-i18n';
-import { getIconPath } from '../../constants/assets';
+import { createHelpIcon } from './popup-help';
 
 type RowControl = HTMLElement;
-
-// Moved from setting-dom.ts to be reusable
-function createHelpIcon(): HTMLImageElement {
-  const icon = document.createElement('img');
-  icon.className = 'settings-popup__help-icon';
-  icon.src = getIconPath('question.png');
-  icon.alt = 'Help';
-  icon.tabIndex = 0;
-  icon.setAttribute('role', 'button');
-  return icon;
-}
 
 export function createLabelWithHelp(labelKey: TranslationKey): {
   labelWrap: HTMLSpanElement;
@@ -27,7 +16,7 @@ export function createLabelWithHelp(labelKey: TranslationKey): {
   labelText.className = 'settings-popup__label-text';
   setI18nText(labelText, labelKey);
 
-  const helpIcon = createHelpIcon();
+  const helpIcon = createHelpIcon({ className: 'settings-popup__help-icon' });
 
   labelWrap.appendChild(labelText);
   labelWrap.appendChild(helpIcon);

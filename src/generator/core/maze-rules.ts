@@ -8,6 +8,10 @@ type RuleScope = 'single' | 'multi' | 'both';
 
 interface RuleContext {
   complexity: MazeComplexity;
+  minConnectorDistance: number;
+  minConnectorsPerTransition: number | null;
+  maxConnectorsPerTransition: number | null;
+  noConnectorOnBorder: boolean;
 }
 
 interface MazeRule {
@@ -132,6 +136,29 @@ function normalizeComplexity(value: MazeComplexity | undefined): MazeComplexity 
   return 'normal';
 }
 
+function normalizeMinConnectorDistance(value: number | undefined): number {
+  if (!Number.isFinite(value)) {
+    return 2;
+  }
+  const parsed = Math.floor(value as number);
+  return Math.max(1, Math.min(parsed, 6));
+}
+
+function normalizeConnectorCountLimit(value: number | undefined): number | null {
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+  const parsed = Math.floor(value as number);
+  if (parsed <= 0) {
+    return null;
+  }
+  return Math.max(1, Math.min(parsed, 8));
+}
+
+function normalizeNoConnectorOnBorder(value: boolean | undefined): boolean {
+  return value === true;
+}
+
 function getSolutionPathLength(
   maze: number[][][],
   markers: { start: MarkerPoint; end: MarkerPoint }
@@ -161,14 +188,11 @@ function hasReachablePath(
   return getSolutionPathLength(maze, markers) !== null;
 }
 
-function hasMinimumSingleLayerPathLength(
+function hasMinimumPathLength(
   maze: number[][][],
   markers: { start: MarkerPoint; end: MarkerPoint },
   context: RuleContext
 ): boolean {
-  if (maze.length !== 1) {
-    return true;
-  }
   const layer = maze[0];
   if (!layer || layer.length === 0) {
     return false;
@@ -190,17 +214,20 @@ function hasMinimumSingleLayerPathLength(
     high: 0.5,
   };
   const ratio = ratioByComplexity[context.complexity] ?? 0.35;
-  const minLength = Math.max(6, Math.floor((rows + cols) * ratio));
+  const layerBonus = Math.max(0, maze.length - 1);
+  const minLength = Math.max(6, Math.floor((rows + cols) * ratio) + layerBonus);
   return pathLength >= minLength;
 }
 
-function connectorsNotAdjacent(maze: number[][][]): boolean {
-  const directions = [
-    { row: -1, col: 0 },
-    { row: 1, col: 0 },
-    { row: 0, col: -1 },
-    { row: 0, col: 1 },
-  ];
+function connectorsRespectMinimumDistance(
+  maze: number[][][],
+  _markers: { start: MarkerPoint; end: MarkerPoint },
+  context: RuleContext
+): boolean {
+  const minDistance = context.minConnectorDistance;
+  if (minDistance <= 1) {
+    return true;
+  }
 
   for (let layerIndex = 0; layerIndex < maze.length; layerIndex += 1) {
     const layer = maze[layerIndex];
@@ -209,20 +236,99 @@ function connectorsNotAdjacent(maze: number[][][]): boolean {
     }
     const rows = layer.length;
     const cols = layer[0]?.length ?? 0;
+    const connectors: Array<{ row: number; col: number }> = [];
+
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) {
+        if (isConnector(layer[row]?.[col])) {
+          connectors.push({ row, col });
+        }
+      }
+    }
+
+    for (let i = 0; i < connectors.length; i += 1) {
+      const a = connectors[i] as { row: number; col: number };
+      for (let j = i + 1; j < connectors.length; j += 1) {
+        const b = connectors[j] as { row: number; col: number };
+        const distance = Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
+        if (distance < minDistance) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+function connectorsWithinTransitionLimits(
+  maze: number[][][],
+  _markers: { start: MarkerPoint; end: MarkerPoint },
+  context: RuleContext
+): boolean {
+  const minLimit = context.minConnectorsPerTransition;
+  const maxLimit = context.maxConnectorsPerTransition;
+  if (minLimit === null && maxLimit === null) {
+    return true;
+  }
+
+  for (let layerIndex = 1; layerIndex < maze.length; layerIndex += 1) {
+    const upperLayer = maze[layerIndex];
+    const lowerLayer = maze[layerIndex - 1];
+    if (!upperLayer || !lowerLayer || upperLayer.length === 0) {
+      continue;
+    }
+    const rows = upperLayer.length;
+    const cols = upperLayer[0]?.length ?? 0;
+    let connectorCount = 0;
+
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) {
+        if (!isConnector(upperLayer[row]?.[col])) {
+          continue;
+        }
+        if (!isWalkable(lowerLayer[row]?.[col])) {
+          continue;
+        }
+        connectorCount += 1;
+      }
+    }
+
+    if (minLimit !== null && connectorCount < minLimit) {
+      return false;
+    }
+    if (maxLimit !== null && connectorCount > maxLimit) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function connectorsNotOnBorder(
+  maze: number[][][],
+  _markers: { start: MarkerPoint; end: MarkerPoint },
+  context: RuleContext
+): boolean {
+  if (!context.noConnectorOnBorder) {
+    return true;
+  }
+
+  for (let layerIndex = 0; layerIndex < maze.length; layerIndex += 1) {
+    const layer = maze[layerIndex];
+    if (!layer || layer.length === 0) {
+      continue;
+    }
+    const rows = layer.length;
+    const cols = layer[0]?.length ?? 0;
+
     for (let row = 0; row < rows; row += 1) {
       for (let col = 0; col < cols; col += 1) {
         if (!isConnector(layer[row]?.[col])) {
           continue;
         }
-        for (const dir of directions) {
-          const nextRow = row + dir.row;
-          const nextCol = col + dir.col;
-          if (nextRow < 0 || nextRow >= rows || nextCol < 0 || nextCol >= cols) {
-            continue;
-          }
-          if (isConnector(layer[nextRow]?.[nextCol])) {
-            return false;
-          }
+        if (row === 0 || col === 0 || row === rows - 1 || col === cols - 1) {
+          return false;
         }
       }
     }
@@ -299,14 +405,24 @@ const RULES: readonly MazeRule[] = [
     validate: hasReachablePath,
   },
   {
-    id: 'min-single-layer-path-length',
-    scope: 'single',
-    validate: hasMinimumSingleLayerPathLength,
+    id: 'min-path-length',
+    scope: 'both',
+    validate: hasMinimumPathLength,
   },
   {
-    id: 'connectors-not-adjacent',
+    id: 'connector-min-distance',
     scope: 'multi',
-    validate: connectorsNotAdjacent,
+    validate: connectorsRespectMinimumDistance,
+  },
+  {
+    id: 'connector-count-per-transition',
+    scope: 'multi',
+    validate: connectorsWithinTransitionLimits,
+  },
+  {
+    id: 'connector-not-on-border',
+    scope: 'multi',
+    validate: connectorsNotOnBorder,
   },
   {
     id: 'connector-exits-valid',
@@ -337,6 +453,14 @@ export function applyCommonMazeRules(
   const failed: string[] = [];
   const resolvedContext: RuleContext = {
     complexity: normalizeComplexity(context?.complexity),
+    minConnectorDistance: normalizeMinConnectorDistance(context?.minConnectorDistance),
+    minConnectorsPerTransition: normalizeConnectorCountLimit(
+      context?.minConnectorsPerTransition ?? undefined
+    ),
+    maxConnectorsPerTransition: normalizeConnectorCountLimit(
+      context?.maxConnectorsPerTransition ?? undefined
+    ),
+    noConnectorOnBorder: normalizeNoConnectorOnBorder(context?.noConnectorOnBorder),
   };
 
   RULES.forEach(rule => {
