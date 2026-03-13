@@ -2,12 +2,14 @@ import './preview-window.css';
 import { PREVIEW_COLORS } from './preview-constants';
 import {
   computePreviewLayout,
+  getConnectorDirection,
+  isConnectorCellValue,
   renderPreviewMaze,
   type PreviewLayout,
 } from './preview-canvas-renderer';
 import {
   assemblePreviewWindow,
-  createPreviewCanvas,
+  createPreviewCanvasHost,
   createPreviewContainer,
   createPreviewFooter,
   createPreviewTitleBar,
@@ -16,6 +18,7 @@ import {
 import { computeMarkersFromLayer } from '../maze';
 import { subscribeLanguageChange, t } from '../i18n';
 import type { MarkerPoint, MazeData, SolutionPath } from '../types/maze';
+import { getIconPath } from '../constants/assets';
 
 export interface PreviewWindowConfig {
   initialX?: number;
@@ -34,8 +37,10 @@ export class PreviewWindow {
   private container: HTMLDivElement;
   private titleBar: HTMLDivElement;
   private titleText: HTMLSpanElement;
+  private canvasHost: HTMLDivElement;
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
+  private arrowOverlay: HTMLDivElement;
   private closeButton: HTMLButtonElement;
   private hideButton: HTMLButtonElement;
   private gridToggleButton: HTMLButtonElement;
@@ -145,7 +150,10 @@ export class PreviewWindow {
     this.layerLabel = footerElements.layerLabel;
     this.layerNextButton = footerElements.layerNextButton;
 
-    this.canvas = createPreviewCanvas(this.canvasWidth, this.canvasHeight);
+    const canvasElements = createPreviewCanvasHost(this.canvasWidth, this.canvasHeight);
+    this.canvasHost = canvasElements.host;
+    this.canvas = canvasElements.canvas;
+    this.arrowOverlay = canvasElements.overlay;
     this.ctx = getPreviewCanvasContextOrThrow(this.canvas);
     this.ctx.imageSmoothingEnabled = false;
 
@@ -153,7 +161,7 @@ export class PreviewWindow {
       container: this.container,
       titleBar: this.titleBar,
       legend: this.legend,
-      canvas: this.canvas,
+      canvasHost: this.canvasHost,
       footer: this.footer,
     });
 
@@ -415,6 +423,7 @@ export class PreviewWindow {
     if (!this.activeLayerData || this.activeLayerData.length === 0) {
       this.ctx.fillStyle = PREVIEW_COLORS.background;
       this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+      this.arrowOverlay.replaceChildren();
       return;
     }
 
@@ -430,12 +439,93 @@ export class PreviewWindow {
       canvasWidth: this.canvasWidth,
       canvasHeight: this.canvasHeight,
       mazeData: this.activeLayerData,
+      connectorOverlay: this.mazeData?.[this.activeLayerIndex + 1] ?? null,
       layout: this.layout,
       showGrid: this.showGrid,
       startCell: this.startCell,
       endCell: this.endCell,
       solutionPath: this.solutionPath,
     });
+    this.renderConnectorArrows();
+  }
+
+  private renderConnectorArrows(): void {
+    this.arrowOverlay.replaceChildren();
+    if (!this.activeLayerData || this.activeLayerData.length === 0) {
+      return;
+    }
+
+    const connectorLayer = this.mazeData?.[this.activeLayerIndex + 1] ?? null;
+
+    const canvasRect = this.canvas.getBoundingClientRect();
+    if (canvasRect.width <= 0 || canvasRect.height <= 0) {
+      return;
+    }
+
+    const overlayLayout =
+      this.layout ??
+      computePreviewLayout(this.activeLayerData, this.canvasWidth, this.canvasHeight);
+    if (!overlayLayout) {
+      return;
+    }
+
+    const scaleX = canvasRect.width / this.canvasWidth;
+    const scaleY = canvasRect.height / this.canvasHeight;
+    const { rows, cols, cellSize, offsetX, offsetY } = overlayLayout;
+    const iconSize = Math.max(10, Math.round(cellSize * 0.72 * scaleX));
+    const iconSrc = getIconPath('arrow.png');
+    const fragment = document.createDocumentFragment();
+
+    const renderArrowLayer = (layer: number[][] | null, className?: string) => {
+      if (!layer) {
+        return;
+      }
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const cell = layer[row]?.[col];
+          if (typeof cell !== 'number' || !isConnectorCellValue(cell)) {
+            continue;
+          }
+          const direction = getConnectorDirection(cell);
+          if (!direction) {
+            continue;
+          }
+
+          const centerX = Math.round(
+            (offsetX + col * cellSize + cellSize / 2) * scaleX
+          );
+          const centerY = Math.round(
+            (offsetY + (rows - 1 - row) * cellSize + cellSize / 2) * scaleY
+          );
+          const angle = Math.atan2(direction.dy, direction.dx);
+
+          const arrow = document.createElement('img');
+          arrow.className = 'preview-connector-arrow';
+          if (className) {
+            arrow.classList.add(className);
+          }
+          arrow.src = iconSrc;
+          arrow.alt = '';
+          arrow.width = iconSize;
+          arrow.height = iconSize;
+          arrow.style.left = `${centerX}px`;
+          arrow.style.top = `${centerY}px`;
+          const baseTransform = `translate(-50%, -50%) rotate(${angle}rad)`;
+          arrow.style.transform =
+            className === 'preview-connector-arrow--upper'
+              ? `${baseTransform} scale(0.92)`
+              : baseTransform;
+          arrow.decoding = 'async';
+          arrow.loading = 'eager';
+
+          fragment.appendChild(arrow);
+        }
+      }
+    };
+
+    renderArrowLayer(this.activeLayerData, 'preview-connector-arrow--lower');
+    renderArrowLayer(connectorLayer, 'preview-connector-arrow--upper');
+    this.arrowOverlay.appendChild(fragment);
   }
 
   /**

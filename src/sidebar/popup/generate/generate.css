@@ -191,10 +191,22 @@
   cursor: pointer;
 }
 
+.generate-popup__toggle-row--disabled {
+  cursor: not-allowed;
+}
+
+.generate-popup__toggle-row:has(.generate-popup__toggle-input:disabled) {
+  cursor: not-allowed;
+}
+
 .generate-popup__toggle-input {
   width: 20px;
   height: 20px;
   accent-color: #0f7f61;
+}
+
+.generate-popup__toggle-input:disabled {
+  cursor: not-allowed;
 }
 
 .generate-popup__select-row {

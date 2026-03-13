@@ -83,7 +83,6 @@ function createToggleRow(
   input.type = 'checkbox';
   input.className = 'generate-popup__toggle-input';
   input.checked = checked;
-  input.disabled = disabled;
 
   const { row } = createRow({
     label: labelKey,
@@ -92,7 +91,18 @@ function createToggleRow(
     labelClassName: 'generate-popup__toggle-label',
   });
 
+  setToggleRowDisabled(row, input, disabled);
+
   return { row, input };
+}
+
+function setToggleRowDisabled(
+  row: HTMLLabelElement,
+  input: HTMLInputElement,
+  disabled: boolean
+): void {
+  input.disabled = disabled;
+  row.classList.toggle('generate-popup__toggle-row--disabled', disabled);
 }
 
 function createNumberInput(
@@ -177,9 +187,13 @@ export function createGeneratorRow(options: CreateGeneratorRowOptions): HTMLElem
   }
   panel.appendChild(sizeRow);
 
+  let randomizeRowEl: HTMLLabelElement | null = null;
   let randomizeInput: HTMLInputElement | null = null;
+  let randomizeLayersRowEl: HTMLLabelElement | null = null;
   let randomizeLayersInput: HTMLInputElement | null = null;
+  let forceDifferentLayersRowEl: HTMLLabelElement | null = null;
   let forceDifferentLayersInput: HTMLInputElement | null = null;
+  let noConnectorBorderRowEl: HTMLLabelElement | null = null;
   let minConnectorInput: HTMLInputElement | null = null;
   let minConnectorCountInput: HTMLInputElement | null = null;
   let maxConnectorCountInput: HTMLInputElement | null = null;
@@ -203,19 +217,23 @@ export function createGeneratorRow(options: CreateGeneratorRowOptions): HTMLElem
     morePanel.className = 'generate-popup__more-panel';
 
     const randomizeRow = createToggleRow('generate.randomizeStartEnd', false);
+    randomizeRowEl = randomizeRow.row;
     randomizeInput = randomizeRow.input;
     morePanel.appendChild(randomizeRow.row);
 
     if (isMultiLayer) {
       const randomizeLayersRow = createToggleRow('generate.randomizeStartEndLayers', false, true);
+      randomizeLayersRowEl = randomizeLayersRow.row;
       randomizeLayersInput = randomizeLayersRow.input;
       morePanel.appendChild(randomizeLayersRow.row);
 
       const forceDifferentRow = createToggleRow('generate.forceDifferentLayers', true);
+      forceDifferentLayersRowEl = forceDifferentRow.row;
       forceDifferentLayersInput = forceDifferentRow.input;
       morePanel.appendChild(forceDifferentRow.row);
 
       const noBorderRow = createToggleRow('generate.noConnectorOnBorder', true);
+      noConnectorBorderRowEl = noBorderRow.row;
       noConnectorBorderInput = noBorderRow.input;
       morePanel.appendChild(noBorderRow.row);
 
@@ -223,7 +241,12 @@ export function createGeneratorRow(options: CreateGeneratorRowOptions): HTMLElem
         if (!randomizeLayersInput) {
           return;
         }
-        randomizeLayersInput.disabled = !randomizeInput?.checked;
+        const shouldDisable = !randomizeInput?.checked;
+        if (randomizeLayersRowEl) {
+          setToggleRowDisabled(randomizeLayersRowEl, randomizeLayersInput, shouldDisable);
+        } else {
+          randomizeLayersInput.disabled = shouldDisable;
+        }
         if (randomizeLayersInput.disabled) {
           randomizeLayersInput.checked = false;
         }
@@ -422,13 +445,25 @@ export function createGeneratorRow(options: CreateGeneratorRowOptions): HTMLElem
       biasInput.input.disabled = true;
     }
     if (randomizeInput) {
-      randomizeInput.disabled = true;
+      if (randomizeRowEl) {
+        setToggleRowDisabled(randomizeRowEl, randomizeInput, true);
+      } else {
+        randomizeInput.disabled = true;
+      }
     }
     if (randomizeLayersInput) {
-      randomizeLayersInput.disabled = true;
+      if (randomizeLayersRowEl) {
+        setToggleRowDisabled(randomizeLayersRowEl, randomizeLayersInput, true);
+      } else {
+        randomizeLayersInput.disabled = true;
+      }
     }
     if (forceDifferentLayersInput) {
-      forceDifferentLayersInput.disabled = true;
+      if (forceDifferentLayersRowEl) {
+        setToggleRowDisabled(forceDifferentLayersRowEl, forceDifferentLayersInput, true);
+      } else {
+        forceDifferentLayersInput.disabled = true;
+      }
     }
     if (minConnectorInput) {
       minConnectorInput.disabled = true;
@@ -440,7 +475,11 @@ export function createGeneratorRow(options: CreateGeneratorRowOptions): HTMLElem
       maxConnectorCountInput.disabled = true;
     }
     if (noConnectorBorderInput) {
-      noConnectorBorderInput.disabled = true;
+      if (noConnectorBorderRowEl) {
+        setToggleRowDisabled(noConnectorBorderRowEl, noConnectorBorderInput, true);
+      } else {
+        noConnectorBorderInput.disabled = true;
+      }
     }
     if (complexitySelect) {
       complexitySelect.disabled = true;

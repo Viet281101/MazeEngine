@@ -168,6 +168,24 @@ export function createPreviewCanvas(width: number, height: number): HTMLCanvasEl
   return canvas;
 }
 
+export function createPreviewCanvasHost(width: number, height: number): {
+  host: HTMLDivElement;
+  canvas: HTMLCanvasElement;
+  overlay: HTMLDivElement;
+} {
+  const host = document.createElement('div');
+  host.className = 'preview-canvas-host';
+
+  const canvas = createPreviewCanvas(width, height);
+  const overlay = document.createElement('div');
+  overlay.className = 'preview-canvas-overlay';
+
+  host.appendChild(canvas);
+  host.appendChild(overlay);
+
+  return { host, canvas, overlay };
+}
+
 export function getPreviewCanvasContextOrThrow(
   canvas: HTMLCanvasElement
 ): CanvasRenderingContext2D {
@@ -182,12 +200,12 @@ export function assemblePreviewWindow(options: {
   container: HTMLDivElement;
   titleBar: HTMLDivElement;
   legend: HTMLDivElement;
-  canvas: HTMLCanvasElement;
+  canvasHost: HTMLDivElement;
   footer: HTMLDivElement;
 }): void {
   options.container.appendChild(options.titleBar);
   options.container.appendChild(options.legend);
-  options.container.appendChild(options.canvas);
+  options.container.appendChild(options.canvasHost);
   options.container.appendChild(options.footer);
   document.body.appendChild(options.container);
 }
