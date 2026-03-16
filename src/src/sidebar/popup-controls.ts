@@ -1,4 +1,4 @@
-import { t } from './i18n';
+import { t } from '../i18n';
 import { getIconPath } from '../constants/assets';
 import {
   POPUP_CONTROL_CLOSE_LEFT_DESKTOP,

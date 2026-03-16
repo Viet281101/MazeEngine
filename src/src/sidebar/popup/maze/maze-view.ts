@@ -1,6 +1,6 @@
 import { MAZE_SIZE } from '../../../constants/maze';
 import { getIconPath } from '../../../constants/assets';
-import type { TranslationKey } from '../../i18n';
+import type { TranslationKey } from '../../../i18n';
 import { createI18nButton } from '../popup-elements';
 import { setI18nAriaLabel, setI18nText, setI18nTitle } from '../popup-i18n';
 import { createLabeledNumberInput } from '../popup-inputs';

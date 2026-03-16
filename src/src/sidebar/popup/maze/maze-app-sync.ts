@@ -1,6 +1,11 @@
 import { MAZE_SIZE } from '../../../constants/maze';
-import { t } from '../../i18n';
-import { updateMazePreservingCamera } from '../popup-maze-app-bridge';
+import { t } from '../../../i18n';
+import {
+  getMazeAppBridge,
+  getMazeDataFromApp,
+  getMazeMarkersFromApp,
+  updateMazePreservingCamera,
+} from '../popup-maze-app-bridge';
 import type { MazePopupState } from './types';
 
 export interface LoadedMazeSize {
@@ -13,7 +18,7 @@ export function clampMazeSize(value: number): number {
 }
 
 export function loadCurrentMazeIntoState(state: MazePopupState): LoadedMazeSize | null {
-  const mazeApp = window.mazeApp;
+  const mazeApp = getMazeAppBridge();
   if (
     !mazeApp ||
     (typeof mazeApp.getMazeDataRef !== 'function' && typeof mazeApp.getMazeData !== 'function')
@@ -22,10 +27,8 @@ export function loadCurrentMazeIntoState(state: MazePopupState): LoadedMazeSize 
     return null;
   }
 
-  const data =
-    typeof mazeApp.getMazeDataRef === 'function' ? mazeApp.getMazeDataRef() : mazeApp.getMazeData();
-  const markers =
-    mazeApp && typeof mazeApp.getMazeMarkers === 'function' ? mazeApp.getMazeMarkers() : null;
+  const data = getMazeDataFromApp(mazeApp);
+  const markers = getMazeMarkersFromApp(mazeApp);
   if (!Array.isArray(data) || data.length === 0 || !Array.isArray(data[0])) {
     console.warn('No maze data available to load');
     return null;
@@ -97,7 +100,7 @@ export function loadCurrentMazeIntoState(state: MazePopupState): LoadedMazeSize 
 
 export function applyStateToMaze(state: MazePopupState): void {
   const mazeData = [state.grid.map(row => row.slice()).reverse()];
-  const mazeApp = window.mazeApp;
+  const mazeApp = getMazeAppBridge();
   if (!mazeApp || typeof mazeApp.updateMaze !== 'function') {
     console.warn('mazeApp.updateMaze not available');
     return;

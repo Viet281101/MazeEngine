@@ -1,4 +1,4 @@
-import { subscribeLanguageChange, t } from '../../i18n';
+import { subscribeLanguageChange, t } from '../../../i18n';
 import { Toolbar } from '../../toolbar';
 import { watchContainerRemoval } from '../popup-lifecycle';
 import { applyI18nTexts } from '../popup-i18n';
@@ -13,6 +13,7 @@ import {
   runMazeSolve,
   type SolveRunResult,
 } from './solve-runtime';
+import { getMazeDataFromApp, getMazeMarkersFromApp } from '../popup-maze-app-bridge';
 import {
   createMazeInfoSnapshot,
   findAlgorithmById,
@@ -121,14 +122,8 @@ class SolvePopup {
 
   private refreshMazeInfo(): void {
     const mazeApp = getMazeAppBridge();
-    const mazeData =
-      mazeApp && typeof mazeApp.getMazeDataRef === 'function'
-        ? mazeApp.getMazeDataRef()
-        : mazeApp && typeof mazeApp.getMazeData === 'function'
-          ? mazeApp.getMazeData()
-          : [];
-    const markers =
-      mazeApp && typeof mazeApp.getMazeMarkers === 'function' ? mazeApp.getMazeMarkers() : null;
+    const mazeData = getMazeDataFromApp(mazeApp);
+    const markers = getMazeMarkersFromApp(mazeApp);
 
     const topology = detectTopology(mazeData);
     const snapshot = createMazeInfoSnapshot(topology, mazeData, markers);
@@ -169,8 +164,7 @@ class SolvePopup {
 
   private hasReadyMarkers(): boolean {
     const mazeApp = getMazeAppBridge();
-    const markers =
-      mazeApp && typeof mazeApp.getMazeMarkers === 'function' ? mazeApp.getMazeMarkers() : null;
+    const markers = getMazeMarkersFromApp(mazeApp);
     return !!markers?.start && !!markers?.end;
   }
 
