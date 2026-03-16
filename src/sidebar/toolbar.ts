@@ -3,7 +3,7 @@ import { showSettingsPopup } from './popup/setting';
 import { showTutorialPopup } from './popup/tutorial';
 import { showMazePopup } from './popup/maze';
 import { showGeneratePopup } from './popup/generate';
-import { subscribeLanguageChange, t, type TranslationKey } from './i18n';
+import { subscribeLanguageChange, t, type TranslationKey } from '../i18n';
 import { UI_BREAKPOINTS } from '../constants/ui';
 import { ToolbarPopupControls } from './popup-controls';
 import {

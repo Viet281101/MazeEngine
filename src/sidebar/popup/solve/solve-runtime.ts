@@ -2,6 +2,11 @@ import type { MazeTopologyId } from '../../../generator';
 import type { MazeAppBridge } from '../../../types/maze';
 import { solveMultiLayerMazeWithBfs } from '../../../solve/runtime/multi-layer-bfs';
 import { solveSingleLayerMazeWithBfs } from '../../../solve/runtime/single-layer-bfs';
+import {
+  getMazeAppBridge as getSharedMazeAppBridge,
+  getMazeDataFromApp,
+  getMazeMarkersFromApp,
+} from '../popup-maze-app-bridge';
 
 export type SolveTopology = MazeTopologyId | 'unknown';
 
@@ -13,7 +18,7 @@ export type SolveRunResult =
   | { status: 'solved'; pathLength: number };
 
 export function getMazeAppBridge(): MazeAppBridge | null {
-  return window.mazeApp ?? null;
+  return getSharedMazeAppBridge();
 }
 
 export function detectTopology(mazeData: number[][][]): SolveTopology {
@@ -51,9 +56,8 @@ export function runMazeSolve(selectedAlgorithmId: string): SolveRunResult {
     return { status: 'appUnavailable' };
   }
 
-  const mazeData =
-    typeof mazeApp.getMazeDataRef === 'function' ? mazeApp.getMazeDataRef() : mazeApp.getMazeData();
-  const markers = mazeApp.getMazeMarkers();
+  const mazeData = getMazeDataFromApp(mazeApp);
+  const markers = getMazeMarkersFromApp(mazeApp);
   const topology = detectTopology(mazeData);
   if (topology !== 'singleLayerRect' && topology !== 'multiLayerRect') {
     mazeApp.clearSolutionPath();

@@ -8,6 +8,7 @@ export type MazeTopologyId =
   | 'circular';
 
 export type ShaftDensity = 'sparse' | 'normal' | 'dense';
+export type MazeComplexity = 'low' | 'normal' | 'high';
 
 export type GeneratorId =
   | 'binaryTree'
@@ -22,6 +23,14 @@ export interface GeneratorRunInput {
   cols: number;
   params?: {
     northBias?: number;
+    randomizeStartEnd?: boolean;
+    randomizeStartEndLayers?: boolean;
+    forceDifferentLayers?: boolean;
+    minConnectorDistance?: number;
+    minConnectorsPerTransition?: number;
+    maxConnectorsPerTransition?: number;
+    noConnectorOnBorder?: boolean;
+    complexity?: MazeComplexity;
   };
   topologyParams?: {
     layers?: number;

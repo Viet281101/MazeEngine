@@ -4,7 +4,7 @@ import {
   type SolveAlgorithmCategory,
   type SolveAlgorithmDefinition,
 } from '../../../solve/solve-catalog';
-import { getSolveInsights } from '../../i18n';
+import { getSolveInsights } from '../../../i18n';
 import type { SolveTopology } from './solve-runtime';
 
 type MarkerStatusKey =
