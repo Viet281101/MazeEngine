@@ -491,9 +491,7 @@ export class PreviewWindow {
             continue;
           }
 
-          const centerX = Math.round(
-            (offsetX + col * cellSize + cellSize / 2) * scaleX
-          );
+          const centerX = Math.round((offsetX + col * cellSize + cellSize / 2) * scaleX);
           const centerY = Math.round(
             (offsetY + (rows - 1 - row) * cellSize + cellSize / 2) * scaleY
           );

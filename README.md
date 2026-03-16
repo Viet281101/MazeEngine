@@ -44,6 +44,8 @@ MazeEngine targets modern browsers with native `PointerEvent` support.
 - [Contributing Guide](./CONTRIBUTING.md)
 - [Architecture Overview](./docs/architecture.md)
 - [How to Add a Generator](./docs/how-to-add-generator.md)
+- [Common Maze Rules](./docs/maze-rules.md)
+- [Onboarding Guide](./docs/onboarding.md)
 
 ## Project Focus Areas
 

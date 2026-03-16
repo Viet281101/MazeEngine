@@ -337,6 +337,32 @@ function connectorsNotOnBorder(
   return true;
 }
 
+function connectorsNotStackedAcrossLayers(maze: number[][][]): boolean {
+  if (maze.length < 2) {
+    return true;
+  }
+
+  for (let layerIndex = 0; layerIndex < maze.length - 1; layerIndex += 1) {
+    const lowerLayer = maze[layerIndex];
+    const upperLayer = maze[layerIndex + 1];
+    if (!lowerLayer || !upperLayer || lowerLayer.length === 0 || upperLayer.length === 0) {
+      continue;
+    }
+    const rows = Math.min(lowerLayer.length, upperLayer.length);
+    const cols = Math.min(lowerLayer[0]?.length ?? 0, upperLayer[0]?.length ?? 0);
+
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) {
+        if (isConnector(lowerLayer[row]?.[col]) && isConnector(upperLayer[row]?.[col])) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
 function connectorsHaveValidExits(maze: number[][][]): boolean {
   for (let layerIndex = 0; layerIndex < maze.length; layerIndex += 1) {
     const layer = maze[layerIndex];
@@ -423,6 +449,11 @@ const RULES: readonly MazeRule[] = [
     id: 'connector-not-on-border',
     scope: 'multi',
     validate: connectorsNotOnBorder,
+  },
+  {
+    id: 'connector-not-stacked',
+    scope: 'multi',
+    validate: connectorsNotStackedAcrossLayers,
   },
   {
     id: 'connector-exits-valid',

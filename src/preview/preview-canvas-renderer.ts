@@ -114,8 +114,7 @@ export function renderPreviewMaze(params: RenderPreviewMazeParams): void {
 
       const cell = mazeRow[col];
       const overlayCell = connectorOverlay?.[row]?.[col];
-      const hasOverlayConnector =
-        overlayCell !== undefined && isConnectorCellValue(overlayCell);
+      const hasOverlayConnector = overlayCell !== undefined && isConnectorCellValue(overlayCell);
       let nextFill = PREVIEW_COLORS.path;
       if (cell === 1) {
         nextFill = PREVIEW_COLORS.wall;

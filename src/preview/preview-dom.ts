@@ -168,7 +168,10 @@ export function createPreviewCanvas(width: number, height: number): HTMLCanvasEl
   return canvas;
 }
 
-export function createPreviewCanvasHost(width: number, height: number): {
+export function createPreviewCanvasHost(
+  width: number,
+  height: number
+): {
   host: HTMLDivElement;
   canvas: HTMLCanvasElement;
   overlay: HTMLDivElement;

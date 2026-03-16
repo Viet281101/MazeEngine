@@ -28,6 +28,7 @@
    - `src/generator/core/registry.ts`
    - Validates generator availability + topology support.
    - Uses topology adapter (`src/generator/core/topology-adapters.ts`) for input/output adaptation.
+   - Applies shared validation rules via `applyCommonMazeRules`.
 6. App update:
    - `mazeApp.updateMaze(...)` applies generated maze and markers.
 
@@ -37,6 +38,11 @@
 - Topology adapter layer allows generator implementations to stay focused on core grid behavior.
 - Registry (`GENERATOR_CATALOG`) is the single source of truth for availability + support matrix.
 - Popup i18n keys keep UI strings centralized and translatable.
+- Shared rule enforcement keeps generators consistent across single-layer and multi-layer mazes.
+
+## Common Rules
+
+See `docs/maze-rules.md` for the shared rule list, defaults, and rule context parameters.
 
 ## Operational Notes
 

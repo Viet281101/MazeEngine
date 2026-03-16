@@ -13,6 +13,9 @@ Implementation contract:
 - Return `GeneratedMazeResult` (`maze` + `markers.start/end`).
 - Respect size limits (reuse `MAZE_SIZE` and clamp inputs).
 - Keep algorithm deterministic only when intended (document random behavior).
+- Common validation rules are applied in the registry via `applyCommonMazeRules`.
+  - If your algorithm needs extra retries (e.g., randomness), you may re-run generation internally,
+    but avoid duplicating fixes unless you need immediate feedback on rule failures.
 
 ## 2. Register Generator ID and Definition
 
@@ -41,9 +44,9 @@ Update `src/sidebar/popup/generate/generate-config.ts`:
 
 Update locale files:
 
-- `src/sidebar/locales/en.json`
-- `src/sidebar/locales/vi.json`
-- `src/sidebar/locales/fr.json`
+- `src/i18n/locales/en.json`
+- `src/i18n/locales/vi.json`
+- `src/i18n/locales/fr.json`
 
 Add keys:
 
@@ -82,3 +85,7 @@ If algorithm becomes heavy:
 - Keep it pure and side-effect free.
 - Avoid blocking operations beyond required computation.
 - Use existing perf logs in `generate-runner.ts` to compare impact.
+
+## 7. Common Rule Reference
+
+See `docs/maze-rules.md` for the shared single-layer and multi-layer rule set and rule context parameters.
