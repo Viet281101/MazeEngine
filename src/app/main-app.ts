@@ -63,6 +63,7 @@ export class MainApp implements MazeController, MazeAppBridge {
   private hideEdgesDuringInteractionEnabled: boolean = false;
   private floorGridEnabled: boolean = true;
   private adaptiveQualityEnabled: boolean = true;
+  private allowMultipleMazePopupPanels: boolean = false;
   private cameraZoomLimitEnabled: boolean = CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED;
   private cameraZoomMinDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE;
   private cameraZoomMaxDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE;
@@ -153,6 +154,7 @@ export class MainApp implements MazeController, MazeAppBridge {
       hideEdgesDuringInteractionEnabled: false,
       floorGridEnabled: true,
       adaptiveQualityEnabled: true,
+      allowMultipleMazePopupPanels: false,
       cameraZoomLimitEnabled: CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED,
       cameraZoomMinDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE,
       cameraZoomMaxDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE,
@@ -162,6 +164,7 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.hideEdgesDuringInteractionEnabled = loaded.hideEdgesDuringInteractionEnabled;
     this.floorGridEnabled = loaded.floorGridEnabled;
     this.adaptiveQualityEnabled = loaded.adaptiveQualityEnabled;
+    this.allowMultipleMazePopupPanels = loaded.allowMultipleMazePopupPanels;
     this.cameraZoomLimitEnabled = loaded.cameraZoomLimitEnabled;
     this.cameraZoomMinDistance = loaded.cameraZoomMinDistance;
     this.cameraZoomMaxDistance = loaded.cameraZoomMaxDistance;
@@ -469,6 +472,15 @@ export class MainApp implements MazeController, MazeAppBridge {
 
   public isAdaptiveQualityEnabled(): boolean {
     return this.adaptiveQualityEnabled;
+  }
+
+  public setAllowMultipleMazePopupPanels(enabled: boolean): void {
+    this.allowMultipleMazePopupPanels = enabled;
+    this.settingsStorage.saveAllowMultipleMazePopupPanels(enabled);
+  }
+
+  public isAllowMultipleMazePopupPanelsEnabled(): boolean {
+    return this.allowMultipleMazePopupPanels;
   }
 
   public setCameraZoomLimitEnabled(enabled: boolean): void {

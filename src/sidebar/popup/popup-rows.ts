@@ -1,6 +1,5 @@
 import type { TranslationKey } from '../../i18n';
-import { setI18nText } from './popup-i18n';
-import { createHelpIcon } from './popup-help';
+import { createHelpIcon, setI18nText } from './utils';
 
 type RowControl = HTMLElement;
 

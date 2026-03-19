@@ -6,7 +6,7 @@ import {
   type AppLanguage,
   type TranslationKey,
 } from '../../../i18n';
-import { createNumberStepperField } from '../popup-inputs';
+import { createNumberStepperField } from '../utils';
 import { createLabelWithHelp, createRow, createToggleRow } from '../popup-rows';
 
 export interface SettingsPopupDom {
@@ -19,6 +19,7 @@ export interface SettingsPopupDom {
   hideEdgesDuringInteractionLabel: HTMLElement;
   floorGridLabel: HTMLElement;
   adaptiveQualityLabel: HTMLElement;
+  allowMultipleMazePopupPanelsLabel: HTMLElement;
   showEdgesLabel: HTMLElement;
   showDebugLabel: HTMLElement;
   showPreviewLabel: HTMLElement;
@@ -34,6 +35,7 @@ export interface SettingsPopupDom {
   hideEdgesDuringInteractionToggle: HTMLInputElement;
   floorGridToggle: HTMLInputElement;
   adaptiveQualityToggle: HTMLInputElement;
+  allowMultipleMazePopupPanelsToggle: HTMLInputElement;
   showEdgesToggle: HTMLInputElement;
   showDebugToggle: HTMLInputElement;
   showPreviewToggle: HTMLInputElement;
@@ -140,6 +142,7 @@ export function createSettingsPopupDom(
   initialHideEdgesDuringInteractionEnabled: boolean,
   initialFloorGridEnabled: boolean,
   initialAdaptiveQualityEnabled: boolean,
+  initialAllowMultipleMazePopupPanelsEnabled: boolean,
   initialShowEdgesEnabled: boolean,
   initialShowDebugEnabled: boolean,
   initialShowPreviewEnabled: boolean,
@@ -215,6 +218,12 @@ export function createSettingsPopupDom(
     initialState: initialAdaptiveQualityEnabled,
     withHelp: true,
   });
+
+  const { toggle: allowMultipleMazePopupPanelsToggle, label: allowMultipleMazePopupPanelsLabel } =
+    appendToggleSettingRow(content, {
+      labelKey: 'settings.allowMultipleMazePopupPanels',
+      initialState: initialAllowMultipleMazePopupPanelsEnabled,
+    });
 
   const {
     toggle: showEdgesToggle,
@@ -374,6 +383,7 @@ export function createSettingsPopupDom(
     hideEdgesDuringInteractionLabel,
     floorGridLabel,
     adaptiveQualityLabel,
+    allowMultipleMazePopupPanelsLabel,
     showEdgesLabel,
     showDebugLabel,
     showPreviewLabel,
@@ -387,6 +397,7 @@ export function createSettingsPopupDom(
     hideEdgesDuringInteractionToggle,
     floorGridToggle,
     adaptiveQualityToggle,
+    allowMultipleMazePopupPanelsToggle,
     showEdgesToggle,
     showDebugToggle,
     showPreviewToggle,

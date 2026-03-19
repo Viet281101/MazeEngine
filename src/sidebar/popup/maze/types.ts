@@ -25,7 +25,6 @@ export interface MazePopupState {
 }
 
 export interface MazePopupViewRefs {
-  controls: HTMLElement;
   rowsInput: HTMLInputElement;
   colsInput: HTMLInputElement;
   toolButtons: Record<ToolMode, HTMLButtonElement>;
@@ -33,4 +32,16 @@ export interface MazePopupViewRefs {
   clearBtn: HTMLButtonElement;
   applyBtn: HTMLButtonElement;
   loadBtn: HTMLButtonElement;
+}
+
+export interface MazePopupViewBundle {
+  controls: HTMLElement;
+  accordionRows: HTMLDetailsElement[];
+  singleLayerRow: HTMLDetailsElement;
+  multiLayerRow?: HTMLDetailsElement;
+  singleLayer: MazePopupViewRefs;
+  multiLayer?: {
+    refs: MazePopupViewRefs;
+    canvas: HTMLCanvasElement;
+  };
 }

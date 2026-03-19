@@ -1,6 +1,9 @@
 .maze-popup {
   box-sizing: border-box;
   padding: 64px 10px 14px;
+  --maze-panel-pad-top: 10px;
+  --maze-panel-pad-bottom: 12px;
+  --maze-panel-pad-x: 12px;
 }
 
 .maze-popup__content {
@@ -18,14 +21,19 @@
 }
 
 .maze-popup__summary {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 12px;
+  padding: 12px 36px 12px 12px;
   cursor: pointer;
   list-style: none;
   user-select: none;
+}
+
+.maze-popup__summary--disabled {
+  cursor: default;
 }
 
 .maze-popup__summary::-webkit-details-marker {
@@ -34,6 +42,10 @@
 
 .maze-popup__summary::after {
   content: '▾';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  translate: 0 -50%;
   font-size: 16px;
   color: #d0e0e8;
   transition: transform 0.2s ease;
@@ -49,12 +61,44 @@
   max-width: 240px;
 }
 
+.maze-popup__badge {
+  max-width: 66px;
+  text-align: center;
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 4px 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.maze-popup__badge--coming {
+  background: #4d2b2b;
+  color: #ffd8d8;
+}
+
 .maze-popup__panel {
   border-top: 1px solid #2f4453;
-  padding: 10px 12px 12px;
+  padding: 0 var(--maze-panel-pad-x);
+  display: block;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  will-change: opacity, height;
+}
+
+.maze-popup__row[open] > .maze-popup__panel {
+  opacity: 1;
+  padding: var(--maze-panel-pad-top) var(--maze-panel-pad-x) var(--maze-panel-pad-bottom);
+  border-top-color: #2f4453;
+  pointer-events: auto;
+}
+
+.maze-popup__panel-body {
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-height: 0;
 }
 
 .maze-popup__panel--placeholder {
@@ -67,6 +111,16 @@
   gap: 8px;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.maze-popup__section--stairs {
+  gap: 10px;
+}
+
+.maze-popup__section-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #cfe2ea;
 }
 
 .maze-popup__section--apply {
@@ -103,6 +157,11 @@
   padding: 8px 14px;
   cursor: pointer;
   font-size: 16px;
+}
+
+.maze-popup__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .maze-popup__tool {

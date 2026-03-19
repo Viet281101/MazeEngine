@@ -2,7 +2,7 @@ import { Toolbar } from '../../toolbar';
 import { subscribeLanguageChange, t } from '../../../i18n';
 import { getIconPath } from '../../../constants/assets';
 import { watchContainerRemoval } from '../popup-lifecycle';
-import { applyI18nTexts, setI18nText } from '../popup-i18n';
+import { applyI18nTexts, setI18nText } from '../utils';
 import './tutorial.css';
 
 export function showTutorialPopup(toolbar: Toolbar): void {
