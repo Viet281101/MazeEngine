@@ -2,8 +2,7 @@ import type { GeneratorId, MazeComplexity, MazeTopologyId, ShaftDensity } from '
 import { Toolbar } from '../../toolbar';
 import { subscribeLanguageChange } from '../../../i18n';
 import { watchContainerRemoval } from '../popup-lifecycle';
-import { applyI18nTexts, setI18nText } from '../popup-i18n';
-import { createLabeledNumberInput } from '../popup-inputs';
+import { applyI18nTexts, createLabeledNumberInput, setI18nText } from '../utils';
 import {
   clamp,
   getGeneratorUiDefinitions,

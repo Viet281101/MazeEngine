@@ -1,11 +1,14 @@
 import type { GeneratorId, MazeComplexity, MazeTopologyId } from '../../../generator';
 import type { TranslationKey } from '../../../i18n';
 import { MAZE_SIZE } from '../../../constants/maze';
-import { createI18nButton } from '../popup-elements';
-import { createLabeledNumberInput, createNumberStepperField } from '../popup-inputs';
-import { setI18nText } from '../popup-i18n';
+import {
+  createHelpIcon,
+  createI18nButton,
+  createLabeledNumberInput,
+  createNumberStepperField,
+  setI18nText,
+} from '../utils';
 import { createRow } from '../popup-rows';
-import { createHelpIcon } from '../popup-help';
 import { clamp, type GeneratorUiDefinition } from './generate-config';
 
 interface ToggleRowResult {
@@ -143,9 +146,22 @@ export function createGeneratorRow(options: CreateGeneratorRowOptions): HTMLElem
   summary.appendChild(title);
   summary.appendChild(badge);
   details.appendChild(summary);
+  details.addEventListener('toggle', () => {
+    if (!details.open) {
+      details.classList.remove('generate-popup__row--panel-animating');
+      return;
+    }
+    details.classList.add('generate-popup__row--panel-animating');
+  });
 
   const panel = document.createElement('div');
-  panel.className = 'generate-popup__panel';
+  panel.className = 'generate-popup__panel popup-accordion__panel';
+  panel.addEventListener('animationend', event => {
+    if (event.animationName !== 'generate-popup-panel-reveal') {
+      return;
+    }
+    details.classList.remove('generate-popup__row--panel-animating');
+  });
 
   const description = document.createElement('p');
   description.className = 'generate-popup__description';
@@ -486,6 +502,5 @@ export function createGeneratorRow(options: CreateGeneratorRowOptions): HTMLElem
     }
     generateBtn.disabled = true;
   }
-
   return details;
 }

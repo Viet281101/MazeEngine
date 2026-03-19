@@ -12,6 +12,7 @@ interface InitialSettingsValues {
   hideEdgesDuringInteractionEnabled: boolean;
   floorGridEnabled: boolean;
   adaptiveQualityEnabled: boolean;
+  allowMultipleMazePopupPanels: boolean;
   edgesVisible: boolean;
   debugVisible: boolean;
   previewVisible: boolean;
@@ -39,6 +40,10 @@ export function getInitialSettingsValues(): InitialSettingsValues {
       app && typeof app.isAdaptiveQualityEnabled === 'function'
         ? app.isAdaptiveQualityEnabled()
         : true,
+    allowMultipleMazePopupPanels:
+      app && typeof app.isAllowMultipleMazePopupPanelsEnabled === 'function'
+        ? app.isAllowMultipleMazePopupPanelsEnabled()
+        : false,
     edgesVisible: app && typeof app.isEdgesVisible === 'function' ? app.isEdgesVisible() : true,
     debugVisible:
       app && typeof app.isDebugOverlayVisible === 'function' ? app.isDebugOverlayVisible() : true,
@@ -103,6 +108,13 @@ export function setAdaptiveQualityEnabled(enabled: boolean): void {
   const app = getMazeAppBridge();
   if (app && typeof app.setAdaptiveQualityEnabled === 'function') {
     app.setAdaptiveQualityEnabled(enabled);
+  }
+}
+
+export function setAllowMultipleMazePopupPanels(enabled: boolean): void {
+  const app = getMazeAppBridge();
+  if (app && typeof app.setAllowMultipleMazePopupPanels === 'function') {
+    app.setAllowMultipleMazePopupPanels(enabled);
   }
 }
 

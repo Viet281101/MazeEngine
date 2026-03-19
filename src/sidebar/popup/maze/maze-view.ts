@@ -1,37 +1,78 @@
 import { MAZE_SIZE } from '../../../constants/maze';
 import { getIconPath } from '../../../constants/assets';
 import type { TranslationKey } from '../../../i18n';
-import { createI18nButton } from '../popup-elements';
-import { setI18nAriaLabel, setI18nText, setI18nTitle } from '../popup-i18n';
-import { createLabeledNumberInput } from '../popup-inputs';
-import type { MazePopupViewRefs, ToolMode } from './types';
+import {
+  createI18nButton,
+  createLabeledNumberInput,
+  setI18nAriaLabel,
+  setI18nText,
+  setI18nTitle,
+} from '../utils';
+import type { MazePopupViewBundle, MazePopupViewRefs, ToolMode } from './types';
 
 const PLACEHOLDER_MAZE_TYPE_KEYS: TranslationKey[] = [
-  'maze.multiLayerCustom',
   'maze.hexagonalCustom',
   'maze.triangularCustom',
   'maze.circularCustom',
 ];
 
-export function buildMazePopupView(canvas: HTMLCanvasElement): MazePopupViewRefs {
+export function buildMazePopupView(canvas: HTMLCanvasElement): MazePopupViewBundle {
   const content = document.createElement('div');
   content.className = 'maze-popup__content';
+  const accordionRows: HTMLDetailsElement[] = [];
 
+  const singleLayer = createMazeEditorRow('maze.singleLayerCustom', canvas, true, false);
+  content.appendChild(singleLayer.row);
+  accordionRows.push(singleLayer.row);
+
+  const multiCanvas = document.createElement('canvas');
+  multiCanvas.width = canvas.width || 330;
+  multiCanvas.height = canvas.height || 330;
+  const multiLayer = createMazeEditorRow('maze.multiLayerCustom', multiCanvas, false, true);
+  content.appendChild(multiLayer.row);
+  accordionRows.push(multiLayer.row);
+
+  PLACEHOLDER_MAZE_TYPE_KEYS.forEach(titleKey => {
+    content.appendChild(createPlaceholderMazeTypeRow(titleKey));
+  });
+
+  return {
+    controls: content,
+    accordionRows,
+    singleLayerRow: singleLayer.row,
+    multiLayerRow: multiLayer.row,
+    singleLayer: singleLayer.refs,
+    multiLayer: {
+      refs: multiLayer.refs,
+      canvas: multiCanvas,
+    },
+  };
+}
+
+function createMazeEditorRow(
+  titleKey: TranslationKey,
+  canvas: HTMLCanvasElement,
+  isOpen: boolean,
+  showStairs: boolean
+): { row: HTMLDetailsElement; refs: MazePopupViewRefs } {
   const editorRow = document.createElement('details');
   editorRow.className = 'maze-popup__row';
-  editorRow.open = true;
+  editorRow.open = isOpen;
 
   const summary = document.createElement('summary');
   summary.className = 'maze-popup__summary';
 
   const sectionTitle = document.createElement('span');
   sectionTitle.className = 'maze-popup__title';
-  setI18nText(sectionTitle, 'maze.singleLayerCustom');
+  setI18nText(sectionTitle, titleKey);
   summary.appendChild(sectionTitle);
   editorRow.appendChild(summary);
 
   const panel = document.createElement('div');
-  panel.className = 'maze-popup__panel';
+  panel.className = 'maze-popup__panel popup-accordion__panel';
+  const panelBody = document.createElement('div');
+  panelBody.className = 'maze-popup__panel-body';
+  panel.appendChild(panelBody);
 
   const sizeSection = document.createElement('div');
   sizeSection.className = 'maze-popup__section';
@@ -85,31 +126,63 @@ export function buildMazePopupView(canvas: HTMLCanvasElement): MazePopupViewRefs
   });
   applySection.appendChild(applyBtn);
 
-  panel.appendChild(sizeSection);
-  panel.appendChild(toolSection);
-  panel.appendChild(canvas);
-  panel.appendChild(applySection);
-  editorRow.appendChild(panel);
-  content.appendChild(editorRow);
+  canvas.classList.add('maze-popup__canvas');
 
-  PLACEHOLDER_MAZE_TYPE_KEYS.forEach(titleKey => {
-    content.appendChild(createPlaceholderMazeTypeRow(titleKey));
-  });
+  panelBody.appendChild(sizeSection);
+  panelBody.appendChild(toolSection);
+  if (showStairs) {
+    const stairsSection = document.createElement('div');
+    stairsSection.className = 'maze-popup__section maze-popup__section--stairs';
+
+    const stairsLabel = document.createElement('span');
+    stairsLabel.className = 'maze-popup__section-label';
+    setI18nText(stairsLabel, 'maze.stairs');
+
+    const stairsNorthBtn = createI18nButton({
+      textKey: 'maze.stairsNorth',
+      className: 'maze-popup__btn',
+    });
+    const stairsEastBtn = createI18nButton({
+      textKey: 'maze.stairsEast',
+      className: 'maze-popup__btn',
+    });
+    const stairsSouthBtn = createI18nButton({
+      textKey: 'maze.stairsSouth',
+      className: 'maze-popup__btn',
+    });
+    const stairsWestBtn = createI18nButton({
+      textKey: 'maze.stairsWest',
+      className: 'maze-popup__btn',
+    });
+
+    stairsSection.appendChild(stairsLabel);
+    stairsSection.appendChild(stairsNorthBtn);
+    stairsSection.appendChild(stairsEastBtn);
+    stairsSection.appendChild(stairsSouthBtn);
+    stairsSection.appendChild(stairsWestBtn);
+
+    panelBody.appendChild(stairsSection);
+  }
+  panelBody.appendChild(canvas);
+  panelBody.appendChild(applySection);
+  editorRow.appendChild(panel);
 
   return {
-    controls: content,
-    rowsInput: rowsInput.input,
-    colsInput: colsInput.input,
-    createBtn,
-    loadBtn,
-    clearBtn,
-    applyBtn,
-    toolButtons: {
-      pen: penBtn,
-      eraser: eraserBtn,
-      start: startBtn,
-      end: endBtn,
-    } as Record<ToolMode, HTMLButtonElement>,
+    row: editorRow,
+    refs: {
+      rowsInput: rowsInput.input,
+      colsInput: colsInput.input,
+      createBtn,
+      loadBtn,
+      clearBtn,
+      applyBtn,
+      toolButtons: {
+        pen: penBtn,
+        eraser: eraserBtn,
+        start: startBtn,
+        end: endBtn,
+      } as Record<ToolMode, HTMLButtonElement>,
+    },
   };
 }
 
@@ -135,24 +208,25 @@ function createIconToolButton(textKey: TranslationKey, iconFile: string): HTMLBu
   return button;
 }
 
-function createPlaceholderMazeTypeRow(titleKey: TranslationKey): HTMLElement {
-  const row = document.createElement('details');
+function createPlaceholderMazeTypeRow(titleKey: TranslationKey): HTMLDivElement {
+  const row = document.createElement('div');
   row.className = 'maze-popup__row maze-popup__row--placeholder';
 
-  const summary = document.createElement('summary');
-  summary.className = 'maze-popup__summary';
+  const summary = document.createElement('div');
+  summary.className = 'maze-popup__summary maze-popup__summary--disabled';
+  summary.setAttribute('aria-disabled', 'true');
 
   const title = document.createElement('span');
   title.className = 'maze-popup__title';
   setI18nText(title, titleKey);
 
-  summary.appendChild(title);
-  row.appendChild(summary);
+  const badge = document.createElement('span');
+  badge.className = 'maze-popup__badge maze-popup__badge--coming';
+  setI18nText(badge, 'generate.comingSoon');
 
-  const panel = document.createElement('div');
-  panel.className = 'maze-popup__panel maze-popup__panel--placeholder';
-  panel.setAttribute('aria-hidden', 'true');
-  row.appendChild(panel);
+  summary.appendChild(title);
+  summary.appendChild(badge);
+  row.appendChild(summary);
 
   return row;
 }

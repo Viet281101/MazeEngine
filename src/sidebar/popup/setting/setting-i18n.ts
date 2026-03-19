@@ -17,6 +17,7 @@ export function applySettingsTranslations(dom: SettingsPopupDom): void {
   dom.hideEdgesDuringInteractionLabel.textContent = t('settings.hideEdgesDuringInteraction');
   dom.floorGridLabel.textContent = t('settings.floorGrid');
   dom.adaptiveQualityLabel.textContent = t('settings.adaptiveQuality');
+  dom.allowMultipleMazePopupPanelsLabel.textContent = t('settings.allowMultipleMazePopupPanels');
   dom.showEdgesLabel.textContent = t('gui.showEdges');
   dom.showDebugLabel.textContent = t('gui.showDebug');
   dom.showPreviewLabel.textContent = t('gui.showPreview');

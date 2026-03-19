@@ -13,6 +13,7 @@ import {
   setDebugVisible,
   setEdgesVisible,
   setAdaptiveQualityEnabled,
+  setAllowMultipleMazePopupPanels,
   setCameraZoomLimitEnabled,
   setFloorGridEnabled,
   setHideEdgesDuringInteractionEnabled,
@@ -36,6 +37,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     initialValues.hideEdgesDuringInteractionEnabled,
     initialValues.floorGridEnabled,
     initialValues.adaptiveQualityEnabled,
+    initialValues.allowMultipleMazePopupPanels,
     initialValues.edgesVisible,
     initialValues.debugVisible,
     initialValues.previewVisible,
@@ -52,6 +54,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     hideEdgesDuringInteractionToggle,
     floorGridToggle,
     adaptiveQualityToggle,
+    allowMultipleMazePopupPanelsToggle,
     showEdgesToggle,
     showDebugToggle,
     showPreviewToggle,
@@ -174,6 +177,9 @@ export function showSettingsPopup(toolbar: Toolbar): void {
   });
   adaptiveQualityToggle.addEventListener('change', () => {
     setAdaptiveQualityEnabled(adaptiveQualityToggle.checked);
+  });
+  allowMultipleMazePopupPanelsToggle.addEventListener('change', () => {
+    setAllowMultipleMazePopupPanels(allowMultipleMazePopupPanelsToggle.checked);
   });
   showEdgesToggle.addEventListener('change', () => {
     setEdgesVisible(showEdgesToggle.checked);

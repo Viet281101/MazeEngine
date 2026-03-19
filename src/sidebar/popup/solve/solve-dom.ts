@@ -1,4 +1,4 @@
-import { setI18nText } from '../popup-i18n';
+import { setI18nText } from '../utils';
 import { createRow } from '../popup-rows';
 import type { TranslationKey } from '../../../i18n';
 import {
@@ -13,6 +13,7 @@ export interface SolvePopupDomRefs {
   sizeValue: HTMLSpanElement;
   markerValue: HTMLSpanElement;
   solveButton: HTMLButtonElement;
+  insightBox: HTMLDetailsElement;
   insightTitle: HTMLSpanElement;
   insightComplexityValue: HTMLSpanElement;
   insightOverviewValue: HTMLParagraphElement;
@@ -133,7 +134,7 @@ export function createSolvePopupDom(
   insightBox.appendChild(insightSummary);
 
   const insightPanel = document.createElement('div');
-  insightPanel.className = 'solve-popup__insight-panel';
+  insightPanel.className = 'solve-popup__insight-panel popup-accordion__panel';
 
   const insightComplexityValue = document.createElement('span');
   insightComplexityValue.className = 'solve-popup__insight-complexity';
@@ -192,6 +193,7 @@ export function createSolvePopupDom(
     sizeValue,
     markerValue,
     solveButton,
+    insightBox,
     insightTitle,
     insightComplexityValue,
     insightOverviewValue,

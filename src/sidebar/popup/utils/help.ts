@@ -1,6 +1,6 @@
-import type { TranslationKey } from '../../i18n';
-import { getIconPath } from '../../constants/assets';
-import { setI18nAriaLabel } from './popup-i18n';
+import type { TranslationKey } from '../../../i18n';
+import { getIconPath } from '../../../constants/assets';
+import { setI18nAriaLabel } from './i18n';
 
 interface HelpIconOptions {
   className: string;
