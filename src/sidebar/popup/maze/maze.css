@@ -113,8 +113,9 @@
   align-items: center;
 }
 
-.maze-popup__section--stairs {
-  gap: 10px;
+.maze-popup__section--tools {
+  position: relative;
+  z-index: 5;
 }
 
 .maze-popup__section-label {
@@ -125,6 +126,74 @@
 
 .maze-popup__section--apply {
   justify-content: center;
+}
+
+.maze-popup__layer-tabs-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  width: 330px;
+  max-width: 100%;
+  align-self: center;
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 1;
+}
+
+.maze-popup__layer-tabs-bar[hidden] {
+  display: none;
+}
+
+.maze-popup__layer-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.maze-popup__layer-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.maze-popup__layer-tabs-nav {
+  min-width: 24px;
+  border: 1px solid #2d4a5d;
+  border-radius: 6px 6px 0 0;
+  background: #132430;
+  color: #dceef7;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+}
+
+.maze-popup__layer-tabs-nav:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.maze-popup__layer-tab {
+  flex: 0 0 auto;
+  border: 1px solid #000;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: #1c303b;
+  color: #def0f8;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.maze-popup__layer-tab.is-active {
+  border-color: #000;
+  background: #33566b;
+  color: #f7fffb;
 }
 
 .maze-popup__input {
@@ -206,13 +275,18 @@
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.16s ease;
-  z-index: 2;
+  z-index: 100;
 }
 
 .maze-popup__tool:hover .maze-popup__tool-tooltip,
 .maze-popup__tool:focus-visible .maze-popup__tool-tooltip {
   opacity: 1;
   visibility: visible;
+}
+
+.maze-popup__tool--staircase.is-active .maze-popup__tool-tooltip {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .maze-popup__tool.is-active {
@@ -230,9 +304,39 @@
   width: 330px;
   height: 330px;
   max-width: 100%;
-  align-self: center;
   border: 1px solid #000;
   background: #33566b;
   cursor: crosshair;
   touch-action: none;
+}
+
+.maze-popup__canvas-wrap {
+  position: relative;
+  width: 330px;
+  max-width: 100%;
+  align-self: center;
+}
+
+.maze-popup__canvas-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.maze-popup__stairs-overlay {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 10px;
+  min-height: 54px;
+  padding: 10px 12px;
+  border: 1px solid #355062;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(9, 25, 34, 0.88) 0%, rgba(8, 20, 29, 0.82) 100%);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+  z-index: 3;
+}
+
+.maze-popup__stairs-overlay[hidden] {
+  display: none;
 }

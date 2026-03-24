@@ -146,22 +146,9 @@ export function createGeneratorRow(options: CreateGeneratorRowOptions): HTMLElem
   summary.appendChild(title);
   summary.appendChild(badge);
   details.appendChild(summary);
-  details.addEventListener('toggle', () => {
-    if (!details.open) {
-      details.classList.remove('generate-popup__row--panel-animating');
-      return;
-    }
-    details.classList.add('generate-popup__row--panel-animating');
-  });
 
   const panel = document.createElement('div');
   panel.className = 'generate-popup__panel popup-accordion__panel';
-  panel.addEventListener('animationend', event => {
-    if (event.animationName !== 'generate-popup-panel-reveal') {
-      return;
-    }
-    details.classList.remove('generate-popup__row--panel-animating');
-  });
 
   const description = document.createElement('p');
   description.className = 'generate-popup__description';

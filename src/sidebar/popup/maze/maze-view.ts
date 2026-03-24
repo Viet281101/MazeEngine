@@ -15,6 +15,11 @@ const PLACEHOLDER_MAZE_TYPE_KEYS: TranslationKey[] = [
   'maze.triangularCustom',
   'maze.circularCustom',
 ];
+const MULTI_LAYER_COUNT_LIMITS = {
+  min: 2,
+  max: 30,
+  defaultValue: 3,
+} as const;
 
 export function buildMazePopupView(canvas: HTMLCanvasElement): MazePopupViewBundle {
   const content = document.createElement('div');
@@ -91,6 +96,15 @@ function createMazeEditorRow(
     value: MAZE_SIZE.DEFAULT_CUSTOM_EDITOR,
     wrapperClassName: 'maze-popup__input',
   });
+  const layersInput = showStairs
+    ? createLabeledNumberInput({
+        labelKey: 'generate.layers',
+        min: MULTI_LAYER_COUNT_LIMITS.min,
+        max: MULTI_LAYER_COUNT_LIMITS.max,
+        value: MULTI_LAYER_COUNT_LIMITS.defaultValue,
+        wrapperClassName: 'maze-popup__input',
+      })
+    : null;
 
   const createBtn = createI18nButton({ textKey: 'maze.create', className: 'maze-popup__btn' });
   const loadBtn = createI18nButton({
@@ -100,22 +114,32 @@ function createMazeEditorRow(
 
   sizeSection.appendChild(rowsInput.wrapper);
   sizeSection.appendChild(colsInput.wrapper);
+  if (layersInput) {
+    sizeSection.appendChild(layersInput.wrapper);
+  }
   sizeSection.appendChild(createBtn);
   sizeSection.appendChild(loadBtn);
 
   const toolSection = document.createElement('div');
-  toolSection.className = 'maze-popup__section';
+  toolSection.className = 'maze-popup__section maze-popup__section--tools';
 
   const penBtn = createIconToolButton('maze.pen', 'pen.png');
   const eraserBtn = createIconToolButton('maze.eraser', 'erase.png');
   const startBtn = createIconToolButton('maze.start', 'start.png');
   const endBtn = createIconToolButton('maze.end', 'end.png');
+  let staircaseBtn: HTMLButtonElement | null = null;
   const clearBtn = createIconToolButton('maze.clear', 'trash.png');
 
   toolSection.appendChild(penBtn);
   toolSection.appendChild(eraserBtn);
   toolSection.appendChild(startBtn);
   toolSection.appendChild(endBtn);
+  if (showStairs) {
+    staircaseBtn = createIconToolButton('maze.stairs', 'staircase.png');
+    staircaseBtn.classList.add('maze-popup__tool--staircase');
+    staircaseBtn.setAttribute('aria-expanded', 'false');
+    toolSection.appendChild(staircaseBtn);
+  }
   toolSection.appendChild(clearBtn);
 
   const applySection = document.createElement('div');
@@ -127,43 +151,55 @@ function createMazeEditorRow(
   applySection.appendChild(applyBtn);
 
   canvas.classList.add('maze-popup__canvas');
+  const canvasShell = document.createElement('div');
+  canvasShell.className = 'maze-popup__canvas-shell';
+  const canvasWrapper = document.createElement('div');
+  canvasWrapper.className = 'maze-popup__canvas-wrap';
+  canvasWrapper.appendChild(canvas);
+  const layerTabsBar = document.createElement('div');
+  layerTabsBar.className = 'maze-popup__layer-tabs-bar';
+  layerTabsBar.hidden = !showStairs;
+  const layerTabsPrevBtn = document.createElement('button');
+  layerTabsPrevBtn.type = 'button';
+  layerTabsPrevBtn.className = 'maze-popup__layer-tabs-nav';
+  layerTabsPrevBtn.textContent = '‹';
+  layerTabsPrevBtn.setAttribute('aria-label', 'Scroll layers left');
+  const layerTabsSection = document.createElement('div');
+  layerTabsSection.className = 'maze-popup__layer-tabs';
+  const layerTabsNextBtn = document.createElement('button');
+  layerTabsNextBtn.type = 'button';
+  layerTabsNextBtn.className = 'maze-popup__layer-tabs-nav';
+  layerTabsNextBtn.textContent = '›';
+  layerTabsNextBtn.setAttribute('aria-label', 'Scroll layers right');
+  layerTabsBar.appendChild(layerTabsPrevBtn);
+  layerTabsBar.appendChild(layerTabsSection);
+  layerTabsBar.appendChild(layerTabsNextBtn);
+  canvasShell.appendChild(layerTabsBar);
+  canvasShell.appendChild(canvasWrapper);
 
   panelBody.appendChild(sizeSection);
   panelBody.appendChild(toolSection);
   if (showStairs) {
-    const stairsSection = document.createElement('div');
-    stairsSection.className = 'maze-popup__section maze-popup__section--stairs';
+    const stairsOverlay = document.createElement('div');
+    stairsOverlay.className = 'maze-popup__stairs-overlay';
+    stairsOverlay.hidden = true;
 
     const stairsLabel = document.createElement('span');
     stairsLabel.className = 'maze-popup__section-label';
     setI18nText(stairsLabel, 'maze.stairs');
+    stairsOverlay.appendChild(stairsLabel);
 
-    const stairsNorthBtn = createI18nButton({
-      textKey: 'maze.stairsNorth',
-      className: 'maze-popup__btn',
-    });
-    const stairsEastBtn = createI18nButton({
-      textKey: 'maze.stairsEast',
-      className: 'maze-popup__btn',
-    });
-    const stairsSouthBtn = createI18nButton({
-      textKey: 'maze.stairsSouth',
-      className: 'maze-popup__btn',
-    });
-    const stairsWestBtn = createI18nButton({
-      textKey: 'maze.stairsWest',
-      className: 'maze-popup__btn',
-    });
-
-    stairsSection.appendChild(stairsLabel);
-    stairsSection.appendChild(stairsNorthBtn);
-    stairsSection.appendChild(stairsEastBtn);
-    stairsSection.appendChild(stairsSouthBtn);
-    stairsSection.appendChild(stairsWestBtn);
-
-    panelBody.appendChild(stairsSection);
+    if (staircaseBtn) {
+      staircaseBtn.addEventListener('click', () => {
+        const shouldOpen = stairsOverlay.hidden;
+        stairsOverlay.hidden = !shouldOpen;
+        staircaseBtn.classList.toggle('is-active', shouldOpen);
+        staircaseBtn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+      });
+    }
+    canvasWrapper.appendChild(stairsOverlay);
   }
-  panelBody.appendChild(canvas);
+  panelBody.appendChild(canvasShell);
   panelBody.appendChild(applySection);
   editorRow.appendChild(panel);
 
@@ -172,6 +208,10 @@ function createMazeEditorRow(
     refs: {
       rowsInput: rowsInput.input,
       colsInput: colsInput.input,
+      layersInput: layersInput?.input,
+      layerTabsContainer: showStairs ? layerTabsSection : undefined,
+      layerTabsPrevBtn: showStairs ? layerTabsPrevBtn : undefined,
+      layerTabsNextBtn: showStairs ? layerTabsNextBtn : undefined,
       createBtn,
       loadBtn,
       clearBtn,

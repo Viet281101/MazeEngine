@@ -27,6 +27,10 @@ export interface MazePopupState {
 export interface MazePopupViewRefs {
   rowsInput: HTMLInputElement;
   colsInput: HTMLInputElement;
+  layersInput?: HTMLInputElement;
+  layerTabsContainer?: HTMLDivElement;
+  layerTabsPrevBtn?: HTMLButtonElement;
+  layerTabsNextBtn?: HTMLButtonElement;
   toolButtons: Record<ToolMode, HTMLButtonElement>;
   createBtn: HTMLButtonElement;
   clearBtn: HTMLButtonElement;

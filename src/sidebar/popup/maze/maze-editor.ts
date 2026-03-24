@@ -10,8 +10,19 @@ import {
   resetView,
   updateStaticCell,
 } from './maze-canvas-renderer';
-import { applyToolAt, clearGrid, rebuildGrid } from './maze-grid';
+import { applyToolAt, clearGrid, initGrid } from './maze-grid';
 import type { CellPos, MazePopupState, MazePopupViewRefs, ToolMode } from './types';
+
+const MULTI_LAYER_COUNT = {
+  min: 2,
+  max: 30,
+} as const;
+
+interface LayerSnapshot {
+  grid: number[][];
+  start: CellPos | null;
+  end: CellPos | null;
+}
 
 export class MazeEditorController {
   private readonly canvas: HTMLCanvasElement;
@@ -29,6 +40,8 @@ export class MazeEditorController {
   private readonly onMouseUp: EventListener;
   private readonly onMouseLeave: EventListener;
   private readonly onWheel: EventListener;
+  private layerSnapshots: LayerSnapshot[] = [];
+  private activeLayerIndex = 0;
 
   constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, refs: MazePopupViewRefs) {
     this.canvas = canvas;
@@ -94,6 +107,21 @@ export class MazeEditorController {
     this.addManagedEvent(this.refs.toolButtons.eraser, 'click', () => this.setTool('eraser'));
     this.addManagedEvent(this.refs.toolButtons.start, 'click', () => this.setTool('start'));
     this.addManagedEvent(this.refs.toolButtons.end, 'click', () => this.setTool('end'));
+    if (this.refs.layerTabsContainer) {
+      this.addManagedEvent(this.refs.layerTabsContainer, 'scroll', () => this.updateLayerTabsNavState());
+      this.addManagedEvent(
+        this.refs.layerTabsContainer,
+        'wheel',
+        event => this.handleLayerTabsWheel(event as WheelEvent),
+        { passive: false }
+      );
+    }
+    if (this.refs.layerTabsPrevBtn) {
+      this.addManagedEvent(this.refs.layerTabsPrevBtn, 'click', () => this.scrollLayerTabs(-1));
+    }
+    if (this.refs.layerTabsNextBtn) {
+      this.addManagedEvent(this.refs.layerTabsNextBtn, 'click', () => this.scrollLayerTabs(1));
+    }
 
     this.addManagedEvent(this.canvas, 'contextmenu', this.onContextMenu);
     this.addManagedEvent(this.canvas, 'mousedown', this.onMouseDown);
@@ -134,9 +162,17 @@ export class MazeEditorController {
   private rebuildFromInputs(): void {
     const rows = this.clampEditorValue(this.refs.rowsInput.valueAsNumber);
     const cols = this.clampEditorValue(this.refs.colsInput.valueAsNumber);
+    const layerCount = this.getLayerCountFromInput();
     this.refs.rowsInput.valueAsNumber = rows;
     this.refs.colsInput.valueAsNumber = cols;
-    rebuildGrid(this.state, rows, cols);
+    this.initializeLayers(rows, cols, layerCount);
+    this.activeLayerIndex = 0;
+    this.state.rows = rows;
+    this.state.cols = cols;
+    this.state.grid = this.layerSnapshots[0].grid;
+    this.state.start = null;
+    this.state.end = null;
+    this.renderLayerTabs();
     rebuildStaticLayer(this.staticLayer, this.state);
     resetView(this.state, this.canvas);
     this.drawNow();
@@ -149,6 +185,22 @@ export class MazeEditorController {
     }
     this.refs.rowsInput.valueAsNumber = loaded.rows;
     this.refs.colsInput.valueAsNumber = loaded.cols;
+    const layerCount = this.getLayerCountFromInput();
+    this.layerSnapshots = Array.from({ length: layerCount }, (_, index) =>
+      index === 0
+        ? {
+            grid: this.state.grid,
+            start: this.state.start ? { ...this.state.start } : null,
+            end: this.state.end ? { ...this.state.end } : null,
+          }
+        : {
+            grid: initGrid(loaded.rows, loaded.cols),
+            start: null,
+            end: null,
+          }
+    );
+    this.activeLayerIndex = 0;
+    this.renderLayerTabs();
     rebuildStaticLayer(this.staticLayer, this.state);
     fitViewToCanvas(this.state, this.canvas);
     this.drawNow();
@@ -156,6 +208,7 @@ export class MazeEditorController {
 
   private handleClear(): void {
     clearGrid(this.state);
+    this.syncActiveLayerSnapshot();
     rebuildStaticLayer(this.staticLayer, this.state);
     this.drawNow();
   }
@@ -210,9 +263,119 @@ export class MazeEditorController {
     }
     this.lastDragCell = cell;
     if (applyToolAt(this.state, cell)) {
+      this.syncActiveLayerSnapshot();
       updateStaticCell(this.staticLayer, this.state, cell.row, cell.col);
       this.requestDraw();
     }
+  }
+
+  private initializeLayers(rows: number, cols: number, layerCount: number): void {
+    this.layerSnapshots = Array.from({ length: layerCount }, () => ({
+      grid: initGrid(rows, cols),
+      start: null,
+      end: null,
+    }));
+  }
+
+  private activateLayer(nextLayerIndex: number): void {
+    const snapshot = this.layerSnapshots[nextLayerIndex];
+    if (!snapshot) {
+      return;
+    }
+    this.stopPointerActions();
+    this.activeLayerIndex = nextLayerIndex;
+    this.state.rows = snapshot.grid.length;
+    this.state.cols = snapshot.grid[0]?.length ?? 0;
+    this.state.grid = snapshot.grid;
+    this.state.start = snapshot.start ? { ...snapshot.start } : null;
+    this.state.end = snapshot.end ? { ...snapshot.end } : null;
+    this.renderLayerTabs();
+    rebuildStaticLayer(this.staticLayer, this.state);
+    this.drawNow();
+  }
+
+  private syncActiveLayerSnapshot(): void {
+    const snapshot = this.layerSnapshots[this.activeLayerIndex];
+    if (!snapshot) {
+      return;
+    }
+    snapshot.grid = this.state.grid;
+    snapshot.start = this.state.start ? { ...this.state.start } : null;
+    snapshot.end = this.state.end ? { ...this.state.end } : null;
+  }
+
+  private renderLayerTabs(): void {
+    const container = this.refs.layerTabsContainer;
+    if (!container) {
+      return;
+    }
+    const totalLayers = this.layerSnapshots.length;
+    container.replaceChildren();
+    for (let i = 0; i < totalLayers; i += 1) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'maze-popup__layer-tab';
+      button.textContent = `L${i + 1}`;
+      button.classList.toggle('is-active', i === this.activeLayerIndex);
+      button.setAttribute('aria-pressed', i === this.activeLayerIndex ? 'true' : 'false');
+      button.addEventListener('click', () => this.activateLayer(i));
+      container.appendChild(button);
+    }
+    const activeTab = container.children[this.activeLayerIndex] as HTMLElement | undefined;
+    activeTab?.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+    this.updateLayerTabsNavState();
+  }
+
+  private scrollLayerTabs(direction: -1 | 1): void {
+    const container = this.refs.layerTabsContainer;
+    if (!container) {
+      return;
+    }
+    const amount = Math.max(80, Math.round(container.clientWidth * 0.55)) * direction;
+    container.scrollBy({ left: amount, behavior: 'smooth' });
+  }
+
+  private handleLayerTabsWheel(event: WheelEvent): void {
+    const container = this.refs.layerTabsContainer;
+    if (!container) {
+      return;
+    }
+    const dominantDelta =
+      Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (dominantDelta === 0) {
+      return;
+    }
+    event.preventDefault();
+    container.scrollBy({ left: dominantDelta, behavior: 'auto' });
+  }
+
+  private updateLayerTabsNavState(): void {
+    const container = this.refs.layerTabsContainer;
+    if (!container) {
+      return;
+    }
+    const prevBtn = this.refs.layerTabsPrevBtn;
+    const nextBtn = this.refs.layerTabsNextBtn;
+    const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth);
+    const epsilon = 1;
+    if (prevBtn) {
+      prevBtn.disabled = container.scrollLeft <= epsilon;
+    }
+    if (nextBtn) {
+      nextBtn.disabled = container.scrollLeft >= maxScrollLeft - epsilon;
+    }
+  }
+
+  private getLayerCountFromInput(): number {
+    const input = this.refs.layersInput;
+    if (!input) {
+      return 1;
+    }
+    const raw = input.valueAsNumber;
+    const safe = Number.isFinite(raw) ? Math.floor(raw) : MULTI_LAYER_COUNT.min;
+    const clamped = Math.max(MULTI_LAYER_COUNT.min, Math.min(MULTI_LAYER_COUNT.max, safe));
+    input.valueAsNumber = clamped;
+    return clamped;
   }
 
   private stopPointerActions(): void {
