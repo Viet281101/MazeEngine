@@ -163,14 +163,16 @@ function createMazeEditorRow(
   layerTabsPrevBtn.type = 'button';
   layerTabsPrevBtn.className = 'maze-popup__layer-tabs-nav';
   layerTabsPrevBtn.textContent = '‹';
-  layerTabsPrevBtn.setAttribute('aria-label', 'Scroll layers left');
+  setI18nAriaLabel(layerTabsPrevBtn, 'maze.layerTabsScrollLeft');
+  setI18nTitle(layerTabsPrevBtn, 'maze.layerTabsScrollLeft');
   const layerTabsSection = document.createElement('div');
   layerTabsSection.className = 'maze-popup__layer-tabs';
   const layerTabsNextBtn = document.createElement('button');
   layerTabsNextBtn.type = 'button';
   layerTabsNextBtn.className = 'maze-popup__layer-tabs-nav';
   layerTabsNextBtn.textContent = '›';
-  layerTabsNextBtn.setAttribute('aria-label', 'Scroll layers right');
+  setI18nAriaLabel(layerTabsNextBtn, 'maze.layerTabsScrollRight');
+  setI18nTitle(layerTabsNextBtn, 'maze.layerTabsScrollRight');
   layerTabsBar.appendChild(layerTabsPrevBtn);
   layerTabsBar.appendChild(layerTabsSection);
   layerTabsBar.appendChild(layerTabsNextBtn);
@@ -179,25 +181,103 @@ function createMazeEditorRow(
 
   panelBody.appendChild(sizeSection);
   panelBody.appendChild(toolSection);
+  let stairsOverlay: HTMLDivElement | undefined;
+  let stairsDirectionShell: HTMLDivElement | undefined;
+  let stairsNavigateIcon: HTMLImageElement | undefined;
+  let stairsRotateLeftBtn: HTMLButtonElement | undefined;
+  let stairsRotateRightBtn: HTMLButtonElement | undefined;
+  let stairsConfirmBtn: HTMLButtonElement | undefined;
   if (showStairs) {
-    const stairsOverlay = document.createElement('div');
-    stairsOverlay.className = 'maze-popup__stairs-overlay';
-    stairsOverlay.hidden = true;
+    stairsOverlay = document.createElement('div');
+    const overlayEl = stairsOverlay;
+    overlayEl.className = 'maze-popup__stairs-overlay';
+    overlayEl.hidden = true;
 
     const stairsLabel = document.createElement('span');
     stairsLabel.className = 'maze-popup__section-label';
-    setI18nText(stairsLabel, 'maze.stairs');
-    stairsOverlay.appendChild(stairsLabel);
+    setI18nText(stairsLabel, 'maze.stairsDirection');
+    overlayEl.appendChild(stairsLabel);
+
+    const stairsPicker = document.createElement('div');
+    stairsPicker.className = 'maze-popup__stairs-picker';
+    const stairsVisual = document.createElement('div');
+    stairsVisual.className = 'maze-popup__stairs-visual';
+
+    const stairPreviewImg = document.createElement('img');
+    stairPreviewImg.className = 'maze-popup__stairs-preview-icon';
+    stairPreviewImg.src = getIconPath('staircase.png');
+    stairPreviewImg.alt = '';
+    stairPreviewImg.setAttribute('aria-hidden', 'true');
+
+    const directionShell = document.createElement('div');
+    directionShell.className = 'maze-popup__stairs-direction-shell';
+    stairsDirectionShell = directionShell;
+
+    const directionImg = document.createElement('img');
+    directionImg.className = 'maze-popup__stairs-direction-icon';
+    directionImg.src = getIconPath('direction.png');
+    directionImg.alt = '';
+    directionImg.setAttribute('aria-hidden', 'true');
+
+    stairsNavigateIcon = document.createElement('img');
+    stairsNavigateIcon.className = 'maze-popup__stairs-navigate-icon';
+    stairsNavigateIcon.src = getIconPath('navigate.png');
+    stairsNavigateIcon.alt = '';
+    stairsNavigateIcon.setAttribute('aria-hidden', 'true');
+
+    directionShell.appendChild(directionImg);
+    directionShell.appendChild(stairsNavigateIcon);
+
+    const controls = document.createElement('div');
+    controls.className = 'maze-popup__stairs-controls';
+
+    stairsRotateLeftBtn = document.createElement('button');
+    stairsRotateLeftBtn.type = 'button';
+    stairsRotateLeftBtn.className = 'maze-popup__btn maze-popup__btn--small';
+    setI18nAriaLabel(stairsRotateLeftBtn, 'maze.stairsRotateLeft');
+    setI18nTitle(stairsRotateLeftBtn, 'maze.stairsRotateLeft');
+    const rotateLeftIcon = document.createElement('img');
+    rotateLeftIcon.className = 'maze-popup__stairs-rotate-icon';
+    rotateLeftIcon.src = getIconPath('rotate_left.png');
+    rotateLeftIcon.alt = '';
+    rotateLeftIcon.setAttribute('aria-hidden', 'true');
+    stairsRotateLeftBtn.appendChild(rotateLeftIcon);
+
+    stairsRotateRightBtn = document.createElement('button');
+    stairsRotateRightBtn.type = 'button';
+    stairsRotateRightBtn.className = 'maze-popup__btn maze-popup__btn--small';
+    setI18nAriaLabel(stairsRotateRightBtn, 'maze.stairsRotateRight');
+    setI18nTitle(stairsRotateRightBtn, 'maze.stairsRotateRight');
+    const rotateRightIcon = document.createElement('img');
+    rotateRightIcon.className = 'maze-popup__stairs-rotate-icon';
+    rotateRightIcon.src = getIconPath('rotate_right.png');
+    rotateRightIcon.alt = '';
+    rotateRightIcon.setAttribute('aria-hidden', 'true');
+    stairsRotateRightBtn.appendChild(rotateRightIcon);
+
+    stairsConfirmBtn = document.createElement('button');
+    stairsConfirmBtn.type = 'button';
+    stairsConfirmBtn.className = 'maze-popup__btn maze-popup__btn--primary';
+    setI18nText(stairsConfirmBtn, 'maze.stairsConfirm');
+
+    controls.appendChild(stairsRotateLeftBtn);
+    controls.appendChild(stairsRotateRightBtn);
+    controls.appendChild(stairsConfirmBtn);
+    stairsVisual.appendChild(stairPreviewImg);
+    stairsVisual.appendChild(directionShell);
+    stairsPicker.appendChild(stairsVisual);
+    stairsPicker.appendChild(controls);
+    overlayEl.appendChild(stairsPicker);
 
     if (staircaseBtn) {
       staircaseBtn.addEventListener('click', () => {
-        const shouldOpen = stairsOverlay.hidden;
-        stairsOverlay.hidden = !shouldOpen;
-        staircaseBtn.classList.toggle('is-active', shouldOpen);
+        const shouldOpen = overlayEl.hidden;
+        overlayEl.hidden = !shouldOpen;
+        staircaseBtn.classList.toggle('is-open', shouldOpen);
         staircaseBtn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
       });
     }
-    canvasWrapper.appendChild(stairsOverlay);
+    canvasWrapper.appendChild(overlayEl);
   }
   panelBody.appendChild(canvasShell);
   panelBody.appendChild(applySection);
@@ -212,6 +292,13 @@ function createMazeEditorRow(
       layerTabsContainer: showStairs ? layerTabsSection : undefined,
       layerTabsPrevBtn: showStairs ? layerTabsPrevBtn : undefined,
       layerTabsNextBtn: showStairs ? layerTabsNextBtn : undefined,
+      stairsBtn: staircaseBtn ?? undefined,
+      stairsOverlay,
+      stairsDirectionShell,
+      stairsNavigateIcon,
+      stairsRotateLeftBtn,
+      stairsRotateRightBtn,
+      stairsConfirmBtn,
       createBtn,
       loadBtn,
       clearBtn,
@@ -221,7 +308,7 @@ function createMazeEditorRow(
         eraser: eraserBtn,
         start: startBtn,
         end: endBtn,
-      } as Record<ToolMode, HTMLButtonElement>,
+      } as Record<Exclude<ToolMode, 'stairs'>, HTMLButtonElement>,
     },
   };
 }
@@ -231,7 +318,7 @@ function createIconToolButton(textKey: TranslationKey, iconFile: string): HTMLBu
   button.type = 'button';
   button.className = 'maze-popup__tool';
   setI18nAriaLabel(button, textKey);
-  setI18nTitle(button, textKey);
+  button.removeAttribute('title');
 
   const icon = document.createElement('img');
   icon.className = 'maze-popup__tool-icon';

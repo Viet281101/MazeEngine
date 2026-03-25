@@ -1,4 +1,5 @@
-export type ToolMode = 'pen' | 'eraser' | 'start' | 'end';
+export type ToolMode = 'pen' | 'eraser' | 'start' | 'end' | 'stairs';
+export type StairDirection = 'north' | 'east' | 'south' | 'west';
 
 export interface CellPos {
   row: number;
@@ -12,6 +13,7 @@ export interface MazePopupState {
   start: CellPos | null;
   end: CellPos | null;
   tool: ToolMode;
+  stairDirection: StairDirection;
   cellSize: number;
   scale: number;
   minScale: number;
@@ -31,7 +33,14 @@ export interface MazePopupViewRefs {
   layerTabsContainer?: HTMLDivElement;
   layerTabsPrevBtn?: HTMLButtonElement;
   layerTabsNextBtn?: HTMLButtonElement;
-  toolButtons: Record<ToolMode, HTMLButtonElement>;
+  stairsBtn?: HTMLButtonElement;
+  stairsOverlay?: HTMLDivElement;
+  stairsDirectionShell?: HTMLDivElement;
+  stairsNavigateIcon?: HTMLImageElement;
+  stairsRotateLeftBtn?: HTMLButtonElement;
+  stairsRotateRightBtn?: HTMLButtonElement;
+  stairsConfirmBtn?: HTMLButtonElement;
+  toolButtons: Record<Exclude<ToolMode, 'stairs'>, HTMLButtonElement>;
   createBtn: HTMLButtonElement;
   clearBtn: HTMLButtonElement;
   applyBtn: HTMLButtonElement;

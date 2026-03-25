@@ -56,8 +56,6 @@ class MazePopup {
       if (!multiCtx) {
         throw new Error('Failed to get 2D context for multi-layer maze popup');
       }
-      viewBundle.multiLayer.refs.applyBtn.disabled = true;
-      viewBundle.multiLayer.refs.loadBtn.disabled = true;
       this.multiLayerEditor = new MazeEditorController(
         multiCanvas,
         multiCtx,
