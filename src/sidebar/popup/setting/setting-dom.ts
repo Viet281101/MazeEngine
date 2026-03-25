@@ -11,6 +11,7 @@ import { createLabelWithHelp, createRow, createToggleRow } from '../popup-rows';
 
 export interface SettingsPopupDom {
   content: HTMLDivElement;
+  graphicsGroupTitle: HTMLElement;
   select: HTMLSelectElement;
   languageOptions: Record<AppLanguage, HTMLOptionElement>;
   languageLabel: HTMLElement;
@@ -20,6 +21,7 @@ export interface SettingsPopupDom {
   floorGridLabel: HTMLElement;
   adaptiveQualityLabel: HTMLElement;
   allowMultipleMazePopupPanelsLabel: HTMLElement;
+  toolbarTooltipsLabel: HTMLElement;
   showEdgesLabel: HTMLElement;
   showDebugLabel: HTMLElement;
   showPreviewLabel: HTMLElement;
@@ -36,6 +38,7 @@ export interface SettingsPopupDom {
   floorGridToggle: HTMLInputElement;
   adaptiveQualityToggle: HTMLInputElement;
   allowMultipleMazePopupPanelsToggle: HTMLInputElement;
+  toolbarTooltipsToggle: HTMLInputElement;
   showEdgesToggle: HTMLInputElement;
   showDebugToggle: HTMLInputElement;
   showPreviewToggle: HTMLInputElement;
@@ -143,6 +146,7 @@ export function createSettingsPopupDom(
   initialFloorGridEnabled: boolean,
   initialAdaptiveQualityEnabled: boolean,
   initialAllowMultipleMazePopupPanelsEnabled: boolean,
+  initialToolbarTooltipsEnabled: boolean,
   initialShowEdgesEnabled: boolean,
   initialShowDebugEnabled: boolean,
   initialShowPreviewEnabled: boolean,
@@ -152,6 +156,12 @@ export function createSettingsPopupDom(
 ): SettingsPopupDom {
   const content = document.createElement('div');
   content.className = 'settings-popup__content';
+
+  const graphicsGroup = document.createElement('fieldset');
+  graphicsGroup.className = 'settings-popup__group';
+  const graphicsGroupTitle = document.createElement('legend');
+  graphicsGroupTitle.className = 'settings-popup__group-title';
+  graphicsGroup.appendChild(graphicsGroupTitle);
 
   const languageOptions = {} as Record<AppLanguage, HTMLOptionElement>;
   SUPPORTED_LANGUAGES.forEach(language => {
@@ -173,7 +183,7 @@ export function createSettingsPopupDom(
     toggle: meshReductionToggle,
     label: meshReductionLabel,
     helpIcon: meshReductionHelpIcon,
-  } = appendToggleSettingRow(content, {
+  } = appendToggleSettingRow(graphicsGroup, {
     labelKey: 'settings.meshVisible',
     initialState: initialMeshEnabled,
     withHelp: true,
@@ -197,13 +207,13 @@ export function createSettingsPopupDom(
     helpIcon: thresholdHelpIcon,
   } = createLabelWithHelp('settings.meshReductionThreshold');
   const { row: thresholdRow } = createRow({ label: thresholdLabelWrap, control: thresholdField });
-  content.appendChild(thresholdRow);
+  graphicsGroup.appendChild(thresholdRow);
 
   const {
     toggle: hideEdgesDuringInteractionToggle,
     label: hideEdgesDuringInteractionLabel,
     helpIcon: hideEdgesDuringInteractionHelpIcon,
-  } = appendToggleSettingRow(content, {
+  } = appendToggleSettingRow(graphicsGroup, {
     labelKey: 'settings.hideEdgesDuringInteraction',
     initialState: initialHideEdgesDuringInteractionEnabled,
     withHelp: true,
@@ -213,9 +223,29 @@ export function createSettingsPopupDom(
     toggle: adaptiveQualityToggle,
     label: adaptiveQualityLabel,
     helpIcon: adaptiveQualityHelpIcon,
-  } = appendToggleSettingRow(content, {
+  } = appendToggleSettingRow(graphicsGroup, {
     labelKey: 'settings.adaptiveQuality',
     initialState: initialAdaptiveQualityEnabled,
+    withHelp: true,
+  });
+
+  const {
+    toggle: floorGridToggle,
+    label: floorGridLabel,
+    helpIcon: floorGridHelpIcon,
+  } = appendToggleSettingRow(graphicsGroup, {
+    labelKey: 'settings.floorGrid',
+    initialState: initialFloorGridEnabled,
+    withHelp: true,
+  });
+
+  const {
+    toggle: showEdgesToggle,
+    label: showEdgesLabel,
+    helpIcon: showEdgesHelpIcon,
+  } = appendToggleSettingRow(graphicsGroup, {
+    labelKey: 'gui.showEdges',
+    initialState: initialShowEdgesEnabled,
     withHelp: true,
   });
 
@@ -225,15 +255,13 @@ export function createSettingsPopupDom(
       initialState: initialAllowMultipleMazePopupPanelsEnabled,
     });
 
-  const {
-    toggle: showEdgesToggle,
-    label: showEdgesLabel,
-    helpIcon: showEdgesHelpIcon,
-  } = appendToggleSettingRow(content, {
-    labelKey: 'gui.showEdges',
-    initialState: initialShowEdgesEnabled,
-    withHelp: true,
-  });
+  const { toggle: toolbarTooltipsToggle, label: toolbarTooltipsLabel } = appendToggleSettingRow(
+    content,
+    {
+      labelKey: 'settings.toolbarTooltips',
+      initialState: initialToolbarTooltipsEnabled,
+    }
+  );
 
   const {
     toggle: showDebugToggle,
@@ -255,18 +283,8 @@ export function createSettingsPopupDom(
     withHelp: true,
   });
 
-  const {
-    toggle: floorGridToggle,
-    label: floorGridLabel,
-    helpIcon: floorGridHelpIcon,
-  } = appendToggleSettingRow(content, {
-    labelKey: 'settings.floorGrid',
-    initialState: initialFloorGridEnabled,
-    withHelp: true,
-  });
-
   const { toggle: cameraZoomLimitToggle, label: cameraZoomLimitLabel } = appendToggleSettingRow(
-    content,
+    graphicsGroup,
     {
       labelKey: 'settings.cameraZoomLimit',
       initialState: initialCameraZoomLimitEnabled,
@@ -299,7 +317,7 @@ export function createSettingsPopupDom(
     label: 'settings.cameraZoomLimitMin',
     control: cameraZoomMinField,
   });
-  content.appendChild(cameraZoomMinRow);
+  graphicsGroup.appendChild(cameraZoomMinRow);
 
   const cameraZoomMaxInput = document.createElement('input');
   cameraZoomMaxInput.type = 'number';
@@ -327,7 +345,7 @@ export function createSettingsPopupDom(
     label: 'settings.cameraZoomLimitMax',
     control: cameraZoomMaxField,
   });
-  content.appendChild(cameraZoomMaxRow);
+  graphicsGroup.appendChild(cameraZoomMaxRow);
 
   const previewButton = document.createElement('button');
   previewButton.type = 'button';
@@ -338,6 +356,7 @@ export function createSettingsPopupDom(
     control: previewButton,
   });
   content.appendChild(previewRow);
+  content.appendChild(graphicsGroup);
 
   const meshTooltipBlock = createTooltipBlock(
     content,
@@ -375,6 +394,7 @@ export function createSettingsPopupDom(
 
   return {
     content,
+    graphicsGroupTitle,
     select,
     languageOptions,
     languageLabel,
@@ -384,6 +404,7 @@ export function createSettingsPopupDom(
     floorGridLabel,
     adaptiveQualityLabel,
     allowMultipleMazePopupPanelsLabel,
+    toolbarTooltipsLabel,
     showEdgesLabel,
     showDebugLabel,
     showPreviewLabel,
@@ -398,6 +419,7 @@ export function createSettingsPopupDom(
     floorGridToggle,
     adaptiveQualityToggle,
     allowMultipleMazePopupPanelsToggle,
+    toolbarTooltipsToggle,
     showEdgesToggle,
     showDebugToggle,
     showPreviewToggle,

@@ -280,6 +280,10 @@
   z-index: 100;
 }
 
+.maze-popup__content--tooltips-disabled .maze-popup__tool-tooltip {
+  display: none !important;
+}
+
 .maze-popup__tool:hover .maze-popup__tool-tooltip,
 .maze-popup__tool:focus-visible .maze-popup__tool-tooltip {
   opacity: 1;

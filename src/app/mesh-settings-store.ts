@@ -11,6 +11,7 @@ export interface MeshReductionSettings {
   floorGridEnabled: boolean;
   adaptiveQualityEnabled: boolean;
   allowMultipleMazePopupPanels: boolean;
+  toolbarTooltipsEnabled: boolean;
   cameraZoomLimitEnabled: boolean;
   cameraZoomMinDistance: number;
   cameraZoomMaxDistance: number;
@@ -25,6 +26,7 @@ export class MeshReductionSettingsStorage {
   private static readonly ADAPTIVE_QUALITY_KEY = 'maze_solver_3d_adaptive_quality';
   private static readonly ALLOW_MULTIPLE_MAZE_POPUP_PANELS_KEY =
     'maze_solver_3d_allow_multiple_maze_popup_panels';
+  private static readonly TOOLBAR_TOOLTIPS_ENABLED_KEY = 'maze_solver_3d_toolbar_tooltips_enabled';
   private static readonly CAMERA_ZOOM_LIMIT_ENABLED_KEY =
     'maze_solver_3d_camera_zoom_limit_enabled';
   private static readonly CAMERA_ZOOM_MIN_DISTANCE_KEY = 'maze_solver_3d_camera_zoom_min_distance';
@@ -49,6 +51,10 @@ export class MeshReductionSettingsStorage {
       MeshReductionSettingsStorage.ALLOW_MULTIPLE_MAZE_POPUP_PANELS_KEY,
       defaults.allowMultipleMazePopupPanels
     );
+    const toolbarTooltipsEnabled = this.loadBoolean(
+      MeshReductionSettingsStorage.TOOLBAR_TOOLTIPS_ENABLED_KEY,
+      defaults.toolbarTooltipsEnabled
+    );
     const cameraZoomLimitEnabled = this.loadBoolean(
       MeshReductionSettingsStorage.CAMERA_ZOOM_LIMIT_ENABLED_KEY,
       defaults.cameraZoomLimitEnabled
@@ -64,6 +70,7 @@ export class MeshReductionSettingsStorage {
       floorGridEnabled,
       adaptiveQualityEnabled,
       allowMultipleMazePopupPanels,
+      toolbarTooltipsEnabled,
       cameraZoomLimitEnabled,
       cameraZoomMinDistance,
       cameraZoomMaxDistance,
@@ -92,6 +99,10 @@ export class MeshReductionSettingsStorage {
       MeshReductionSettingsStorage.ALLOW_MULTIPLE_MAZE_POPUP_PANELS_KEY,
       String(enabled)
     );
+  }
+
+  public saveToolbarTooltipsEnabled(enabled: boolean): void {
+    this.setItem(MeshReductionSettingsStorage.TOOLBAR_TOOLTIPS_ENABLED_KEY, String(enabled));
   }
 
   public saveFloorGridEnabled(enabled: boolean): void {

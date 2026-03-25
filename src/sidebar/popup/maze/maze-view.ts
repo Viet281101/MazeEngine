@@ -21,9 +21,15 @@ const MULTI_LAYER_COUNT_LIMITS = {
   defaultValue: 3,
 } as const;
 
-export function buildMazePopupView(canvas: HTMLCanvasElement): MazePopupViewBundle {
+export function buildMazePopupView(
+  canvas: HTMLCanvasElement,
+  tooltipsEnabled: boolean = true
+): MazePopupViewBundle {
   const content = document.createElement('div');
   content.className = 'maze-popup__content';
+  if (!tooltipsEnabled) {
+    content.classList.add('maze-popup__content--tooltips-disabled');
+  }
   const accordionRows: HTMLDetailsElement[] = [];
 
   const singleLayer = createMazeEditorRow('maze.singleLayerCustom', canvas, true, false);

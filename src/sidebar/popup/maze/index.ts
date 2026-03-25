@@ -17,6 +17,7 @@ class MazePopup {
   private readonly accordionRows: HTMLDetailsElement[];
   private readonly disposers: Array<() => void> = [];
   private readonly popupShownHandler = () => {
+    this.syncToolbarTooltipsVisibility();
     this.bindAccordionBehavior();
   };
 
@@ -40,7 +41,7 @@ class MazePopup {
     canvas.width = 330;
     canvas.height = 330;
 
-    const viewBundle = buildMazePopupView(canvas);
+    const viewBundle = buildMazePopupView(canvas, this.getToolbarTooltipsEnabled());
     this.popupContainer.appendChild(viewBundle.controls);
     this.accordionRows = viewBundle.accordionRows;
 
@@ -65,6 +66,7 @@ class MazePopup {
     }
 
     this.popupContainer.addEventListener(TOOLBAR_POPUP_SHOWN_EVENT, this.popupShownHandler);
+    this.syncToolbarTooltipsVisibility();
     this.bindAccordionBehavior();
 
     this.unsubscribeLanguageChange = subscribeLanguageChange(() => this.applyTranslations());
@@ -92,6 +94,22 @@ class MazePopup {
     }
 
     this.disposers.push(setupAccordionGroup(this.accordionRows));
+  }
+
+  private getToolbarTooltipsEnabled(): boolean {
+    const mazeApp = getMazeAppBridge();
+    return mazeApp && typeof mazeApp.isToolbarTooltipsEnabled === 'function'
+      ? mazeApp.isToolbarTooltipsEnabled()
+      : true;
+  }
+
+  private syncToolbarTooltipsVisibility(): void {
+    const content = this.popupContainer.querySelector('.maze-popup__content');
+    if (!(content instanceof HTMLElement)) {
+      return;
+    }
+    const disabledClass = 'maze-popup__content--tooltips-disabled';
+    content.classList.toggle(disabledClass, !this.getToolbarTooltipsEnabled());
   }
 
   private applyTranslations(): void {

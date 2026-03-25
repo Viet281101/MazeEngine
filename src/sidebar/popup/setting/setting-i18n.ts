@@ -11,6 +11,7 @@ import type { SettingsPopupDom } from './setting-dom';
 type LanguageTranslationKey = `settings.language.${AppLanguage}`;
 
 export function applySettingsTranslations(dom: SettingsPopupDom): void {
+  dom.graphicsGroupTitle.textContent = t('settings.graphicsSection');
   dom.languageLabel.textContent = t('settings.language');
   dom.meshReductionLabel.textContent = t('settings.meshVisible');
   dom.thresholdLabel.textContent = t('settings.meshReductionThreshold');
@@ -18,6 +19,7 @@ export function applySettingsTranslations(dom: SettingsPopupDom): void {
   dom.floorGridLabel.textContent = t('settings.floorGrid');
   dom.adaptiveQualityLabel.textContent = t('settings.adaptiveQuality');
   dom.allowMultipleMazePopupPanelsLabel.textContent = t('settings.allowMultipleMazePopupPanels');
+  dom.toolbarTooltipsLabel.textContent = t('settings.toolbarTooltips');
   dom.showEdgesLabel.textContent = t('gui.showEdges');
   dom.showDebugLabel.textContent = t('gui.showDebug');
   dom.showPreviewLabel.textContent = t('gui.showPreview');

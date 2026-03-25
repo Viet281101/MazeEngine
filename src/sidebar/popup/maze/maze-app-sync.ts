@@ -217,9 +217,7 @@ export function applyMultiLayerStateToMaze(
 
   const mazeData = remapPopupConnectorsToEngineUpperLayers(
     layerSnapshots.map(layer =>
-      layer.grid
-        .map(row => row.map(cell => toMazeCellValueFromPopup(cell)))
-        .reverse()
+      layer.grid.map(row => row.map(cell => toMazeCellValueFromPopup(cell))).reverse()
     )
   );
   const preferredLayer = clampLayerIndex(activeLayerIndex, layerSnapshots.length);

@@ -13,6 +13,7 @@ interface InitialSettingsValues {
   floorGridEnabled: boolean;
   adaptiveQualityEnabled: boolean;
   allowMultipleMazePopupPanels: boolean;
+  toolbarTooltipsEnabled: boolean;
   edgesVisible: boolean;
   debugVisible: boolean;
   previewVisible: boolean;
@@ -44,6 +45,10 @@ export function getInitialSettingsValues(): InitialSettingsValues {
       app && typeof app.isAllowMultipleMazePopupPanelsEnabled === 'function'
         ? app.isAllowMultipleMazePopupPanelsEnabled()
         : false,
+    toolbarTooltipsEnabled:
+      app && typeof app.isToolbarTooltipsEnabled === 'function'
+        ? app.isToolbarTooltipsEnabled()
+        : true,
     edgesVisible: app && typeof app.isEdgesVisible === 'function' ? app.isEdgesVisible() : true,
     debugVisible:
       app && typeof app.isDebugOverlayVisible === 'function' ? app.isDebugOverlayVisible() : true,
@@ -115,6 +120,13 @@ export function setAllowMultipleMazePopupPanels(enabled: boolean): void {
   const app = getMazeAppBridge();
   if (app && typeof app.setAllowMultipleMazePopupPanels === 'function') {
     app.setAllowMultipleMazePopupPanels(enabled);
+  }
+}
+
+export function setToolbarTooltipsEnabled(enabled: boolean): void {
+  const app = getMazeAppBridge();
+  if (app && typeof app.setToolbarTooltipsEnabled === 'function') {
+    app.setToolbarTooltipsEnabled(enabled);
   }
 }
 
