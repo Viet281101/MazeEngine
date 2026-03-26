@@ -1,4 +1,4 @@
-import { t, type TranslationKey } from '../../i18n';
+import { t, type TranslationKey } from '../../../i18n';
 
 /**
  * Binds an element text node to an i18n key.

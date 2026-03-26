@@ -1,3 +1,4 @@
+import { MULTI_LAYER_MAZE } from '../../../constants/maze';
 import type { CellPos, MazePopupState } from './types';
 
 export function initGrid(rows: number, cols: number): number[][] {
@@ -15,14 +16,6 @@ export function initGrid(rows: number, cols: number): number[][] {
 
 export function clearGrid(state: MazePopupState): void {
   state.grid = initGrid(state.rows, state.cols);
-  state.start = null;
-  state.end = null;
-}
-
-export function rebuildGrid(state: MazePopupState, rows: number, cols: number): void {
-  state.rows = rows;
-  state.cols = cols;
-  state.grid = initGrid(rows, cols);
   state.start = null;
   state.end = null;
 }
@@ -61,6 +54,20 @@ export function applyToolAt(state: MazePopupState, pos: CellPos | null): boolean
     state.start = { row, col };
     return true;
   }
+  if (state.tool === 'stairs') {
+    const nextValue = getStairCellValue(state.stairDirection);
+    if (state.grid[row][col] === nextValue) {
+      return false;
+    }
+    state.grid[row][col] = nextValue;
+    if (state.start && state.start.row === row && state.start.col === col) {
+      state.start = null;
+    }
+    if (state.end && state.end.row === row && state.end.col === col) {
+      state.end = null;
+    }
+    return true;
+  }
   const alreadyEnd = !!(state.end && state.end.row === row && state.end.col === col);
   if (alreadyEnd && state.grid[row][col] === 0) {
     return false;
@@ -68,4 +75,17 @@ export function applyToolAt(state: MazePopupState, pos: CellPos | null): boolean
   state.grid[row][col] = 0;
   state.end = { row, col };
   return true;
+}
+
+function getStairCellValue(direction: MazePopupState['stairDirection']): number {
+  if (direction === 'north') {
+    return MULTI_LAYER_MAZE.OPENING_NORTH_CELL_VALUE;
+  }
+  if (direction === 'east') {
+    return MULTI_LAYER_MAZE.OPENING_EAST_CELL_VALUE;
+  }
+  if (direction === 'south') {
+    return MULTI_LAYER_MAZE.OPENING_SOUTH_CELL_VALUE;
+  }
+  return MULTI_LAYER_MAZE.OPENING_WEST_CELL_VALUE;
 }

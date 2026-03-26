@@ -43,6 +43,7 @@ export class Toolbar {
   private popupOpen: boolean;
   private currentPopup: HTMLElement | null;
   private tooltip: HTMLDivElement | null = null;
+  private tooltipsEnabled: boolean = true;
   private hoverFrameId: number | null = null;
   private pendingPointerX: number = 0;
   private pendingPointerY: number = 0;
@@ -117,7 +118,7 @@ export class Toolbar {
   }
 
   private showTooltip(text: string, x: number, y: number): void {
-    if (this.isMobile) return;
+    if (this.isMobile || !this.tooltipsEnabled) return;
     this.ensureTooltip();
     if (!this.tooltip) return;
     this.tooltip.textContent = text;
@@ -129,6 +130,13 @@ export class Toolbar {
   private hideTooltip(): void {
     if (!this.tooltip) return;
     this.tooltip.style.display = 'none';
+  }
+
+  public setTooltipsEnabled(enabled: boolean): void {
+    this.tooltipsEnabled = enabled;
+    if (!enabled) {
+      this.hideTooltip();
+    }
   }
 
   private async preloadImages(): Promise<void> {
