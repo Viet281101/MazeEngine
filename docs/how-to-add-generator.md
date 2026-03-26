@@ -4,9 +4,9 @@ This guide describes the current workflow used in this repository.
 
 ## 1. Add Algorithm Implementation
 
-Create a new file in `src/generator/algorithms/`, for example:
+Create a new file in `frontend/src/generator/algorithms/`, for example:
 
-- `src/generator/algorithms/prim.ts`
+- `frontend/src/generator/algorithms/prim.ts`
 
 Implementation contract:
 
@@ -19,11 +19,11 @@ Implementation contract:
 
 ## 2. Register Generator ID and Definition
 
-Update `src/generator/core/types.ts`:
+Update `frontend/src/generator/core/types.ts`:
 
 - Add new literal in `GeneratorId`.
 
-Update `src/generator/core/registry.ts`:
+Update `frontend/src/generator/core/registry.ts`:
 
 - Import algorithm function.
 - Add entry to `GENERATOR_CATALOG`:
@@ -38,15 +38,15 @@ If algorithm is not ready for users yet:
 
 ## 3. Wire UI Labels/Descriptions
 
-Update `src/sidebar/popup/generate/generate-config.ts`:
+Update `frontend/src/sidebar/popup/generate/generate-config.ts`:
 
 - Add i18n mapping for new `GeneratorId` in `GENERATOR_I18N`.
 
 Update locale files:
 
-- `src/i18n/locales/en.json`
-- `src/i18n/locales/vi.json`
-- `src/i18n/locales/fr.json`
+- `frontend/src/i18n/locales/en.json`
+- `frontend/src/i18n/locales/vi.json`
+- `frontend/src/i18n/locales/fr.json`
 
 Add keys:
 
@@ -60,6 +60,8 @@ Run locally:
 ```bash
 npm run dev
 ```
+
+If you only need the client while working on generator UI, `npm run dev:frontend` is enough.
 
 Manual checks:
 

@@ -1,38 +1,26 @@
 {
-  "name": "maze-engine",
+  "name": "maze-engine-workspace",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "test": "npm run lint && npm run build",
-    "preview": "vite preview",
-    "deploy": "gh-pages -d dist",
-    "format": "prettier --write .",
-    "check:multilayer": "tsc -p scripts/tsconfig.multilayer-check.json --outDir /tmp/mazeengine-multilayer-check && node /tmp/mazeengine-multilayer-check/scripts/check-multilayer-solvable.js",
-    "lint:file-names": "node scripts/check-file-names.mjs",
-    "lint:eslint": "eslint .",
-    "lint": "npm run lint:file-names && npm run lint:eslint"
+    "dev": "npm run supabase:start && npm run dev:frontend",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:docker": "docker compose up frontend",
+    "supabase:init": "cd backend && supabase init",
+    "supabase:start": "cd backend && supabase start",
+    "supabase:stop": "cd backend && supabase stop",
+    "supabase:status": "cd backend && supabase status",
+    "supabase:reset": "cd backend && supabase db reset",
+    "build": "npm --prefix frontend run build",
+    "test": "npm --prefix frontend run test",
+    "preview": "npm --prefix frontend run preview",
+    "deploy": "npm --prefix frontend run deploy",
+    "format": "npm --prefix frontend run format",
+    "check:multilayer": "npm --prefix frontend run check:multilayer",
+    "lint:file-names": "npm --prefix frontend run lint:file-names",
+    "lint:eslint": "npm --prefix frontend run lint:eslint",
+    "lint": "npm --prefix frontend run lint"
   },
   "devDependencies": {
-    "@types/dat.gui": "^0.7.13",
-    "@types/node": "^25.2.0",
-    "@eslint/js": "^9.33.0",
-    "@typescript-eslint/eslint-plugin": "^8.41.0",
-    "@typescript-eslint/parser": "^8.41.0",
-    "eslint": "^9.33.0",
-    "eslint-config-prettier": "^10.1.8",
-    "globals": "^15.9.0",
-    "gh-pages": "^6.1.1",
-    "prettier": "^3.8.1",
-    "typescript": "^5.2.2",
-    "vite": "^5.3.1",
-    "vite-plugin-static-copy": "^1.0.6"
-  },
-  "dependencies": {
-    "@types/three": "^0.166.0",
-    "dat.gui": "^0.7.9",
-    "three": "^0.166.0"
+    "supabase": "^2.84.4"
   }
 }

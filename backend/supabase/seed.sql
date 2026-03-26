@@ -1,0 +1,2 @@
+-- Add optional seed data for local development.
+-- Keep empty for now.
