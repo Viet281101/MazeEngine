@@ -2,8 +2,12 @@ import type { GeneratorId, MazeComplexity, MazeTopologyId, ShaftDensity } from '
 import { Toolbar } from '../../toolbar';
 import { subscribeLanguageChange } from '../../../i18n';
 import { watchContainerRemoval } from '../popup-lifecycle';
-import { applyI18nTexts, setI18nText } from '../popup-i18n';
-import { createLabeledNumberInput } from '../popup-inputs';
+import {
+  applyI18nTexts,
+  createLabeledNumberInput,
+  removePopupDefaultCanvas,
+  setI18nText,
+} from '../utils';
 import {
   clamp,
   getGeneratorUiDefinitions,
@@ -32,17 +36,10 @@ class GeneratePopup {
   constructor(toolbar: Toolbar) {
     this.popupContainer = toolbar.createPopupContainerByKey('generatePopup', 'popup.generateMaze');
     this.popupContainer.classList.add('generate-popup');
-    this.removeDefaultCanvas();
+    removePopupDefaultCanvas(this.popupContainer);
     this.buildContent();
     this.unsubscribeLanguageChange = subscribeLanguageChange(() => this.applyTranslations());
     this.watchContainerRemoval();
-  }
-
-  private removeDefaultCanvas(): void {
-    const canvas = this.popupContainer.querySelector('canvas');
-    if (canvas) {
-      canvas.remove();
-    }
   }
 
   private buildContent(): void {

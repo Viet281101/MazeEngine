@@ -1,7 +1,7 @@
 import type { TranslationKey } from '../i18n';
 import { getIconPath } from '../constants/assets';
 
-export type PopupType = 'maze' | 'generate' | 'solve' | 'tutorial' | 'settings';
+export type PopupType = 'maze' | 'generate' | 'solve' | 'account' | 'tutorial' | 'settings';
 
 export interface ToolButton {
   type: PopupType;
@@ -39,7 +39,7 @@ export const POPUP_CONTROL_CLOSE_LEFT_DESKTOP = '400px';
 export const POPUP_CONTROL_HIDE_LEFT_MOBILE = 'calc(50% + 120px)';
 export const POPUP_CONTROL_HIDE_LEFT_DESKTOP = '360px';
 
-const POPUP_ORDER: PopupType[] = ['maze', 'generate', 'solve', 'tutorial', 'settings'];
+const POPUP_ORDER: PopupType[] = ['account', 'maze', 'generate', 'solve', 'tutorial', 'settings'];
 
 const POPUP_DESCRIPTORS: Record<PopupType, PopupDescriptor> = {
   maze: {
@@ -53,6 +53,10 @@ const POPUP_DESCRIPTORS: Record<PopupType, PopupDescriptor> = {
   solve: {
     nameKey: 'toolbar.solvingMaze',
     icon: getIconPath('solving_maze.png'),
+  },
+  account: {
+    nameKey: 'toolbar.account',
+    icon: getIconPath('customer.png'),
   },
   tutorial: {
     nameKey: 'toolbar.tutorial',

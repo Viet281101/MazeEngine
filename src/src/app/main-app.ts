@@ -63,6 +63,8 @@ export class MainApp implements MazeController, MazeAppBridge {
   private hideEdgesDuringInteractionEnabled: boolean = false;
   private floorGridEnabled: boolean = true;
   private adaptiveQualityEnabled: boolean = true;
+  private allowMultipleMazePopupPanels: boolean = false;
+  private toolbarTooltipsEnabled: boolean = true;
   private cameraZoomLimitEnabled: boolean = CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED;
   private cameraZoomMinDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE;
   private cameraZoomMaxDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE;
@@ -77,6 +79,7 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.settingsStorage = new MeshReductionSettingsStorage();
     this.datGuiSettingsStorage = new DatGuiSettingsStorage();
     this.loadMeshReductionSettings();
+    this.toolbar.setTooltipsEnabled(this.toolbarTooltipsEnabled);
     const initialDatGuiSettings = this.loadDatGuiSettings();
 
     this.maze = this.createInitialMaze();
@@ -153,6 +156,8 @@ export class MainApp implements MazeController, MazeAppBridge {
       hideEdgesDuringInteractionEnabled: false,
       floorGridEnabled: true,
       adaptiveQualityEnabled: true,
+      allowMultipleMazePopupPanels: false,
+      toolbarTooltipsEnabled: true,
       cameraZoomLimitEnabled: CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED,
       cameraZoomMinDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE,
       cameraZoomMaxDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE,
@@ -162,6 +167,8 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.hideEdgesDuringInteractionEnabled = loaded.hideEdgesDuringInteractionEnabled;
     this.floorGridEnabled = loaded.floorGridEnabled;
     this.adaptiveQualityEnabled = loaded.adaptiveQualityEnabled;
+    this.allowMultipleMazePopupPanels = loaded.allowMultipleMazePopupPanels;
+    this.toolbarTooltipsEnabled = loaded.toolbarTooltipsEnabled;
     this.cameraZoomLimitEnabled = loaded.cameraZoomLimitEnabled;
     this.cameraZoomMinDistance = loaded.cameraZoomMinDistance;
     this.cameraZoomMaxDistance = loaded.cameraZoomMaxDistance;
@@ -469,6 +476,25 @@ export class MainApp implements MazeController, MazeAppBridge {
 
   public isAdaptiveQualityEnabled(): boolean {
     return this.adaptiveQualityEnabled;
+  }
+
+  public setAllowMultipleMazePopupPanels(enabled: boolean): void {
+    this.allowMultipleMazePopupPanels = enabled;
+    this.settingsStorage.saveAllowMultipleMazePopupPanels(enabled);
+  }
+
+  public isAllowMultipleMazePopupPanelsEnabled(): boolean {
+    return this.allowMultipleMazePopupPanels;
+  }
+
+  public setToolbarTooltipsEnabled(enabled: boolean): void {
+    this.toolbarTooltipsEnabled = enabled;
+    this.toolbar.setTooltipsEnabled(enabled);
+    this.settingsStorage.saveToolbarTooltipsEnabled(enabled);
+  }
+
+  public isToolbarTooltipsEnabled(): boolean {
+    return this.toolbarTooltipsEnabled;
   }
 
   public setCameraZoomLimitEnabled(enabled: boolean): void {

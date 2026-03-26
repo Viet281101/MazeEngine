@@ -1,13 +1,27 @@
+import { MULTI_LAYER_MAZE } from '../../../constants/maze';
+import { getIconPath } from '../../../constants/assets';
 import type { CellPos, MazePopupState } from './types';
 
 interface StaticLayerCache {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
 }
+interface HoverStyle {
+  fill: string;
+  stroke: string;
+}
 
 const FLOOR_COLOR = '#e6e6e6';
 const WALL_COLOR = '#333';
+const CONNECTOR_COLOR = '#6b90a3';
 const BACKGROUND_COLOR = '#33566b';
+const CONNECTOR_ARROW_ICON = new Image();
+let isConnectorArrowIconReady = false;
+
+CONNECTOR_ARROW_ICON.src = getIconPath('arrow.png');
+CONNECTOR_ARROW_ICON.addEventListener('load', () => {
+  isConnectorArrowIconReady = true;
+});
 
 export function createStaticLayerCache(): StaticLayerCache {
   const canvas = document.createElement('canvas');
@@ -32,6 +46,10 @@ export function rebuildStaticLayer(cache: StaticLayerCache, state: MazePopupStat
     for (let c = 0; c < state.cols; c += 1) {
       if (state.grid[r][c] === 1) {
         cache.ctx.fillRect(c * state.cellSize, r * state.cellSize, state.cellSize, state.cellSize);
+      } else if (isConnectorCellValue(state.grid[r][c])) {
+        cache.ctx.fillStyle = CONNECTOR_COLOR;
+        cache.ctx.fillRect(c * state.cellSize, r * state.cellSize, state.cellSize, state.cellSize);
+        cache.ctx.fillStyle = WALL_COLOR;
       }
     }
   }
@@ -43,7 +61,13 @@ export function updateStaticCell(
   row: number,
   col: number
 ): void {
-  cache.ctx.fillStyle = state.grid[row][col] === 1 ? WALL_COLOR : FLOOR_COLOR;
+  if (state.grid[row][col] === 1) {
+    cache.ctx.fillStyle = WALL_COLOR;
+  } else if (isConnectorCellValue(state.grid[row][col])) {
+    cache.ctx.fillStyle = CONNECTOR_COLOR;
+  } else {
+    cache.ctx.fillStyle = FLOOR_COLOR;
+  }
   cache.ctx.fillRect(col * state.cellSize, row * state.cellSize, state.cellSize, state.cellSize);
 }
 
@@ -79,7 +103,8 @@ export function drawMaze(
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
   state: MazePopupState,
-  cache: StaticLayerCache
+  cache: StaticLayerCache,
+  ghostConnectorGrid: number[][] | null = null
 ): void {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = BACKGROUND_COLOR;
@@ -93,6 +118,9 @@ export function drawMaze(
   const gridHeight = state.rows * state.cellSize;
 
   ctx.drawImage(cache.canvas, 0, 0);
+  if (ghostConnectorGrid) {
+    drawGhostConnectorCells(ctx, state, ghostConnectorGrid);
+  }
 
   if (state.start) {
     ctx.fillStyle = 'rgba(0, 200, 120, 0.85)';
@@ -112,6 +140,30 @@ export function drawMaze(
       state.cellSize,
       state.cellSize
     );
+  }
+
+  if (state.hoverCell) {
+    const hoverStyle = getHoverStyleByTool(state.tool);
+    ctx.fillStyle = hoverStyle.fill;
+    ctx.fillRect(
+      state.hoverCell.col * state.cellSize,
+      state.hoverCell.row * state.cellSize,
+      state.cellSize,
+      state.cellSize
+    );
+    ctx.strokeStyle = hoverStyle.stroke;
+    ctx.lineWidth = 1 / state.scale;
+    ctx.strokeRect(
+      state.hoverCell.col * state.cellSize + 0.5 / state.scale,
+      state.hoverCell.row * state.cellSize + 0.5 / state.scale,
+      state.cellSize - 1 / state.scale,
+      state.cellSize - 1 / state.scale
+    );
+  }
+
+  drawConnectorDirections(ctx, state.grid, state, false);
+  if (ghostConnectorGrid) {
+    drawConnectorDirections(ctx, ghostConnectorGrid, state, true);
   }
 
   ctx.strokeStyle = 'rgba(0,0,0,0.15)';
@@ -174,4 +226,138 @@ export function applyWheelZoom(
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function getHoverStyleByTool(tool: MazePopupState['tool']): HoverStyle {
+  if (tool === 'start') {
+    return {
+      fill: 'rgba(0, 200, 120, 0.4)',
+      stroke: 'rgba(0, 128, 77, 0.75)',
+    };
+  }
+  if (tool === 'end') {
+    return {
+      fill: 'rgba(220, 60, 60, 0.4)',
+      stroke: 'rgba(140, 35, 35, 0.75)',
+    };
+  }
+  if (tool === 'pen') {
+    return {
+      fill: 'rgba(51, 51, 51, 0.45)',
+      stroke: 'rgba(15, 15, 15, 0.75)',
+    };
+  }
+  if (tool === 'stairs') {
+    return {
+      fill: 'rgba(107, 144, 163, 0.45)',
+      stroke: 'rgba(45, 78, 94, 0.75)',
+    };
+  }
+  return {
+    fill: 'rgba(230, 230, 230, 0.78)',
+    stroke: 'rgba(102, 102, 102, 0.75)',
+  };
+}
+
+function isConnectorCellValue(cell: number): boolean {
+  return (
+    cell === MULTI_LAYER_MAZE.OPENING_CELL_VALUE ||
+    cell === MULTI_LAYER_MAZE.OPENING_NORTH_CELL_VALUE ||
+    cell === MULTI_LAYER_MAZE.OPENING_EAST_CELL_VALUE ||
+    cell === MULTI_LAYER_MAZE.OPENING_SOUTH_CELL_VALUE ||
+    cell === MULTI_LAYER_MAZE.OPENING_WEST_CELL_VALUE
+  );
+}
+
+function drawConnectorDirections(
+  ctx: CanvasRenderingContext2D,
+  grid: number[][],
+  state: MazePopupState,
+  isGhost: boolean
+): void {
+  const radius = Math.max(2.5, state.cellSize * 0.13);
+  const arrowLength = Math.max(4, state.cellSize * 0.33);
+  const headSize = Math.max(2.5, state.cellSize * 0.12);
+  const iconSize = Math.max(10, state.cellSize * 0.72);
+  const strokeColor = isGhost ? 'rgba(0, 36, 58, 0.45)' : 'rgba(0, 36, 58, 0.95)';
+  const dotColor = isGhost ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.95)';
+  const lineWidth = Math.max(1, state.cellSize * 0.06);
+  for (let row = 0; row < state.rows; row += 1) {
+    for (let col = 0; col < state.cols; col += 1) {
+      const direction = getDirectionVector(grid[row]?.[col] ?? -1);
+      if (!direction) {
+        continue;
+      }
+      const centerX = col * state.cellSize + state.cellSize / 2;
+      const centerY = row * state.cellSize + state.cellSize / 2;
+      const tipX = centerX + direction.dx * arrowLength;
+      const tipY = centerY + direction.dy * arrowLength;
+      const directionAngle = Math.atan2(direction.dy, direction.dx);
+
+      if (isConnectorArrowIconReady) {
+        ctx.save();
+        if (isGhost) {
+          ctx.globalAlpha = 0.45;
+        }
+        ctx.translate(centerX, centerY);
+        ctx.rotate(directionAngle);
+        ctx.drawImage(CONNECTOR_ARROW_ICON, -iconSize / 2, -iconSize / 2, iconSize, iconSize);
+        ctx.restore();
+        continue;
+      }
+
+      ctx.fillStyle = dotColor;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = lineWidth;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(tipX, tipY);
+      ctx.stroke();
+
+      const headLeft = directionAngle + Math.PI * 0.82;
+      const headRight = directionAngle - Math.PI * 0.82;
+      ctx.beginPath();
+      ctx.moveTo(tipX, tipY);
+      ctx.lineTo(tipX + Math.cos(headLeft) * headSize, tipY + Math.sin(headLeft) * headSize);
+      ctx.moveTo(tipX, tipY);
+      ctx.lineTo(tipX + Math.cos(headRight) * headSize, tipY + Math.sin(headRight) * headSize);
+      ctx.stroke();
+    }
+  }
+}
+
+function drawGhostConnectorCells(
+  ctx: CanvasRenderingContext2D,
+  state: MazePopupState,
+  ghostConnectorGrid: number[][]
+): void {
+  ctx.fillStyle = 'rgba(107, 144, 163, 0.3)';
+  for (let row = 0; row < state.rows; row += 1) {
+    for (let col = 0; col < state.cols; col += 1) {
+      if (!isConnectorCellValue(ghostConnectorGrid[row]?.[col])) {
+        continue;
+      }
+      ctx.fillRect(col * state.cellSize, row * state.cellSize, state.cellSize, state.cellSize);
+    }
+  }
+}
+
+function getDirectionVector(cell: number): { dx: number; dy: number } | null {
+  if (cell === MULTI_LAYER_MAZE.OPENING_NORTH_CELL_VALUE) {
+    return { dx: 0, dy: -1 };
+  }
+  if (cell === MULTI_LAYER_MAZE.OPENING_EAST_CELL_VALUE) {
+    return { dx: 1, dy: 0 };
+  }
+  if (cell === MULTI_LAYER_MAZE.OPENING_SOUTH_CELL_VALUE) {
+    return { dx: 0, dy: 1 };
+  }
+  if (cell === MULTI_LAYER_MAZE.OPENING_WEST_CELL_VALUE) {
+    return { dx: -1, dy: 0 };
+  }
+  return null;
 }

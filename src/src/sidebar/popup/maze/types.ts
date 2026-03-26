@@ -1,4 +1,5 @@
-export type ToolMode = 'pen' | 'eraser' | 'start' | 'end';
+export type ToolMode = 'pen' | 'eraser' | 'start' | 'end' | 'stairs';
+export type StairDirection = 'north' | 'east' | 'south' | 'west';
 
 export interface CellPos {
   row: number;
@@ -11,7 +12,9 @@ export interface MazePopupState {
   grid: number[][];
   start: CellPos | null;
   end: CellPos | null;
+  hoverCell: CellPos | null;
   tool: ToolMode;
+  stairDirection: StairDirection;
   cellSize: number;
   scale: number;
   minScale: number;
@@ -25,12 +28,34 @@ export interface MazePopupState {
 }
 
 export interface MazePopupViewRefs {
-  controls: HTMLElement;
   rowsInput: HTMLInputElement;
   colsInput: HTMLInputElement;
-  toolButtons: Record<ToolMode, HTMLButtonElement>;
+  layersInput?: HTMLInputElement;
+  layerTabsContainer?: HTMLDivElement;
+  layerTabsPrevBtn?: HTMLButtonElement;
+  layerTabsNextBtn?: HTMLButtonElement;
+  stairsBtn?: HTMLButtonElement;
+  stairsOverlay?: HTMLDivElement;
+  stairsDirectionShell?: HTMLDivElement;
+  stairsNavigateIcon?: HTMLImageElement;
+  stairsRotateLeftBtn?: HTMLButtonElement;
+  stairsRotateRightBtn?: HTMLButtonElement;
+  stairsConfirmBtn?: HTMLButtonElement;
+  toolButtons: Record<Exclude<ToolMode, 'stairs'>, HTMLButtonElement>;
   createBtn: HTMLButtonElement;
   clearBtn: HTMLButtonElement;
   applyBtn: HTMLButtonElement;
   loadBtn: HTMLButtonElement;
+}
+
+export interface MazePopupViewBundle {
+  controls: HTMLElement;
+  accordionRows: HTMLDetailsElement[];
+  singleLayerRow: HTMLDetailsElement;
+  multiLayerRow?: HTMLDetailsElement;
+  singleLayer: MazePopupViewRefs;
+  multiLayer?: {
+    refs: MazePopupViewRefs;
+    canvas: HTMLCanvasElement;
+  };
 }

@@ -1,6 +1,9 @@
 .maze-popup {
   box-sizing: border-box;
   padding: 64px 10px 14px;
+  --maze-panel-pad-top: 10px;
+  --maze-panel-pad-bottom: 12px;
+  --maze-panel-pad-x: 12px;
 }
 
 .maze-popup__content {
@@ -18,14 +21,19 @@
 }
 
 .maze-popup__summary {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 12px;
+  padding: 12px 36px 12px 12px;
   cursor: pointer;
   list-style: none;
   user-select: none;
+}
+
+.maze-popup__summary--disabled {
+  cursor: default;
 }
 
 .maze-popup__summary::-webkit-details-marker {
@@ -34,6 +42,10 @@
 
 .maze-popup__summary::after {
   content: '▾';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  translate: 0 -50%;
   font-size: 16px;
   color: #d0e0e8;
   transition: transform 0.2s ease;
@@ -49,12 +61,44 @@
   max-width: 240px;
 }
 
+.maze-popup__badge {
+  max-width: 66px;
+  text-align: center;
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 4px 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.maze-popup__badge--coming {
+  background: #4d2b2b;
+  color: #ffd8d8;
+}
+
 .maze-popup__panel {
   border-top: 1px solid #2f4453;
-  padding: 10px 12px 12px;
+  padding: 0 var(--maze-panel-pad-x);
+  display: block;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  will-change: opacity, height;
+}
+
+.maze-popup__row[open] > .maze-popup__panel {
+  opacity: 1;
+  padding: var(--maze-panel-pad-top) var(--maze-panel-pad-x) var(--maze-panel-pad-bottom);
+  border-top-color: #2f4453;
+  pointer-events: auto;
+}
+
+.maze-popup__panel-body {
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-height: 0;
 }
 
 .maze-popup__panel--placeholder {
@@ -69,8 +113,89 @@
   align-items: center;
 }
 
+.maze-popup__section--tools {
+  position: relative;
+  z-index: 5;
+}
+
+.maze-popup__section-label {
+  width: 100%;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #cfe2ea;
+}
+
 .maze-popup__section--apply {
   justify-content: center;
+}
+
+.maze-popup__layer-tabs-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  width: 330px;
+  max-width: 100%;
+  align-self: center;
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 1;
+}
+
+.maze-popup__layer-tabs-bar[hidden] {
+  display: none;
+}
+
+.maze-popup__layer-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.maze-popup__layer-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.maze-popup__layer-tabs-nav {
+  min-width: 24px;
+  border: 1px solid #2d4a5d;
+  border-radius: 6px 6px 0 0;
+  background: #132430;
+  color: #dceef7;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+}
+
+.maze-popup__layer-tabs-nav:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.maze-popup__layer-tab {
+  flex: 0 0 auto;
+  border: 1px solid #000;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: #1c303b;
+  color: #def0f8;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.maze-popup__layer-tab.is-active {
+  border-color: #000;
+  background: #33566b;
+  color: #f7fffb;
 }
 
 .maze-popup__input {
@@ -103,6 +228,11 @@
   padding: 8px 14px;
   cursor: pointer;
   font-size: 16px;
+}
+
+.maze-popup__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .maze-popup__tool {
@@ -147,13 +277,22 @@
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.16s ease;
-  z-index: 2;
+  z-index: 100;
+}
+
+.maze-popup__content--tooltips-disabled .maze-popup__tool-tooltip {
+  display: none !important;
 }
 
 .maze-popup__tool:hover .maze-popup__tool-tooltip,
 .maze-popup__tool:focus-visible .maze-popup__tool-tooltip {
   opacity: 1;
   visibility: visible;
+}
+
+.maze-popup__tool--staircase.is-open .maze-popup__tool-tooltip {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .maze-popup__tool.is-active {
@@ -171,9 +310,111 @@
   width: 330px;
   height: 330px;
   max-width: 100%;
-  align-self: center;
   border: 1px solid #000;
   background: #33566b;
   cursor: crosshair;
   touch-action: none;
+}
+
+.maze-popup__canvas-wrap {
+  position: relative;
+  width: 330px;
+  max-width: 100%;
+  align-self: center;
+}
+
+.maze-popup__canvas-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.maze-popup__stairs-overlay {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: -30px;
+  min-height: 54px;
+  padding: 10px 12px;
+  border: 1px solid #355062;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(9, 25, 34, 0.88) 0%, rgba(8, 20, 29, 0.82) 100%);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+  z-index: 3;
+}
+
+.maze-popup__stairs-overlay .maze-popup__section-label {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+.maze-popup__stairs-overlay[hidden] {
+  display: none;
+}
+
+.maze-popup__stairs-picker {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.maze-popup__stairs-visual {
+  width: 80%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.maze-popup__stairs-preview-icon {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.35));
+}
+
+.maze-popup__stairs-direction-shell {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  cursor: pointer;
+}
+
+.maze-popup__stairs-direction-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.maze-popup__stairs-navigate-icon {
+  --maze-stairs-rotation: 0deg;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40px;
+  height: 40px;
+  transform: translate(-50%, -50%) rotate(var(--maze-stairs-rotation));
+  transform-origin: center;
+}
+
+.maze-popup__stairs-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.maze-popup__btn--small {
+  padding: 4px 10px;
+  min-width: 36px;
+}
+
+.maze-popup__stairs-rotate-icon {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  display: block;
 }

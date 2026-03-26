@@ -1,7 +1,7 @@
 import { subscribeLanguageChange, t } from '../../../i18n';
 import { Toolbar } from '../../toolbar';
 import { watchContainerRemoval } from '../popup-lifecycle';
-import { applyI18nTexts } from '../popup-i18n';
+import { applyI18nTexts, removePopupDefaultCanvas, setupAnimatedDetails } from '../utils';
 import {
   type SolveAlgorithmCategory,
   type SolveAlgorithmDefinition,
@@ -40,6 +40,7 @@ class SolvePopup {
   private readonly sizeValue: HTMLSpanElement;
   private readonly markerValue: HTMLSpanElement;
   private readonly solveButton: HTMLButtonElement;
+  private readonly insightBox: HTMLDetailsElement;
   private readonly insightTitle: HTMLSpanElement;
   private readonly insightComplexityValue: HTMLSpanElement;
   private readonly insightOverviewValue: HTMLParagraphElement;
@@ -49,6 +50,7 @@ class SolvePopup {
   private selectedCategory: SolveAlgorithmCategory = 'shortestPath';
   private selectedAlgorithm: SolveAlgorithmDefinition | null = null;
   private unsubscribeLanguageChange: (() => void) | null = null;
+  private readonly disposers: Array<() => void> = [];
   private readonly popupShownHandler = () => {
     this.refreshMazeInfo();
   };
@@ -56,7 +58,7 @@ class SolvePopup {
   constructor(toolbar: Toolbar) {
     this.popupContainer = toolbar.createPopupContainerByKey('solvePopup', 'popup.solvingMaze');
     this.popupContainer.classList.add('solve-popup');
-    this.removeDefaultCanvas();
+    removePopupDefaultCanvas(this.popupContainer);
 
     const refs = createSolvePopupDom(this.popupContainer, this.selectedCategory);
     this.categorySelect = refs.categorySelect;
@@ -65,6 +67,7 @@ class SolvePopup {
     this.sizeValue = refs.sizeValue;
     this.markerValue = refs.markerValue;
     this.solveButton = refs.solveButton;
+    this.insightBox = refs.insightBox;
     this.insightTitle = refs.insightTitle;
     this.insightComplexityValue = refs.insightComplexityValue;
     this.insightOverviewValue = refs.insightOverviewValue;
@@ -72,18 +75,12 @@ class SolvePopup {
     this.insightConsList = refs.insightConsList;
 
     this.bindEvents();
+    this.disposers.push(setupAnimatedDetails(this.insightBox));
     this.refreshAlgorithmOptions();
     this.applyTranslations();
 
     this.unsubscribeLanguageChange = subscribeLanguageChange(() => this.applyTranslations());
     this.watchContainerRemoval();
-  }
-
-  private removeDefaultCanvas(): void {
-    const canvas = this.popupContainer.querySelector('canvas');
-    if (canvas) {
-      canvas.remove();
-    }
   }
 
   private bindEvents(): void {
@@ -206,6 +203,7 @@ class SolvePopup {
 
   private watchContainerRemoval(): void {
     watchContainerRemoval(this.popupContainer, () => {
+      this.disposers.splice(0).forEach(dispose => dispose());
       this.popupContainer.removeEventListener(TOOLBAR_POPUP_SHOWN_EVENT, this.popupShownHandler);
       if (this.unsubscribeLanguageChange) {
         this.unsubscribeLanguageChange();

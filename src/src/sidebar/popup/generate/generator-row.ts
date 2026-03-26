@@ -1,11 +1,14 @@
 import type { GeneratorId, MazeComplexity, MazeTopologyId } from '../../../generator';
 import type { TranslationKey } from '../../../i18n';
 import { MAZE_SIZE } from '../../../constants/maze';
-import { createI18nButton } from '../popup-elements';
-import { createLabeledNumberInput, createNumberStepperField } from '../popup-inputs';
-import { setI18nText } from '../popup-i18n';
+import {
+  createHelpIcon,
+  createI18nButton,
+  createLabeledNumberInput,
+  createNumberStepperField,
+  setI18nText,
+} from '../utils';
 import { createRow } from '../popup-rows';
-import { createHelpIcon } from '../popup-help';
 import { clamp, type GeneratorUiDefinition } from './generate-config';
 
 interface ToggleRowResult {
@@ -145,7 +148,7 @@ export function createGeneratorRow(options: CreateGeneratorRowOptions): HTMLElem
   details.appendChild(summary);
 
   const panel = document.createElement('div');
-  panel.className = 'generate-popup__panel';
+  panel.className = 'generate-popup__panel popup-accordion__panel';
 
   const description = document.createElement('p');
   description.className = 'generate-popup__description';
@@ -486,6 +489,5 @@ export function createGeneratorRow(options: CreateGeneratorRowOptions): HTMLElem
     }
     generateBtn.disabled = true;
   }
-
   return details;
 }

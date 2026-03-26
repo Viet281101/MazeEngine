@@ -1,6 +1,6 @@
-import type { TranslationKey } from '../../i18n';
-import { setI18nText } from './popup-i18n';
-import './popup-inputs.css';
+import type { TranslationKey } from '../../../i18n';
+import { setI18nText } from './i18n';
+import './inputs.css';
 
 interface LabeledNumberInputConfig {
   labelKey: TranslationKey;

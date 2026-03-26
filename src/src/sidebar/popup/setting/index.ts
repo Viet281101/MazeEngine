@@ -13,11 +13,13 @@ import {
   setDebugVisible,
   setEdgesVisible,
   setAdaptiveQualityEnabled,
+  setAllowMultipleMazePopupPanels,
   setCameraZoomLimitEnabled,
   setFloorGridEnabled,
   setHideEdgesDuringInteractionEnabled,
   setMeshReductionEnabled,
   setPreviewVisible,
+  setToolbarTooltipsEnabled,
 } from './setting-app-bridge';
 import { createSettingsPopupDom } from './setting-dom';
 import { setupLanguagePrefetch, setupLanguageTranslations } from './setting-i18n';
@@ -36,6 +38,8 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     initialValues.hideEdgesDuringInteractionEnabled,
     initialValues.floorGridEnabled,
     initialValues.adaptiveQualityEnabled,
+    initialValues.allowMultipleMazePopupPanels,
+    initialValues.toolbarTooltipsEnabled,
     initialValues.edgesVisible,
     initialValues.debugVisible,
     initialValues.previewVisible,
@@ -52,6 +56,8 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     hideEdgesDuringInteractionToggle,
     floorGridToggle,
     adaptiveQualityToggle,
+    allowMultipleMazePopupPanelsToggle,
+    toolbarTooltipsToggle,
     showEdgesToggle,
     showDebugToggle,
     showPreviewToggle,
@@ -174,6 +180,12 @@ export function showSettingsPopup(toolbar: Toolbar): void {
   });
   adaptiveQualityToggle.addEventListener('change', () => {
     setAdaptiveQualityEnabled(adaptiveQualityToggle.checked);
+  });
+  allowMultipleMazePopupPanelsToggle.addEventListener('change', () => {
+    setAllowMultipleMazePopupPanels(allowMultipleMazePopupPanelsToggle.checked);
+  });
+  toolbarTooltipsToggle.addEventListener('change', () => {
+    setToolbarTooltipsEnabled(toolbarTooltipsToggle.checked);
   });
   showEdgesToggle.addEventListener('change', () => {
     setEdgesVisible(showEdgesToggle.checked);
