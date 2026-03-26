@@ -19,6 +19,8 @@ class MazePopup {
   private readonly popupShownHandler = () => {
     this.syncToolbarTooltipsVisibility();
     this.bindAccordionBehavior();
+    this.editor?.refreshLayout();
+    this.multiLayerEditor?.refreshLayout();
   };
 
   constructor(toolbar: Toolbar) {
@@ -114,6 +116,8 @@ class MazePopup {
 
   private applyTranslations(): void {
     applyI18nTexts(this.popupContainer);
+    this.editor?.refreshLanguage();
+    this.multiLayerEditor?.refreshLanguage();
   }
 
   private watchContainerRemoval(): void {

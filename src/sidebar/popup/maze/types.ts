@@ -12,6 +12,7 @@ export interface MazePopupState {
   grid: number[][];
   start: CellPos | null;
   end: CellPos | null;
+  hoverCell: CellPos | null;
   tool: ToolMode;
   stairDirection: StairDirection;
   cellSize: number;

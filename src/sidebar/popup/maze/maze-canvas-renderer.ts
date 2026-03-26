@@ -6,6 +6,10 @@ interface StaticLayerCache {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
 }
+interface HoverStyle {
+  fill: string;
+  stroke: string;
+}
 
 const FLOOR_COLOR = '#e6e6e6';
 const WALL_COLOR = '#333';
@@ -138,6 +142,25 @@ export function drawMaze(
     );
   }
 
+  if (state.hoverCell) {
+    const hoverStyle = getHoverStyleByTool(state.tool);
+    ctx.fillStyle = hoverStyle.fill;
+    ctx.fillRect(
+      state.hoverCell.col * state.cellSize,
+      state.hoverCell.row * state.cellSize,
+      state.cellSize,
+      state.cellSize
+    );
+    ctx.strokeStyle = hoverStyle.stroke;
+    ctx.lineWidth = 1 / state.scale;
+    ctx.strokeRect(
+      state.hoverCell.col * state.cellSize + 0.5 / state.scale,
+      state.hoverCell.row * state.cellSize + 0.5 / state.scale,
+      state.cellSize - 1 / state.scale,
+      state.cellSize - 1 / state.scale
+    );
+  }
+
   drawConnectorDirections(ctx, state.grid, state, false);
   if (ghostConnectorGrid) {
     drawConnectorDirections(ctx, ghostConnectorGrid, state, true);
@@ -203,6 +226,37 @@ export function applyWheelZoom(
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function getHoverStyleByTool(tool: MazePopupState['tool']): HoverStyle {
+  if (tool === 'start') {
+    return {
+      fill: 'rgba(0, 200, 120, 0.4)',
+      stroke: 'rgba(0, 128, 77, 0.75)',
+    };
+  }
+  if (tool === 'end') {
+    return {
+      fill: 'rgba(220, 60, 60, 0.4)',
+      stroke: 'rgba(140, 35, 35, 0.75)',
+    };
+  }
+  if (tool === 'pen') {
+    return {
+      fill: 'rgba(51, 51, 51, 0.45)',
+      stroke: 'rgba(15, 15, 15, 0.75)',
+    };
+  }
+  if (tool === 'stairs') {
+    return {
+      fill: 'rgba(107, 144, 163, 0.45)',
+      stroke: 'rgba(45, 78, 94, 0.75)',
+    };
+  }
+  return {
+    fill: 'rgba(230, 230, 230, 0.78)',
+    stroke: 'rgba(102, 102, 102, 0.75)',
+  };
 }
 
 function isConnectorCellValue(cell: number): boolean {

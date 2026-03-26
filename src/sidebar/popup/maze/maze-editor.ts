@@ -41,6 +41,7 @@ export class MazeEditorController {
   private readonly disposers: Array<() => void> = [];
   private lastDragCell: CellPos | null = null;
   private drawFrameId: number | null = null;
+  private layerTabsRefreshFrameId: number | null = null;
   private destroyed = false;
   private readonly onContextMenu: EventListener;
   private readonly onMouseDown: EventListener;
@@ -50,6 +51,7 @@ export class MazeEditorController {
   private readonly onWheel: EventListener;
   private layerSnapshots: LayerSnapshot[] = [];
   private activeLayerIndex = 0;
+  private preferLongLayerTabLabels = true;
 
   constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, refs: MazePopupViewRefs) {
     this.canvas = canvas;
@@ -61,6 +63,7 @@ export class MazeEditorController {
       grid: [],
       start: null,
       end: null,
+      hoverCell: null,
       tool: 'pen',
       stairDirection: 'north',
       cellSize: 22,
@@ -78,7 +81,7 @@ export class MazeEditorController {
     this.onMouseDown = e => this.handleMouseDown(e as MouseEvent);
     this.onMouseMove = e => this.handleMouseMove(e as MouseEvent);
     this.onMouseUp = () => this.stopPointerActions();
-    this.onMouseLeave = () => this.stopPointerActions();
+    this.onMouseLeave = () => this.handleMouseLeave();
     this.onWheel = e => this.handleWheel(e as WheelEvent);
   }
 
@@ -103,8 +106,36 @@ export class MazeEditorController {
       window.cancelAnimationFrame(this.drawFrameId);
       this.drawFrameId = null;
     }
+    if (this.layerTabsRefreshFrameId !== null) {
+      window.cancelAnimationFrame(this.layerTabsRefreshFrameId);
+      this.layerTabsRefreshFrameId = null;
+    }
     this.staticLayer.canvas.width = 0;
     this.staticLayer.canvas.height = 0;
+  }
+
+  public refreshLanguage(): void {
+    if (this.destroyed) {
+      return;
+    }
+    this.renderLayerTabs();
+    if (this.layerTabsRefreshFrameId !== null) {
+      window.cancelAnimationFrame(this.layerTabsRefreshFrameId);
+    }
+    this.layerTabsRefreshFrameId = window.requestAnimationFrame(() => {
+      this.layerTabsRefreshFrameId = null;
+      if (this.destroyed) {
+        return;
+      }
+      this.renderLayerTabs();
+    });
+  }
+
+  public refreshLayout(): void {
+    if (this.destroyed) {
+      return;
+    }
+    this.renderLayerTabs();
   }
 
   private bindEvents(): void {
@@ -205,6 +236,7 @@ export class MazeEditorController {
     this.state.grid = this.layerSnapshots[0].grid;
     this.state.start = null;
     this.state.end = null;
+    this.state.hoverCell = null;
     this.renderLayerTabs();
     rebuildStaticLayer(this.staticLayer, this.state);
     resetView(this.state, this.canvas);
@@ -222,6 +254,7 @@ export class MazeEditorController {
       this.refs.layersInput.valueAsNumber = loaded.layers.length;
       this.layerSnapshots = loaded.layers;
       this.activeLayerIndex = 0;
+      this.state.hoverCell = null;
       this.activateLayer(0);
       fitViewToCanvas(this.state, this.canvas);
       this.drawNow();
@@ -248,6 +281,7 @@ export class MazeEditorController {
           }
     );
     this.activeLayerIndex = 0;
+    this.state.hoverCell = null;
     this.renderLayerTabs();
     rebuildStaticLayer(this.staticLayer, this.state);
     fitViewToCanvas(this.state, this.canvas);
@@ -275,6 +309,9 @@ export class MazeEditorController {
       this.state.isPanning = true;
       this.state.lastX = e.clientX;
       this.state.lastY = e.clientY;
+      if (this.clearHoverCell()) {
+        this.requestDraw();
+      }
       return;
     }
     if (e.button === 0) {
@@ -284,6 +321,7 @@ export class MazeEditorController {
       }
       this.state.isDrawing = true;
       this.lastDragCell = null;
+      this.updateHoverCellFromEvent(e);
       this.applyToolFromEvent(e);
     }
   }
@@ -299,8 +337,16 @@ export class MazeEditorController {
       this.requestDraw();
       return;
     }
+    const hoverChanged = this.updateHoverCellFromEvent(e);
     if (this.state.isDrawing) {
       this.applyToolFromEvent(e);
+      if (hoverChanged) {
+        this.requestDraw();
+      }
+      return;
+    }
+    if (hoverChanged) {
+      this.requestDraw();
     }
   }
 
@@ -350,6 +396,7 @@ export class MazeEditorController {
     this.state.grid = snapshot.grid;
     this.state.start = snapshot.start ? { ...snapshot.start } : null;
     this.state.end = snapshot.end ? { ...snapshot.end } : null;
+    this.state.hoverCell = null;
     this.renderLayerTabs();
     rebuildStaticLayer(this.staticLayer, this.state);
     this.drawNow();
@@ -371,8 +418,12 @@ export class MazeEditorController {
       return;
     }
     const totalLayers = this.layerSnapshots.length;
-    const layerLabel = t('preview.layer');
-    const useLongLabel = this.canUseLongLayerTabLabels(container, totalLayers, layerLabel);
+    const layerLabel = t('maze.layerTab');
+    const measuredUseLongLabel = this.canUseLongLayerTabLabels(container, totalLayers, layerLabel);
+    if (measuredUseLongLabel !== null) {
+      this.preferLongLayerTabLabels = measuredUseLongLabel;
+    }
+    const useLongLabel = this.preferLongLayerTabLabels;
     container.replaceChildren();
     for (let i = 0; i < totalLayers; i += 1) {
       const button = document.createElement('button');
@@ -393,9 +444,14 @@ export class MazeEditorController {
     container: HTMLDivElement,
     totalLayers: number,
     layerLabel: string
-  ): boolean {
+  ): boolean | null {
     if (totalLayers <= 0) {
       return false;
+    }
+    // Container might be hidden/collapsed while language changes.
+    // In that state width is 0, so defer the decision instead of forcing short labels.
+    if (container.clientWidth <= 0) {
+      return null;
     }
     const digitCount = String(totalLayers).length;
     const estimatedTabWidth = 16 + layerLabel.length * 7 + digitCount * 8;
@@ -529,6 +585,34 @@ export class MazeEditorController {
       return false;
     }
     return this.activeLayerIndex >= this.layerSnapshots.length - 1;
+  }
+
+  private handleMouseLeave(): void {
+    this.stopPointerActions();
+    if (this.clearHoverCell()) {
+      this.requestDraw();
+    }
+  }
+
+  private updateHoverCellFromEvent(e: MouseEvent): boolean {
+    const nextCell = getCellFromEvent(this.state, this.canvas, e);
+    const current = this.state.hoverCell;
+    if (!nextCell && !current) {
+      return false;
+    }
+    if (nextCell && current && nextCell.row === current.row && nextCell.col === current.col) {
+      return false;
+    }
+    this.state.hoverCell = nextCell;
+    return true;
+  }
+
+  private clearHoverCell(): boolean {
+    if (!this.state.hoverCell) {
+      return false;
+    }
+    this.state.hoverCell = null;
+    return true;
   }
 
   private stopPointerActions(): void {

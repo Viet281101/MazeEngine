@@ -37,6 +37,7 @@
   "maze.stairsConfirm": "Confirmer",
   "maze.layerTabsScrollLeft": "Faire défiler les couches vers la gauche",
   "maze.layerTabsScrollRight": "Faire défiler les couches vers la droite",
+  "maze.layerTab": "Niveau",
   "maze.stairsNoUpperLayerAlert": "Impossible de placer un escalier sur la couche supérieure car il n’y a pas de couche au-dessus à relier.",
   "maze.apply": "Appliquer",
   "maze.singleLayerOnlyAlert": "Seuls les labyrinthes monocouches peuvent être charges dans l’éditeur.",

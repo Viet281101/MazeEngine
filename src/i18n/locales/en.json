@@ -37,6 +37,7 @@
   "maze.stairsConfirm": "Confirm",
   "maze.layerTabsScrollLeft": "Scroll layers left",
   "maze.layerTabsScrollRight": "Scroll layers right",
+  "maze.layerTab": "Layer",
   "maze.stairsNoUpperLayerAlert": "Cannot place stairs on the top layer because there is no upper layer to connect.",
   "maze.apply": "Apply",
   "maze.singleLayerOnlyAlert": "Only single-layer mazes can be loaded into the editor.",
