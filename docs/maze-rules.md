@@ -1,7 +1,7 @@
 # Common Maze Rules
 
 This document describes the shared validation rules applied to both single-layer and multi-layer mazes.
-Rules live in `src/generator/core/maze-rules.ts` and are enforced in the generator registry. Some
+Rules live in `frontend/src/generator/core/maze-rules.ts` and are enforced in the generator registry. Some
 algorithms (like Binary Tree) may retry generation internally, but the registry still applies the
 same rules to all outputs.
 
@@ -22,15 +22,15 @@ The scope is inferred from topology and/or layer count.
 ## End-to-End Flow (UI → Rules)
 
 1. **Generate Popup UI**
-   - `src/sidebar/popup/generate/index.ts`
-   - `src/sidebar/popup/generate/generator-row.ts`
+   - `frontend/src/sidebar/popup/generate/index.ts`
+   - `frontend/src/sidebar/popup/generate/generator-row.ts`
 2. **Runner**
-   - `src/sidebar/popup/generate/generate-runner.ts`
+   - `frontend/src/sidebar/popup/generate/generate-runner.ts`
 3. **Registry + Topology Adapters**
-   - `src/generator/core/registry.ts`
-   - `src/generator/core/topology-adapters.ts`
+   - `frontend/src/generator/core/registry.ts`
+   - `frontend/src/generator/core/topology-adapters.ts`
 4. **Common Rules**
-   - `src/generator/core/maze-rules.ts`
+   - `frontend/src/generator/core/maze-rules.ts`
 
 Notes:
 
@@ -50,7 +50,7 @@ These are normalized inside `applyCommonMazeRules`:
 
 ## UI Option Mapping (Generate Popup)
 
-These controls live in `src/sidebar/popup/generate/generator-row.ts` under **Binary Tree → More setup**.
+These controls live in `frontend/src/sidebar/popup/generate/generator-row.ts` under **Binary Tree -> More setup**.
 
 - **Complexity** (`generate.complexity`)
   - Maps to `context.complexity` for `min-path-length`.
@@ -82,7 +82,7 @@ These affect marker placement in the generator but do not change rule validation
 
 ### Topology-Driven Defaults (Multi-Layer)
 
-In `src/sidebar/popup/generate/index.ts`, connector min/max can also auto-sync from topology
+In `frontend/src/sidebar/popup/generate/index.ts`, connector min/max can also auto-sync from topology
 `shaftDensity` presets for multi-layer mazes. This runs **before** generation and only updates
 fields that the user has not edited manually. If `complexity` is not `normal`, the UI prefers
 complexity-driven defaults and marks the connector fields with `data-connector-source="complexity"`,
@@ -96,7 +96,7 @@ Shaft density presets:
 
 ### Topology Params (Multi-Layer)
 
-Defined in `src/sidebar/popup/generate/index.ts`:
+Defined in `frontend/src/sidebar/popup/generate/index.ts`:
 
 - **Layers** (`generate.layers`)
   - Controls number of layers for `multiLayerRect`.
