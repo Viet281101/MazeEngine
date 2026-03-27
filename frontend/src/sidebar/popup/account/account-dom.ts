@@ -1,9 +1,11 @@
 import type { TranslationKey } from '../../../i18n';
+import { getIconPath } from '../../../constants/assets';
 import { createI18nButton, removePopupDefaultCanvas, setI18nText } from '../utils';
 
 export interface AccountPopupDomRefs {
-  authSection: HTMLElement;
-  storageSection: HTMLElement;
+  authSection: HTMLDetailsElement;
+  signOutRow: HTMLElement;
+  storageSection: HTMLDetailsElement;
   emailInput: HTMLInputElement;
   passwordInput: HTMLInputElement;
   mazeNameInput: HTMLInputElement;
@@ -42,32 +44,41 @@ function createInputField(
   return input;
 }
 
-function createSection(
+function createAccordionSection(
   parent: HTMLElement,
   titleKey: TranslationKey,
   hintKey: TranslationKey
-): { section: HTMLElement; body: HTMLDivElement } {
-  const section = document.createElement('section');
-  section.className = 'account-popup__section';
+): { section: HTMLDetailsElement; body: HTMLDivElement } {
+  const section = document.createElement('details');
+  section.className = 'account-popup__accordion';
+  section.open = true;
 
-  const header = document.createElement('div');
-  header.className = 'account-popup__section-header';
+  const summary = document.createElement('summary');
+  summary.className = 'account-popup__summary';
+
+  const summaryContent = document.createElement('div');
+  summaryContent.className = 'account-popup__summary-content';
 
   const title = document.createElement('h4');
   title.className = 'account-popup__section-title';
   setI18nText(title, titleKey);
+  summaryContent.appendChild(title);
+  summary.appendChild(summaryContent);
+  section.appendChild(summary);
 
-  const hint = document.createElement('p');
-  hint.className = 'account-popup__section-hint';
-  setI18nText(hint, hintKey);
-
-  header.appendChild(title);
-  header.appendChild(hint);
-  section.appendChild(header);
+  const panel = document.createElement('div');
+  panel.className = 'account-popup__accordion-panel popup-accordion__panel';
 
   const body = document.createElement('div');
   body.className = 'account-popup__section-body';
-  section.appendChild(body);
+
+  const hint = document.createElement('p');
+  hint.className = 'account-popup__section-hint account-popup__section-hint--panel';
+  setI18nText(hint, hintKey);
+
+  body.appendChild(hint);
+  panel.appendChild(body);
+  section.appendChild(panel);
 
   parent.appendChild(section);
 
@@ -84,7 +95,22 @@ export function createAccountPopupDom(popupContainer: HTMLElement): AccountPopup
   status.className = 'account-popup__status';
   content.appendChild(status);
 
-  const authSection = createSection(content, 'account.authSection', 'account.authHint');
+  const signOutRow = document.createElement('div');
+  signOutRow.className = 'account-popup__top-actions';
+  const signOutBtn = createI18nButton({
+    textKey: 'account.signOut',
+    className: 'account-popup__btn account-popup__btn--ghost',
+  });
+  const signOutIcon = document.createElement('img');
+  signOutIcon.className = 'account-popup__btn-icon';
+  signOutIcon.src = getIconPath('sign_out.png');
+  signOutIcon.alt = '';
+  signOutIcon.setAttribute('aria-hidden', 'true');
+  signOutBtn.prepend(signOutIcon);
+  signOutRow.appendChild(signOutBtn);
+  content.appendChild(signOutRow);
+
+  const authSection = createAccordionSection(content, 'account.authSection', 'account.authHint');
   const authSectionBody = authSection.body;
   const emailInput = createInputField(authSectionBody, 'account.email', 'email', 'you@example.com');
   const passwordInput = createInputField(
@@ -107,17 +133,12 @@ export function createAccountPopupDom(popupContainer: HTMLElement): AccountPopup
   authActions.appendChild(signInBtn);
   authSectionBody.appendChild(authActions);
 
-  const storageSection = createSection(content, 'account.storageSection', 'account.storageHint');
+  const storageSection = createAccordionSection(
+    content,
+    'account.storageSection',
+    'account.storageHint'
+  );
   const storageSectionBody = storageSection.body;
-  const signOutActions = document.createElement('div');
-  signOutActions.className = 'account-popup__actions account-popup__actions--single';
-  const signOutBtn = createI18nButton({
-    textKey: 'account.signOut',
-    className: 'account-popup__btn',
-  });
-  signOutActions.appendChild(signOutBtn);
-  storageSectionBody.appendChild(signOutActions);
-
   const mazeNameInput = createInputField(storageSectionBody, 'account.mazeName', 'text', 'My Maze');
 
   const saveActions = document.createElement('div');
@@ -158,6 +179,7 @@ export function createAccountPopupDom(popupContainer: HTMLElement): AccountPopup
 
   return {
     authSection: authSection.section,
+    signOutRow,
     storageSection: storageSection.section,
     emailInput,
     passwordInput,
