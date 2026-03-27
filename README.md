@@ -10,7 +10,7 @@ Practice 3D space calculations and algorithms for generating and solving mazes.
 [![Three.js](frontend/public/threejs.png)](https://github.com/mrdoob/three.js) **&**
 [![dat.GUI](frontend/public/dat.png)](https://github.com/dataarts/dat.gui) [dat.GUI](https://github.com/dataarts/dat.gui)
 
-![Screenshot from 2026-03-02 09-03-08](https://github.com/user-attachments/assets/01bc596e-0b97-4d0b-9b0e-371444aa4781)
+![Screenshot from 2026-03-27](frontend/public/screenshot/screenshot-from-2026-03-27.png)
 
 ## Repository Structure
 

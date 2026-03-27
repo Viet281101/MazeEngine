@@ -97,16 +97,18 @@ export function createAccountPopupDom(popupContainer: HTMLElement): AccountPopup
 
   const signOutRow = document.createElement('div');
   signOutRow.className = 'account-popup__top-actions';
-  const signOutBtn = createI18nButton({
-    textKey: 'account.signOut',
-    className: 'account-popup__btn account-popup__btn--ghost',
-  });
+  const signOutBtn = document.createElement('button');
+  signOutBtn.type = 'button';
+  signOutBtn.className = 'account-popup__btn account-popup__btn--ghost';
   const signOutIcon = document.createElement('img');
   signOutIcon.className = 'account-popup__btn-icon';
   signOutIcon.src = getIconPath('sign_out.png');
   signOutIcon.alt = '';
   signOutIcon.setAttribute('aria-hidden', 'true');
-  signOutBtn.prepend(signOutIcon);
+  const signOutLabel = document.createElement('span');
+  setI18nText(signOutLabel, 'account.signOut');
+  signOutBtn.appendChild(signOutIcon);
+  signOutBtn.appendChild(signOutLabel);
   signOutRow.appendChild(signOutBtn);
   content.appendChild(signOutRow);
 
