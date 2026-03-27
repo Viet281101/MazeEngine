@@ -6,10 +6,12 @@ export interface AccountPopupDomRefs {
   authSection: HTMLDetailsElement;
   signOutRow: HTMLElement;
   storageSection: HTMLDetailsElement;
+  librarySection: HTMLDetailsElement;
   emailInput: HTMLInputElement;
   passwordInput: HTMLInputElement;
   mazeNameInput: HTMLInputElement;
   mazeSelect: HTMLSelectElement;
+  libraryTableBody: HTMLTableSectionElement;
   statusEl: HTMLParagraphElement;
   signUpBtn: HTMLButtonElement;
   signInBtn: HTMLButtonElement;
@@ -79,6 +81,44 @@ function createAccordionSection(
   body.appendChild(hint);
   panel.appendChild(body);
   section.appendChild(panel);
+
+  parent.appendChild(section);
+
+  return { section, body };
+}
+
+function createStaticDropdownSection(
+  parent: HTMLElement,
+  titleKey: TranslationKey,
+  hintKey: TranslationKey
+): { section: HTMLDetailsElement; body: HTMLDivElement } {
+  const section = document.createElement('details');
+  section.className = 'account-popup__static-dropdown';
+  section.open = true;
+
+  const header = document.createElement('summary');
+  header.className = 'account-popup__summary account-popup__summary--static';
+
+  const summaryContent = document.createElement('div');
+  summaryContent.className = 'account-popup__summary-content';
+
+  const title = document.createElement('h4');
+  title.className = 'account-popup__section-title';
+  setI18nText(title, titleKey);
+
+  summaryContent.appendChild(title);
+  header.appendChild(summaryContent);
+  section.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'account-popup__static-dropdown-body account-popup__section-body';
+
+  const hint = document.createElement('p');
+  hint.className = 'account-popup__section-hint account-popup__section-hint--panel';
+  setI18nText(hint, hintKey);
+
+  body.appendChild(hint);
+  section.appendChild(body);
 
   parent.appendChild(section);
 
@@ -164,18 +204,61 @@ export function createAccountPopupDom(popupContainer: HTMLElement): AccountPopup
   storageSectionBody.appendChild(listField);
 
   const loadActions = document.createElement('div');
-  loadActions.className = 'account-popup__actions';
-  const refreshBtn = createI18nButton({
-    textKey: 'account.refreshList',
-    className: 'account-popup__btn',
-  });
+  loadActions.className = 'account-popup__actions account-popup__actions--single';
   const loadBtn = createI18nButton({
     textKey: 'account.loadMaze',
     className: 'account-popup__btn account-popup__btn--primary',
   });
-  loadActions.appendChild(refreshBtn);
   loadActions.appendChild(loadBtn);
   storageSectionBody.appendChild(loadActions);
+
+  const librarySection = createStaticDropdownSection(
+    content,
+    'account.librarySection',
+    'account.libraryHint'
+  );
+  const librarySectionBody = librarySection.body;
+
+  const libraryActions = document.createElement('div');
+  libraryActions.className = 'account-popup__library-actions';
+  const refreshBtn = document.createElement('button');
+  refreshBtn.type = 'button';
+  refreshBtn.className = 'account-popup__btn';
+  const refreshIcon = document.createElement('img');
+  refreshIcon.className = 'account-popup__btn-icon';
+  refreshIcon.src = getIconPath('refresh.png');
+  refreshIcon.alt = '';
+  refreshIcon.setAttribute('aria-hidden', 'true');
+  const refreshLabel = document.createElement('span');
+  setI18nText(refreshLabel, 'account.refreshList');
+  refreshBtn.appendChild(refreshIcon);
+  refreshBtn.appendChild(refreshLabel);
+  libraryActions.appendChild(refreshBtn);
+  librarySectionBody.appendChild(libraryActions);
+
+  const libraryTable = document.createElement('table');
+  libraryTable.className = 'account-popup__table';
+
+  const libraryHead = document.createElement('thead');
+  const libraryHeadRow = document.createElement('tr');
+
+  const nameHeader = document.createElement('th');
+  setI18nText(nameHeader, 'account.savedMazes');
+  const timeHeader = document.createElement('th');
+  setI18nText(timeHeader, 'account.savedAt');
+  const actionsHeader = document.createElement('th');
+  setI18nText(actionsHeader, 'account.actions');
+
+  libraryHeadRow.appendChild(nameHeader);
+  libraryHeadRow.appendChild(timeHeader);
+  libraryHeadRow.appendChild(actionsHeader);
+  libraryHead.appendChild(libraryHeadRow);
+
+  const libraryTableBody = document.createElement('tbody');
+
+  libraryTable.appendChild(libraryHead);
+  libraryTable.appendChild(libraryTableBody);
+  librarySectionBody.appendChild(libraryTable);
 
   popupContainer.appendChild(content);
 
@@ -183,10 +266,12 @@ export function createAccountPopupDom(popupContainer: HTMLElement): AccountPopup
     authSection: authSection.section,
     signOutRow,
     storageSection: storageSection.section,
+    librarySection: librarySection.section,
     emailInput,
     passwordInput,
     mazeNameInput,
     mazeSelect,
+    libraryTableBody,
     statusEl: status,
     signUpBtn,
     signInBtn,

@@ -1,8 +1,10 @@
 import { t } from '../../../i18n';
+import { getIconPath } from '../../../constants/assets';
 import type { User } from '@supabase/supabase-js';
 import { signInWithEmail, signOutCurrentUser, signUpWithEmail } from '../../../lib/auth-service';
 import {
   createMazePayload,
+  deleteMazeRecord,
   getMazeRecordById,
   saveMazeRecord,
   type MazeRecord,
@@ -25,6 +27,7 @@ export class AccountPopupRuntime {
       this.setSignedInState(false);
       this.setAuthControlsDisabled(true);
       this.setStorageControlsDisabled(true);
+      this.renderMazeLibrary([]);
       return;
     }
 
@@ -150,6 +153,23 @@ export class AccountPopupRuntime {
     }
   }
 
+  async handleDeleteMaze(mazeId: string): Promise<void> {
+    const user = await this.getSignedInUser();
+    if (!user) {
+      this.setStatus(t('account.signInRequired'));
+      return;
+    }
+
+    try {
+      await deleteMazeRecord(mazeId);
+      accountStore.invalidateMazeList();
+      this.setStatus(t('account.deleteSuccess'));
+      await this.refreshMazeList(undefined, true);
+    } catch (error) {
+      this.setStatus(`${t('account.deleteFailed')}: ${this.toErrorMessage(error)}`);
+    }
+  }
+
   async refreshMazeList(selectedId?: string, forceReload: boolean = true): Promise<void> {
     const user = await this.getSignedInUser();
     if (!user) {
@@ -193,24 +213,28 @@ export class AccountPopupRuntime {
 
     if (records.length === 0) {
       this.refs.mazeSelect.appendChild(this.createNoSavedMazeOption());
+      this.renderMazeLibrary(records);
       return;
     }
 
     records.forEach(record => {
       const option = document.createElement('option');
       option.value = record.id;
-      option.textContent = `${record.name} (${new Date(record.updatedAt).toLocaleString()})`;
+      option.textContent = record.name;
       this.refs.mazeSelect.appendChild(option);
     });
 
     if (selectedId) {
       this.refs.mazeSelect.value = selectedId;
     }
+
+    this.renderMazeLibrary(records);
   }
 
   private clearMazeOptions(): void {
     this.refs.mazeSelect.textContent = '';
     this.refs.mazeSelect.appendChild(this.createNoSavedMazeOption());
+    this.renderMazeLibrary([]);
   }
 
   private createNoSavedMazeOption(): HTMLOptionElement {
@@ -218,6 +242,58 @@ export class AccountPopupRuntime {
     option.value = '';
     option.textContent = t('account.noSavedMaze');
     return option;
+  }
+
+  private renderMazeLibrary(records: MazeRecord[]): void {
+    this.refs.libraryTableBody.textContent = '';
+
+    if (records.length === 0) {
+      const row = document.createElement('tr');
+      row.className = 'account-popup__table-empty-row';
+
+      const cell = document.createElement('td');
+      cell.className = 'account-popup__table-empty';
+      cell.colSpan = 3;
+      cell.textContent = t('account.noSavedMaze');
+
+      row.appendChild(cell);
+      this.refs.libraryTableBody.appendChild(row);
+      return;
+    }
+
+    records.forEach(record => {
+      const row = document.createElement('tr');
+
+      const nameCell = document.createElement('td');
+      nameCell.textContent = record.name;
+
+      const timeCell = document.createElement('td');
+      timeCell.textContent = new Date(record.updatedAt).toLocaleString();
+
+      const actionsCell = document.createElement('td');
+      actionsCell.className = 'account-popup__table-actions';
+
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className =
+        'account-popup__btn account-popup__btn--danger account-popup__table-btn';
+      deleteButton.dataset.mazeDeleteId = record.id;
+      deleteButton.title = t('account.deleteMaze');
+      deleteButton.setAttribute('aria-label', t('account.deleteMaze'));
+
+      const deleteIcon = document.createElement('img');
+      deleteIcon.className = 'account-popup__table-btn-icon';
+      deleteIcon.src = getIconPath('trash.png');
+      deleteIcon.alt = '';
+      deleteIcon.setAttribute('aria-hidden', 'true');
+      deleteButton.appendChild(deleteIcon);
+
+      actionsCell.appendChild(deleteButton);
+      row.appendChild(nameCell);
+      row.appendChild(timeCell);
+      row.appendChild(actionsCell);
+      this.refs.libraryTableBody.appendChild(row);
+    });
   }
 
   private async getSignedInUser(): Promise<User | null> {
@@ -234,6 +310,7 @@ export class AccountPopupRuntime {
     this.refs.authSection.hidden = isSignedIn;
     this.refs.signOutRow.hidden = !isSignedIn;
     this.refs.storageSection.hidden = !isSignedIn;
+    this.refs.librarySection.hidden = !isSignedIn;
   }
 
   private setAuthControlsDisabled(disabled: boolean): void {

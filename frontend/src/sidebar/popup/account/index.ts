@@ -68,6 +68,20 @@ class AccountPopup {
     refs.loadBtn.addEventListener('click', () => {
       void this.runtime.handleLoadSelectedMaze();
     });
+    refs.libraryTableBody.addEventListener('click', event => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const deleteButton = target.closest<HTMLButtonElement>('[data-maze-delete-id]');
+      const mazeId = deleteButton?.dataset.mazeDeleteId;
+      if (!mazeId) {
+        return;
+      }
+
+      void this.runtime.handleDeleteMaze(mazeId);
+    });
   }
 
   private watchContainerRemoval(): void {
