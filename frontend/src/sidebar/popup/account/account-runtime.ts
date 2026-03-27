@@ -22,19 +22,25 @@ export class AccountPopupRuntime {
   async refreshAll(): Promise<void> {
     if (!isSupabaseConfigured()) {
       this.setStatus(t('account.notConfigured'));
-      this.setActionsDisabled(true);
+      this.setSignedInState(false);
+      this.setAuthControlsDisabled(true);
+      this.setStorageControlsDisabled(true);
       return;
     }
 
-    this.setActionsDisabled(false);
+    this.setAuthControlsDisabled(false);
 
     const user = await getCurrentUser().catch(() => null);
     if (!user) {
+      this.setSignedInState(false);
+      this.setStorageControlsDisabled(true);
       this.setStatus(t('account.notSignedIn'));
       this.clearMazeOptions();
       return;
     }
 
+    this.setSignedInState(true);
+    this.setStorageControlsDisabled(false);
     this.setStatus(`${t('account.signedInAs')}: ${user.email ?? user.id}`);
     await this.refreshMazeList();
   }
@@ -197,15 +203,23 @@ export class AccountPopupRuntime {
     return option;
   }
 
-  private setActionsDisabled(disabled: boolean): void {
+  private setSignedInState(isSignedIn: boolean): void {
+    this.refs.authSection.hidden = isSignedIn;
+    this.refs.storageSection.hidden = !isSignedIn;
+  }
+
+  private setAuthControlsDisabled(disabled: boolean): void {
     this.refs.signUpBtn.disabled = disabled;
     this.refs.signInBtn.disabled = disabled;
+    this.refs.emailInput.disabled = disabled;
+    this.refs.passwordInput.disabled = disabled;
+  }
+
+  private setStorageControlsDisabled(disabled: boolean): void {
     this.refs.signOutBtn.disabled = disabled;
     this.refs.saveBtn.disabled = disabled;
     this.refs.refreshBtn.disabled = disabled;
     this.refs.loadBtn.disabled = disabled;
-    this.refs.emailInput.disabled = disabled;
-    this.refs.passwordInput.disabled = disabled;
     this.refs.mazeNameInput.disabled = disabled;
     this.refs.mazeSelect.disabled = disabled;
   }

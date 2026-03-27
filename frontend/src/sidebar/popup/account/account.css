@@ -39,6 +39,10 @@
     0 10px 22px rgba(8, 12, 16, 0.18);
 }
 
+.account-popup__section[hidden] {
+  display: none;
+}
+
 .account-popup__section-header {
   display: flex;
   flex-direction: column;
