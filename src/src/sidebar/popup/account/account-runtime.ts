@@ -1,42 +1,63 @@
 import { t } from '../../../i18n';
-import {
-  getCurrentUser,
-  signInWithEmail,
-  signOutCurrentUser,
-  signUpWithEmail,
-} from '../../../lib/auth-service';
+import { getIconPath } from '../../../constants/assets';
+import type { User } from '@supabase/supabase-js';
+import { signInWithEmail, signOutCurrentUser, signUpWithEmail } from '../../../lib/auth-service';
 import {
   createMazePayload,
+  deleteMazeRecord,
   getMazeRecordById,
-  listMazeRecords,
   saveMazeRecord,
   type MazeRecord,
 } from '../../../lib/maze-storage-service';
 import { isSupabaseConfigured } from '../../../lib/supabase-client';
 import { getMazeAppBridge, updateMazePreservingCamera } from '../popup-maze-app-bridge';
 import type { AccountPopupDomRefs } from './account-dom';
+import { accountStore } from './account-store';
 
 export class AccountPopupRuntime {
+  private currentUser: User | null = null;
+
   constructor(private readonly refs: AccountPopupDomRefs) {}
 
   async refreshAll(): Promise<void> {
     if (!isSupabaseConfigured()) {
+      accountStore.reset();
+      this.currentUser = null;
       this.setStatus(t('account.notConfigured'));
-      this.setActionsDisabled(true);
+      this.setSignedInState(false);
+      this.setAuthControlsDisabled(true);
+      this.setStorageControlsDisabled(true);
+      this.renderMazeLibrary([]);
       return;
     }
 
-    this.setActionsDisabled(false);
+    this.setAuthControlsDisabled(false);
 
-    const user = await getCurrentUser().catch(() => null);
+    const user = await accountStore.getCurrentUser();
     if (!user) {
+      this.currentUser = null;
+      this.setSignedInState(false);
+      this.setStorageControlsDisabled(true);
       this.setStatus(t('account.notSignedIn'));
       this.clearMazeOptions();
       return;
     }
 
+    this.currentUser = user;
+    this.setSignedInState(true);
+    this.setStorageControlsDisabled(false);
     this.setStatus(`${t('account.signedInAs')}: ${user.email ?? user.id}`);
-    await this.refreshMazeList();
+    await this.refreshMazeList(undefined, false);
+  }
+
+  async handleAuthStateChanged(user: User | null): Promise<void> {
+    if (!isSupabaseConfigured()) {
+      return;
+    }
+
+    accountStore.setCurrentUser(user);
+    this.currentUser = user;
+    await this.refreshAll();
   }
 
   async handleSignUp(): Promise<void> {
@@ -50,6 +71,8 @@ export class AccountPopupRuntime {
   async handleSignOut(): Promise<void> {
     try {
       await signOutCurrentUser();
+      accountStore.reset();
+      this.currentUser = null;
       this.setStatus(t('account.signOutSuccess'));
       await this.refreshAll();
     } catch (error) {
@@ -58,7 +81,7 @@ export class AccountPopupRuntime {
   }
 
   async handleSaveMaze(): Promise<void> {
-    const user = await getCurrentUser().catch(() => null);
+    const user = await this.getSignedInUser();
     if (!user) {
       this.setStatus(t('account.signInRequired'));
       return;
@@ -83,15 +106,16 @@ export class AccountPopupRuntime {
     try {
       const payload = createMazePayload({ mazeData, markers });
       const saved = await saveMazeRecord(mazeName, payload);
+      accountStore.invalidateMazeList();
       this.setStatus(`${t('account.savedSuccess')}: ${saved.name}`);
-      await this.refreshMazeList(saved.id);
+      await this.refreshMazeList(saved.id, true);
     } catch (error) {
       this.setStatus(`${t('account.saveFailed')}: ${this.toErrorMessage(error)}`);
     }
   }
 
   async handleLoadSelectedMaze(): Promise<void> {
-    const user = await getCurrentUser().catch(() => null);
+    const user = await this.getSignedInUser();
     if (!user) {
       this.setStatus(t('account.signInRequired'));
       return;
@@ -113,7 +137,8 @@ export class AccountPopupRuntime {
       const record = await getMazeRecordById(mazeId);
       if (!record) {
         this.setStatus(t('account.mazeNotFound'));
-        await this.refreshMazeList();
+        accountStore.invalidateMazeList();
+        await this.refreshMazeList(undefined, true);
         return;
       }
 
@@ -128,15 +153,32 @@ export class AccountPopupRuntime {
     }
   }
 
-  async refreshMazeList(selectedId?: string): Promise<void> {
-    const user = await getCurrentUser().catch(() => null);
+  async handleDeleteMaze(mazeId: string): Promise<void> {
+    const user = await this.getSignedInUser();
+    if (!user) {
+      this.setStatus(t('account.signInRequired'));
+      return;
+    }
+
+    try {
+      await deleteMazeRecord(mazeId);
+      accountStore.invalidateMazeList();
+      this.setStatus(t('account.deleteSuccess'));
+      await this.refreshMazeList(undefined, true);
+    } catch (error) {
+      this.setStatus(`${t('account.deleteFailed')}: ${this.toErrorMessage(error)}`);
+    }
+  }
+
+  async refreshMazeList(selectedId?: string, forceReload: boolean = true): Promise<void> {
+    const user = await this.getSignedInUser();
     if (!user) {
       this.clearMazeOptions();
       return;
     }
 
     try {
-      const records = await listMazeRecords(50);
+      const records = await accountStore.getMazeList(forceReload);
       this.renderMazeOptions(records, selectedId);
     } catch (error) {
       this.setStatus(`${t('account.listFailed')}: ${this.toErrorMessage(error)}`);
@@ -158,6 +200,7 @@ export class AccountPopupRuntime {
 
     try {
       await action(email, password);
+      accountStore.invalidateMazeList();
       this.setStatus(t(successKey));
       await this.refreshAll();
     } catch (error) {
@@ -170,24 +213,28 @@ export class AccountPopupRuntime {
 
     if (records.length === 0) {
       this.refs.mazeSelect.appendChild(this.createNoSavedMazeOption());
+      this.renderMazeLibrary(records);
       return;
     }
 
     records.forEach(record => {
       const option = document.createElement('option');
       option.value = record.id;
-      option.textContent = `${record.name} (${new Date(record.updatedAt).toLocaleString()})`;
+      option.textContent = record.name;
       this.refs.mazeSelect.appendChild(option);
     });
 
     if (selectedId) {
       this.refs.mazeSelect.value = selectedId;
     }
+
+    this.renderMazeLibrary(records);
   }
 
   private clearMazeOptions(): void {
     this.refs.mazeSelect.textContent = '';
     this.refs.mazeSelect.appendChild(this.createNoSavedMazeOption());
+    this.renderMazeLibrary([]);
   }
 
   private createNoSavedMazeOption(): HTMLOptionElement {
@@ -197,15 +244,87 @@ export class AccountPopupRuntime {
     return option;
   }
 
-  private setActionsDisabled(disabled: boolean): void {
+  private renderMazeLibrary(records: MazeRecord[]): void {
+    this.refs.libraryTableBody.textContent = '';
+
+    if (records.length === 0) {
+      const row = document.createElement('tr');
+      row.className = 'account-popup__table-empty-row';
+
+      const cell = document.createElement('td');
+      cell.className = 'account-popup__table-empty';
+      cell.colSpan = 3;
+      cell.textContent = t('account.noSavedMaze');
+
+      row.appendChild(cell);
+      this.refs.libraryTableBody.appendChild(row);
+      return;
+    }
+
+    records.forEach(record => {
+      const row = document.createElement('tr');
+
+      const nameCell = document.createElement('td');
+      nameCell.textContent = record.name;
+
+      const timeCell = document.createElement('td');
+      timeCell.textContent = new Date(record.updatedAt).toLocaleString();
+
+      const actionsCell = document.createElement('td');
+      actionsCell.className = 'account-popup__table-actions';
+
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className =
+        'account-popup__btn account-popup__btn--danger account-popup__table-btn';
+      deleteButton.dataset.mazeDeleteId = record.id;
+      deleteButton.title = t('account.deleteMaze');
+      deleteButton.setAttribute('aria-label', t('account.deleteMaze'));
+
+      const deleteIcon = document.createElement('img');
+      deleteIcon.className = 'account-popup__table-btn-icon';
+      deleteIcon.src = getIconPath('trash.png');
+      deleteIcon.alt = '';
+      deleteIcon.setAttribute('aria-hidden', 'true');
+      deleteButton.appendChild(deleteIcon);
+
+      actionsCell.appendChild(deleteButton);
+      row.appendChild(nameCell);
+      row.appendChild(timeCell);
+      row.appendChild(actionsCell);
+      this.refs.libraryTableBody.appendChild(row);
+    });
+  }
+
+  private async getSignedInUser(): Promise<User | null> {
+    if (this.currentUser) {
+      return this.currentUser;
+    }
+
+    const user = await accountStore.getCurrentUser();
+    this.currentUser = user;
+    return user;
+  }
+
+  private setSignedInState(isSignedIn: boolean): void {
+    this.refs.authSection.hidden = isSignedIn;
+    this.refs.signOutRow.hidden = !isSignedIn;
+    this.refs.storageSection.hidden = !isSignedIn;
+    this.refs.librarySection.hidden = !isSignedIn;
+  }
+
+  private setAuthControlsDisabled(disabled: boolean): void {
     this.refs.signUpBtn.disabled = disabled;
     this.refs.signInBtn.disabled = disabled;
+    this.refs.emailInput.disabled = disabled;
+    this.refs.passwordInput.disabled = disabled;
+  }
+
+  private setStorageControlsDisabled(disabled: boolean): void {
     this.refs.signOutBtn.disabled = disabled;
     this.refs.saveBtn.disabled = disabled;
     this.refs.refreshBtn.disabled = disabled;
     this.refs.loadBtn.disabled = disabled;
-    this.refs.emailInput.disabled = disabled;
-    this.refs.passwordInput.disabled = disabled;
     this.refs.mazeNameInput.disabled = disabled;
     this.refs.mazeSelect.disabled = disabled;
   }

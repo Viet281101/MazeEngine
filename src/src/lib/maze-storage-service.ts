@@ -126,6 +126,17 @@ export async function getMazeRecordById(id: string): Promise<MazeRecord | null> 
   return mapMazeRow(data);
 }
 
+export async function deleteMazeRecord(id: string): Promise<void> {
+  const userId = await ensureAuthenticatedUserId();
+  const supabase = getSupabaseClient();
+
+  const { error } = await supabase.from('mazes').delete().eq('id', id).eq('user_id', userId);
+
+  if (error) {
+    throw error;
+  }
+}
+
 export function createMazePayload(params: {
   mazeData: MazeData;
   markers: MazeMarkers | null;
