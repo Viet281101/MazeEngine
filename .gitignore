@@ -38,3 +38,4 @@ coverage
 # Optional tooling caches
 .eslintcache
 .stylelintcache
+.codex
