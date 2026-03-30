@@ -230,5 +230,20 @@
   "settings.openPreviewWindow": "Ouvrir une nouvelle fenêtre",
   "settings.openTutorial": "Ouvrir tutoriel",
   "settings.tutorialSoon": "bientôt",
-  "settings.meshReductionThresholdTooltip": "Définit le seuil de taille du labyrinthe pour activer la réduction du mesh (lignes ou colonnes)."
+  "settings.meshReductionThresholdTooltip": "Définit le seuil de taille du labyrinthe pour activer la réduction du mesh (lignes ou colonnes).",
+  "tutorial.shortcutKeyTitle": "Shortcut Key",
+  "tutorial.shortcut.togglePreview": "[Preview window] Afficher/masquer la fenêtre d’aperçu",
+  "tutorial.shortcut.previewNextLayer": "[Preview window] Passer au niveau d’aperçu suivant",
+  "tutorial.shortcut.previewPreviousLayer": "[Preview window] Passer au niveau d’aperçu précédent",
+  "tutorial.shortcut.previewFirstLayer": "[Preview window] Aller au premier niveau d’aperçu",
+  "tutorial.shortcut.previewLastLayer": "[Preview window] Aller au dernier niveau d’aperçu",
+  "tutorial.shortcut.previewFocusHint": "Les raccourcis de niveaux fonctionnent quand la fenêtre d’aperçu est focalisée.",
+  "tutorial.shortcut.datGuiToggle": "[dat.GUI] Afficher/masquer le panneau",
+  "tutorial.shortcut.cameraRotate": "[Caméra 3D] Faire orbiter autour du labyrinthe",
+  "tutorial.shortcut.cameraZoom": "[Caméra 3D] Zoomer/dézoomer",
+  "tutorial.shortcut.cameraPan": "[Caméra 3D] Déplacer la vue (pan)",
+  "tutorial.shortcut.cameraPanModifier": "[Caméra 3D] Maintenir Ctrl/Meta/Shift + glisser gauche pour pan",
+  "tutorial.shortcut.previewLayerWheel": "[Preview window] Faire défiler pour changer de niveau",
+  "tutorial.shortcut.accountModalClose": "[Account modal] Fermer la fenêtre de gestion du labyrinthe",
+  "tutorial.shortcut.settingsTooltipClose": "[Settings tooltip] Fermer l’info-bulle ouverte"
 }

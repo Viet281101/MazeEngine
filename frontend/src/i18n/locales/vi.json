@@ -230,5 +230,20 @@
   "settings.openPreviewWindow": "Mở cửa sổ mới",
   "settings.openTutorial": "Mở hướng dẫn",
   "settings.tutorialSoon": "sắp có",
-  "settings.meshReductionThresholdTooltip": "Đặt ngưỡng kích thước mê cung để bắt đầu giảm mesh (hàng hoặc cột)."
+  "settings.meshReductionThresholdTooltip": "Đặt ngưỡng kích thước mê cung để bắt đầu giảm mesh (hàng hoặc cột).",
+  "tutorial.shortcutKeyTitle": "Shortcut Key",
+  "tutorial.shortcut.togglePreview": "[Preview window] Hiện/ẩn cửa sổ preview",
+  "tutorial.shortcut.previewNextLayer": "[Preview window] Chuyển sang tầng preview kế tiếp",
+  "tutorial.shortcut.previewPreviousLayer": "[Preview window] Chuyển sang tầng preview trước đó",
+  "tutorial.shortcut.previewFirstLayer": "[Preview window] Nhảy về tầng preview đầu tiên",
+  "tutorial.shortcut.previewLastLayer": "[Preview window] Nhảy tới tầng preview cuối cùng",
+  "tutorial.shortcut.previewFocusHint": "Các phím chuyển tầng chỉ hoạt động khi cửa sổ Preview đang được focus.",
+  "tutorial.shortcut.datGuiToggle": "[dat.GUI] Ẩn/hiện bảng điều khiển",
+  "tutorial.shortcut.cameraRotate": "[Camera 3D] Xoay camera quanh mê cung",
+  "tutorial.shortcut.cameraZoom": "[Camera 3D] Zoom camera gần/xa",
+  "tutorial.shortcut.cameraPan": "[Camera 3D] Di chuyển khung nhìn (pan)",
+  "tutorial.shortcut.cameraPanModifier": "[Camera 3D] Giữ Ctrl/Meta/Shift + kéo chuột trái để pan",
+  "tutorial.shortcut.previewLayerWheel": "[Preview window] Cuộn để chuyển tầng preview",
+  "tutorial.shortcut.accountModalClose": "[Account modal] Đóng modal quản lý mê cung",
+  "tutorial.shortcut.settingsTooltipClose": "[Settings tooltip] Đóng tooltip đang mở"
 }

@@ -1,8 +1,8 @@
 import { Toolbar } from '../../toolbar';
 import { subscribeLanguageChange, t } from '../../../i18n';
-import { getIconPath } from '../../../constants/assets';
 import { watchContainerRemoval } from '../popup-lifecycle';
-import { applyI18nTexts, removePopupDefaultCanvas, setI18nText } from '../utils';
+import { applyI18nTexts, removePopupDefaultCanvas, setupAnimatedDetails } from '../utils';
+import { createTutorialPopupDom, type TutorialPopupDomRefs } from './tutorial-dom';
 import './tutorial.css';
 
 export function showTutorialPopup(toolbar: Toolbar): void {
@@ -14,68 +14,60 @@ export function showTutorialPopup(toolbar: Toolbar): void {
 }
 
 class TutorialPopup {
-  private popupContainer: HTMLElement;
+  private readonly popupContainer: HTMLElement;
+  private readonly refs: TutorialPopupDomRefs;
   private unsubscribeLanguageChange: (() => void) | null = null;
+  private readonly disposers: Array<() => void> = [];
 
   constructor(toolbar: Toolbar) {
     this.popupContainer = toolbar.createPopupContainerByKey('tutorialPopup', 'popup.tutorial');
     this.popupContainer.classList.add('tutorial-popup');
     removePopupDefaultCanvas(this.popupContainer);
-    this.buildContent();
+    this.refs = createTutorialPopupDom(this.popupContainer);
+    this.bindEvents();
+    this.disposers.push(setupAnimatedDetails(this.refs.shortcutAccordion));
     this.unsubscribeLanguageChange = subscribeLanguageChange(() => this.applyTranslations());
     this.watchContainerRemoval();
+    this.applyTranslations();
   }
 
-  private buildContent(): void {
-    const content = document.createElement('div');
-    content.className = 'tutorial-popup__content';
-
-    const sourceRow = document.createElement('div');
-    sourceRow.className = 'tutorial-popup__row';
-
-    const label = document.createElement('span');
-    label.className = 'tutorial-popup__label';
-    setI18nText(label, 'tutorial.viewSourceCode');
-    sourceRow.appendChild(label);
-
-    const iconButton = document.createElement('button');
-    iconButton.type = 'button';
-    iconButton.className = 'tutorial-popup__icon-button';
-    iconButton.title = t('tutorial.viewSourceCode');
-    iconButton.addEventListener('click', () => {
+  private bindEvents(): void {
+    this.refs.sourceIconButton.addEventListener('click', () => {
       window.open('https://github.com/Viet281101/MazeEngine', '_blank', 'noopener,noreferrer');
     });
-
-    const icon = document.createElement('img');
-    icon.className = 'tutorial-popup__icon';
-    icon.src = getIconPath('github.png');
-    icon.alt = t('tutorial.viewSourceCode');
-    iconButton.appendChild(icon);
-
-    sourceRow.appendChild(iconButton);
-    content.appendChild(sourceRow);
-    this.popupContainer.appendChild(content);
-    this.applyTranslations();
   }
 
   private applyTranslations(): void {
     applyI18nTexts(this.popupContainer);
+    this.applyShortcutDescriptionHighlight();
 
-    const iconButton = this.popupContainer.querySelector<HTMLButtonElement>(
-      '.tutorial-popup__icon-button'
-    );
-    const icon = this.popupContainer.querySelector<HTMLImageElement>('.tutorial-popup__icon');
     const sourceCodeText = t('tutorial.viewSourceCode');
-    if (iconButton) {
-      iconButton.title = sourceCodeText;
-    }
-    if (icon) {
-      icon.alt = sourceCodeText;
-    }
+    this.refs.sourceIconButton.title = sourceCodeText;
+    this.refs.sourceIcon.setAttribute('alt', sourceCodeText);
+  }
+
+  private applyShortcutDescriptionHighlight(): void {
+    this.refs.shortcutDescriptions.forEach(description => {
+      const rawText = description.textContent?.trim() ?? '';
+      const match = rawText.match(/^(\[[^\]]+\])\s*(.*)$/);
+      if (!match) {
+        return;
+      }
+
+      const tag = document.createElement('span');
+      tag.className = 'tutorial-popup__shortcut-tag';
+      tag.textContent = match[1];
+
+      const text = document.createElement('span');
+      text.textContent = match[2] ? ` ${match[2]}` : '';
+
+      description.replaceChildren(tag, text);
+    });
   }
 
   private watchContainerRemoval(): void {
     watchContainerRemoval(this.popupContainer, () => {
+      this.disposers.splice(0).forEach(dispose => dispose());
       if (this.unsubscribeLanguageChange) {
         this.unsubscribeLanguageChange();
         this.unsubscribeLanguageChange = null;

@@ -5,6 +5,136 @@
 .tutorial-popup__content {
   margin-top: 60px;
   padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tutorial-popup__accordion {
+  border: 1px solid rgba(17, 38, 50, 0.65);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(16, 33, 43, 0.94) 0%, rgba(12, 24, 32, 0.9) 100%);
+  overflow: hidden;
+  --tutorial-panel-pad-top: 10px;
+  --tutorial-panel-pad-bottom: 10px;
+  --tutorial-panel-pad-x: 12px;
+}
+
+.tutorial-popup__summary {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 36px 12px 12px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.tutorial-popup__summary::-webkit-details-marker {
+  display: none;
+}
+
+.tutorial-popup__summary::after {
+  content: '▾';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  translate: 0 -50%;
+  font-size: 16px;
+  color: #d0e0e8;
+  transition: transform 0.2s ease;
+}
+
+.tutorial-popup__accordion:not([open]) .tutorial-popup__summary::after {
+  transform: rotate(-90deg);
+}
+
+.tutorial-popup__summary-title {
+  color: #f1f8fc;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.tutorial-popup__accordion-panel {
+  border-top: 1px solid #2f4453;
+  padding: 0 var(--tutorial-panel-pad-x);
+  display: block;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  will-change: opacity, height;
+}
+
+.tutorial-popup__accordion[open] > .tutorial-popup__accordion-panel {
+  opacity: 1;
+  padding: var(--tutorial-panel-pad-top) var(--tutorial-panel-pad-x)
+    var(--tutorial-panel-pad-bottom);
+  pointer-events: auto;
+}
+
+.tutorial-popup__accordion-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tutorial-popup__shortcut-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tutorial-popup__shortcut-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+}
+
+.tutorial-popup__shortcut-divider {
+  height: 2px;
+  margin: 4px;
+  background: linear-gradient(
+    90deg,
+    rgba(110, 231, 255, 0.05) 0%,
+    rgba(110, 231, 255, 0.5) 35%,
+    rgba(110, 231, 255, 0.05) 100%
+  );
+  border: 0;
+}
+
+.tutorial-popup__shortcut-key {
+  min-width: 148px;
+  padding: 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.tutorial-popup__shortcut-description {
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.tutorial-popup__shortcut-tag {
+  color: #6ee7ff;
+  font-weight: 600;
+}
+
+.tutorial-popup__shortcut-hint {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 16px;
+  line-height: 1.4;
+  border-top: 1px dashed #395364;
+  padding-top: 8px;
 }
 
 .tutorial-popup__row {

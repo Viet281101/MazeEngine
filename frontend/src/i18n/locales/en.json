@@ -232,5 +232,20 @@
   "settings.openPreviewWindow": "Open new window",
   "settings.openTutorial": "Open tutorial",
   "settings.tutorialSoon": "soon",
-  "settings.meshReductionThresholdTooltip": "Set the maze size threshold where mesh reduction starts (rows or cols)."
+  "settings.meshReductionThresholdTooltip": "Set the maze size threshold where mesh reduction starts (rows or cols).",
+  "tutorial.shortcutKeyTitle": "Shortcut Key",
+  "tutorial.shortcut.togglePreview": "[Preview window] Show/Hide preview window",
+  "tutorial.shortcut.previewNextLayer": "[Preview window] Move to next preview layer",
+  "tutorial.shortcut.previewPreviousLayer": "[Preview window] Move to previous preview layer",
+  "tutorial.shortcut.previewFirstLayer": "[Preview window] Jump to first preview layer",
+  "tutorial.shortcut.previewLastLayer": "[Preview window] Jump to last preview layer",
+  "tutorial.shortcut.previewFocusHint": "Preview layer shortcuts work when the Preview window is focused.",
+  "tutorial.shortcut.datGuiToggle": "[dat.GUI] Show/Hide controls panel",
+  "tutorial.shortcut.cameraRotate": "[3D Camera] Orbit around the maze",
+  "tutorial.shortcut.cameraZoom": "[3D Camera] Zoom in/out",
+  "tutorial.shortcut.cameraPan": "[3D Camera] Pan the view",
+  "tutorial.shortcut.cameraPanModifier": "[3D Camera] Hold Ctrl/Meta/Shift + left drag to pan",
+  "tutorial.shortcut.previewLayerWheel": "[Preview window] Scroll to switch preview layer",
+  "tutorial.shortcut.accountModalClose": "[Account modal] Close the maze management modal",
+  "tutorial.shortcut.settingsTooltipClose": "[Settings tooltip] Close the opened tooltip"
 }
