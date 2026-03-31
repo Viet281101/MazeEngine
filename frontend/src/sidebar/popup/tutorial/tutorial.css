@@ -109,13 +109,114 @@
 }
 
 .tutorial-popup__shortcut-key {
-  min-width: 148px;
-  padding: 8px;
+  min-width: 170px;
+  padding: 6px 8px;
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.32);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  font-size: 16px;
-  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tutorial-popup__shortcut-key-icons {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 28px;
+}
+
+.tutorial-popup__shortcut-key-separator {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.tutorial-popup__shortcut-key-icon {
+  width: auto;
+  height: 40px;
+  object-fit: contain;
+  display: block;
+}
+
+.tutorial-popup__shortcut-key-icon-frame {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: inline-block;
+  contain: paint;
+}
+
+.tutorial-popup__shortcut-key-icon-frame .tutorial-popup__shortcut-key-icon {
+  width: 100%;
+  height: 100%;
+}
+
+.tutorial-popup__shortcut-key-icon--base {
+  position: relative;
+  z-index: 1;
+  opacity: 1;
+}
+
+.tutorial-popup__shortcut-key-icon--pressed {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0;
+}
+
+.tutorial-popup__shortcut-key-icon-frame--animatable {
+  filter: drop-shadow(0 0 3px rgba(110, 231, 255, 0.16));
+}
+
+.tutorial-popup__accordion[open]
+  .tutorial-popup__shortcut-key-icon-frame--animatable
+  .tutorial-popup__shortcut-key-icon--base {
+  animation: tutorial-popup-key-base 1.04s steps(1, end) infinite;
+}
+
+.tutorial-popup__accordion[open]
+  .tutorial-popup__shortcut-key-icon-frame--animatable
+  .tutorial-popup__shortcut-key-icon--pressed {
+  animation: tutorial-popup-key-press 1.04s steps(1, end) infinite;
+}
+
+@keyframes tutorial-popup-key-base {
+  0%,
+  49.99%,
+  100% {
+    opacity: 1;
+  }
+  50%,
+  99.99% {
+    opacity: 0;
+  }
+}
+
+@keyframes tutorial-popup-key-press {
+  0%,
+  49.99% {
+    opacity: 0;
+  }
+  50%,
+  99.99% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-popup__accordion[open]
+    .tutorial-popup__shortcut-key-icon-frame--animatable
+    .tutorial-popup__shortcut-key-icon--base,
+  .tutorial-popup__accordion[open]
+    .tutorial-popup__shortcut-key-icon-frame--animatable
+    .tutorial-popup__shortcut-key-icon--pressed {
+    animation: none;
+  }
 }
 
 .tutorial-popup__shortcut-description {
@@ -156,7 +257,7 @@
   align-items: center;
   justify-content: center;
   width: 42px;
-  height: 42px;
+  height: 52px;
   cursor: pointer;
   padding: 0;
   background: transparent;

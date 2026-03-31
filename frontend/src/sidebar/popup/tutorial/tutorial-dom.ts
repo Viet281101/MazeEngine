@@ -1,4 +1,8 @@
-import { getIconPath } from '../../../constants/assets';
+import {
+  getIconPath,
+  getKeyMouseIconPath,
+  type KeyMouseIconName,
+} from '../../../constants/assets';
 import { setI18nText } from '../utils';
 
 type ShortcutDescriptionKey =
@@ -20,8 +24,13 @@ type ShortcutGroup = 'preview' | 'datGui' | 'camera3d' | 'accountModal' | 'setti
 
 interface ShortcutItem {
   group: ShortcutGroup;
-  keyLabel: string;
+  keyVisuals: ShortcutKeyVisual[];
   descriptionKey: ShortcutDescriptionKey;
+}
+
+interface ShortcutKeyVisual {
+  icon: KeyMouseIconName;
+  alt: string;
 }
 
 export interface TutorialPopupDomRefs {
@@ -32,41 +41,79 @@ export interface TutorialPopupDomRefs {
 }
 
 const SHORTCUTS: ShortcutItem[] = [
-  { group: 'preview', keyLabel: 'P', descriptionKey: 'tutorial.shortcut.togglePreview' },
   {
     group: 'preview',
-    keyLabel: 'ArrowUp / PageUp',
+    keyVisuals: [{ icon: 'p', alt: 'P key' }],
+    descriptionKey: 'tutorial.shortcut.togglePreview',
+  },
+  {
+    group: 'preview',
+    keyVisuals: [
+      { icon: 'arrowUp', alt: 'Arrow Up key' },
+      { icon: 'pageUp', alt: 'Page Up key' },
+    ],
     descriptionKey: 'tutorial.shortcut.previewNextLayer',
   },
   {
     group: 'preview',
-    keyLabel: 'ArrowDown / PageDown',
+    keyVisuals: [
+      { icon: 'arrowDown', alt: 'Arrow Down key' },
+      { icon: 'pageDown', alt: 'Page Down key' },
+    ],
     descriptionKey: 'tutorial.shortcut.previewPreviousLayer',
   },
-  { group: 'preview', keyLabel: 'Home', descriptionKey: 'tutorial.shortcut.previewFirstLayer' },
-  { group: 'preview', keyLabel: 'End', descriptionKey: 'tutorial.shortcut.previewLastLayer' },
   {
     group: 'preview',
-    keyLabel: 'Wheel (Preview canvas)',
+    keyVisuals: [{ icon: 'home', alt: 'Home key' }],
+    descriptionKey: 'tutorial.shortcut.previewFirstLayer',
+  },
+  {
+    group: 'preview',
+    keyVisuals: [{ icon: 'end', alt: 'End key' }],
+    descriptionKey: 'tutorial.shortcut.previewLastLayer',
+  },
+  {
+    group: 'preview',
+    keyVisuals: [{ icon: 'scroll', alt: 'Mouse wheel' }],
     descriptionKey: 'tutorial.shortcut.previewLayerWheel',
   },
-  { group: 'datGui', keyLabel: 'H', descriptionKey: 'tutorial.shortcut.datGuiToggle' },
-  { group: 'camera3d', keyLabel: 'LMB Drag', descriptionKey: 'tutorial.shortcut.cameraRotate' },
+  {
+    group: 'datGui',
+    keyVisuals: [{ icon: 'h', alt: 'H key' }],
+    descriptionKey: 'tutorial.shortcut.datGuiToggle',
+  },
   {
     group: 'camera3d',
-    keyLabel: 'Wheel / MMB Drag',
+    keyVisuals: [{ icon: 'leftClick', alt: 'Left click' }],
+    descriptionKey: 'tutorial.shortcut.cameraRotate',
+  },
+  {
+    group: 'camera3d',
+    keyVisuals: [{ icon: 'scroll', alt: 'Mouse wheel' }],
     descriptionKey: 'tutorial.shortcut.cameraZoom',
   },
-  { group: 'camera3d', keyLabel: 'RMB Drag', descriptionKey: 'tutorial.shortcut.cameraPan' },
   {
     group: 'camera3d',
-    keyLabel: 'Ctrl/Meta/Shift + LMB Drag',
+    keyVisuals: [{ icon: 'rightClick', alt: 'Right click' }],
+    descriptionKey: 'tutorial.shortcut.cameraPan',
+  },
+  {
+    group: 'camera3d',
+    keyVisuals: [
+      { icon: 'ctrl', alt: 'Ctrl key' },
+      { icon: 'shift', alt: 'Shift key' },
+      { icon: 'leftClick', alt: 'Left click' },
+    ],
     descriptionKey: 'tutorial.shortcut.cameraPanModifier',
   },
-  { group: 'accountModal', keyLabel: 'Esc', descriptionKey: 'tutorial.shortcut.accountModalClose' },
+  {
+    group: 'accountModal',
+    keyVisuals: [{ icon: 'esc', alt: 'Escape key' }],
+    descriptionKey: 'tutorial.shortcut.accountModalClose',
+  },
   {
     group: 'settingsTooltip',
-    keyLabel: 'Esc',
+    keyVisuals: [{ icon: 'esc', alt: 'Escape key' }],
     descriptionKey: 'tutorial.shortcut.settingsTooltipClose',
   },
 ];
@@ -110,7 +157,54 @@ export function createTutorialPopupDom(popupContainer: HTMLElement): TutorialPop
 
     const key = document.createElement('code');
     key.className = 'tutorial-popup__shortcut-key';
-    key.textContent = shortcut.keyLabel;
+    const keyVisuals = document.createElement('span');
+    keyVisuals.className = 'tutorial-popup__shortcut-key-icons';
+    shortcut.keyVisuals.forEach((visual, visualIndex) => {
+      if (visualIndex > 0) {
+        const sep = document.createElement('span');
+        sep.className = 'tutorial-popup__shortcut-key-separator';
+        sep.textContent = '/';
+        keyVisuals.appendChild(sep);
+      }
+
+      const baseSrc = getKeyMouseIconPath(visual.icon, 'base');
+      const pressedSrc = getKeyMouseIconPath(visual.icon, 'pressed');
+      if (!baseSrc) {
+        return;
+      }
+
+      if (pressedSrc) {
+        const frame = document.createElement('span');
+        frame.className = 'tutorial-popup__shortcut-key-icon-frame tutorial-popup__shortcut-key-icon-frame--animatable';
+
+        const baseIcon = document.createElement('img');
+        baseIcon.className = 'tutorial-popup__shortcut-key-icon tutorial-popup__shortcut-key-icon--base';
+        baseIcon.src = baseSrc;
+        baseIcon.alt = visual.alt;
+        baseIcon.setAttribute('loading', 'lazy');
+
+        const pressedIcon = document.createElement('img');
+        pressedIcon.className =
+          'tutorial-popup__shortcut-key-icon tutorial-popup__shortcut-key-icon--pressed';
+        pressedIcon.src = pressedSrc;
+        pressedIcon.alt = '';
+        pressedIcon.setAttribute('aria-hidden', 'true');
+        pressedIcon.setAttribute('loading', 'lazy');
+
+        frame.appendChild(baseIcon);
+        frame.appendChild(pressedIcon);
+        keyVisuals.appendChild(frame);
+        return;
+      }
+
+      const icon = document.createElement('img');
+      icon.className = 'tutorial-popup__shortcut-key-icon';
+      icon.src = baseSrc;
+      icon.alt = visual.alt;
+      icon.setAttribute('loading', 'lazy');
+      keyVisuals.appendChild(icon);
+    });
+    key.appendChild(keyVisuals);
     item.appendChild(key);
 
     const description = document.createElement('span');
@@ -161,4 +255,3 @@ export function createTutorialPopupDom(popupContainer: HTMLElement): TutorialPop
     sourceIcon,
   };
 }
-

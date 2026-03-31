@@ -3,6 +3,7 @@ import { Toolbar } from '../sidebar/toolbar';
 import { GUIController } from '../gui';
 import { PreviewWindow } from '../preview/preview-window';
 import { PreviewController } from './preview-controller';
+import { ActionBar } from '../actionbar';
 import type { MazeController } from '../maze';
 import { computeMarkersFromLayer } from '../maze';
 import { subscribeLanguageChange, t } from '../i18n';
@@ -44,6 +45,7 @@ export class MainApp implements MazeController, MazeAppBridge {
   private readonly guiController: GUIController;
   private readonly previewController: PreviewController;
   private readonly debugOverlay: DebugOverlay;
+  private readonly actionBar: ActionBar;
   private readonly renderListener: () => void;
   private readonly settingsStorage: MeshReductionSettingsStorage;
   private readonly datGuiSettingsStorage: DatGuiSettingsStorage;
@@ -131,6 +133,7 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.applyPreviewVisible(this.previewVisibleByViewport);
     this.applyGUISettings();
     this.updatePreview();
+    this.actionBar = new ActionBar();
 
     this.resizeHandler = () => this.onWindowResize();
     this.keydownHandler = event => {
@@ -616,6 +619,7 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.maze.destroy();
     this.guiController.destroy();
     this.previewController.destroy();
+    this.actionBar.destroy();
     if (this.unsubscribeLanguageChange) {
       this.unsubscribeLanguageChange();
       this.unsubscribeLanguageChange = null;

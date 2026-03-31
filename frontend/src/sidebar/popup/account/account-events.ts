@@ -96,4 +96,3 @@ export function bindAccountPopupEvents(
     window.removeEventListener('keydown', onKeyDown);
   };
 }
-

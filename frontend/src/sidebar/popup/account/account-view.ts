@@ -101,7 +101,8 @@ export class AccountPopupView {
 
       const editButton = document.createElement('button');
       editButton.type = 'button';
-      editButton.className = 'account-popup__btn account-popup__table-btn account-popup__table-edit-btn';
+      editButton.className =
+        'account-popup__btn account-popup__table-btn account-popup__table-edit-btn';
       editButton.dataset.mazeManageId = record.id;
       editButton.title = t('account.edit');
       editButton.setAttribute('aria-label', t('account.edit'));
