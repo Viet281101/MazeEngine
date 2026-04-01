@@ -4,7 +4,7 @@ import { ResourceManager } from '../../resources/resource-manager';
 import { DisposalHelper } from '../../resources/disposal-helper';
 import { MeshFactory } from '../../resources/mesh-factory';
 import { MAZE_RENDER_TIMING } from '../../constants/maze';
-import type { SolutionPath } from '../../types/maze';
+import type { MarkerPoint, SolutionPath } from '../../types/maze';
 import {
   clearInitialQualityUpgradeTimerApi,
   clearInteractionRestoreTimerApi,
@@ -409,6 +409,52 @@ export abstract class Maze {
 
   public getCameraState(): CameraState {
     return readCameraState(this.camera, this.controls);
+  }
+
+  public setCameraOrbitEnabled(enabled: boolean): void {
+    this.controls.enabled = enabled;
+  }
+
+  public pickCellFromClientPoint(
+    clientX: number,
+    clientY: number,
+    layerIndex: number = 0
+  ): MarkerPoint | null {
+    const layer = this.maze[layerIndex];
+    if (!layer || layer.length === 0 || (layer[0]?.length ?? 0) === 0) {
+      return null;
+    }
+
+    const rect = this.canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) {
+      return null;
+    }
+
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1
+    );
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(ndc, this.camera);
+
+    const planeHeight = this.getLayerBaseY(layerIndex);
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -planeHeight);
+    const hitPoint = new THREE.Vector3();
+    const hasHit = raycaster.ray.intersectPlane(plane, hitPoint);
+    if (!hasHit) {
+      return null;
+    }
+
+    const col = Math.round(hitPoint.x / this.cellSize);
+    const row = Math.round(-hitPoint.z / this.cellSize);
+    if (row < 0 || row >= layer.length) {
+      return null;
+    }
+    if (col < 0 || col >= (layer[row]?.length ?? 0)) {
+      return null;
+    }
+
+    return { row, col, layerIndex };
   }
 
   public getMazeCenter(): MazeCenter {

@@ -233,6 +233,7 @@
   "settings.meshReductionThresholdTooltip": "Définit le seuil de taille du labyrinthe pour activer la réduction du mesh (lignes ou colonnes).",
   "bottomActionBar.ariaLabel": "Barre d’actions inférieure",
   "bottomActionBar.tools.title": "Outils",
+  "bottomActionBar.tools.hand": "Main",
   "bottomActionBar.tools.pen": "Stylo",
   "bottomActionBar.tools.eraser": "Gomme",
   "bottomActionBar.tools.undo": "Annuler",

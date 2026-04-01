@@ -44,6 +44,11 @@
   opacity: 0.55;
 }
 
+.bottom-action-bar__icon-button.is-active {
+  background: #d6ecff;
+  border-color: #0b5fff;
+}
+
 .bottom-action-bar__icon-button {
   width: 36px;
   min-height: 36px;

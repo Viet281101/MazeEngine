@@ -2,8 +2,11 @@ import { subscribeLanguageChange, t } from '../i18n';
 import { getIconPath } from '../constants/assets';
 import './actionbar.css';
 
+export type ActionTool = 'hand' | 'pen' | 'eraser';
+
 interface ActionBarRefs {
   root: HTMLDivElement;
+  handButton: HTMLButtonElement;
   penButton: HTMLButtonElement;
   eraserButton: HTMLButtonElement;
   undoButton: HTMLButtonElement;
@@ -48,10 +51,12 @@ function createActionBarDom(): ActionBarRefs {
 
   const toolsButtons = document.createElement('div');
   toolsButtons.className = 'bottom-action-bar__buttons';
+  const handButton = createIconButton('hand.png');
   const penButton = createIconButton('pen.png');
   const eraserButton = createIconButton('erase.png');
   const undoButton = createIconButton('reset.png');
   const clearButton = createIconButton('trash.png');
+  toolsButtons.appendChild(handButton);
   toolsButtons.appendChild(penButton);
   toolsButtons.appendChild(eraserButton);
   toolsButtons.appendChild(undoButton);
@@ -86,6 +91,7 @@ function createActionBarDom(): ActionBarRefs {
 
   return {
     root,
+    handButton,
     penButton,
     eraserButton,
     undoButton,
@@ -100,9 +106,15 @@ function createActionBarDom(): ActionBarRefs {
 export class ActionBar {
   private readonly refs: ActionBarRefs;
   private unsubscribeLanguageChange: (() => void) | null = null;
+  private activeTool: ActionTool = 'hand';
+  private toolChangeHandler: ((tool: ActionTool) => void) | null = null;
+  private undoHandler: (() => void) | null = null;
+  private clearHandler: (() => void) | null = null;
 
   constructor() {
     this.refs = createActionBarDom();
+    this.bindEvents();
+    this.syncToolButtons();
     document.body.appendChild(this.refs.root);
     this.applyTranslations();
     this.unsubscribeLanguageChange = subscribeLanguageChange(() => this.applyTranslations());
@@ -116,8 +128,46 @@ export class ActionBar {
     this.refs.root.remove();
   }
 
+  public onToolChange(handler: (tool: ActionTool) => void): void {
+    this.toolChangeHandler = handler;
+  }
+
+  public onUndo(handler: () => void): void {
+    this.undoHandler = handler;
+  }
+
+  public onClear(handler: () => void): void {
+    this.clearHandler = handler;
+  }
+
+  public setActiveTool(tool: ActionTool): void {
+    this.activeTool = tool;
+    this.syncToolButtons();
+  }
+
+  private bindEvents(): void {
+    this.refs.handButton.addEventListener('click', () => this.handleToolClick('hand'));
+    this.refs.penButton.addEventListener('click', () => this.handleToolClick('pen'));
+    this.refs.eraserButton.addEventListener('click', () => this.handleToolClick('eraser'));
+    this.refs.undoButton.addEventListener('click', () => this.undoHandler?.());
+    this.refs.clearButton.addEventListener('click', () => this.clearHandler?.());
+  }
+
+  private handleToolClick(tool: ActionTool): void {
+    this.setActiveTool(tool);
+    this.toolChangeHandler?.(tool);
+  }
+
+  private syncToolButtons(): void {
+    this.refs.handButton.classList.toggle('is-active', this.activeTool === 'hand');
+    this.refs.penButton.classList.toggle('is-active', this.activeTool === 'pen');
+    this.refs.eraserButton.classList.toggle('is-active', this.activeTool === 'eraser');
+  }
+
   private applyTranslations(): void {
     this.refs.root.setAttribute('aria-label', t('bottomActionBar.ariaLabel'));
+    this.refs.handButton.setAttribute('aria-label', t('bottomActionBar.tools.hand'));
+    this.refs.handButton.setAttribute('title', t('bottomActionBar.tools.hand'));
     this.refs.penButton.setAttribute('aria-label', t('bottomActionBar.tools.pen'));
     this.refs.penButton.setAttribute('title', t('bottomActionBar.tools.pen'));
     this.refs.eraserButton.setAttribute('aria-label', t('bottomActionBar.tools.eraser'));

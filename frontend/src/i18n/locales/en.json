@@ -235,6 +235,7 @@
   "settings.meshReductionThresholdTooltip": "Set the maze size threshold where mesh reduction starts (rows or cols).",
   "bottomActionBar.ariaLabel": "Bottom action bar",
   "bottomActionBar.tools.title": "Tools",
+  "bottomActionBar.tools.hand": "Hand",
   "bottomActionBar.tools.pen": "Pen",
   "bottomActionBar.tools.eraser": "Eraser",
   "bottomActionBar.tools.undo": "Undo",

@@ -233,6 +233,7 @@
   "settings.meshReductionThresholdTooltip": "Đặt ngưỡng kích thước mê cung để bắt đầu giảm mesh (hàng hoặc cột).",
   "bottomActionBar.ariaLabel": "Thanh thao tác dưới cùng",
   "bottomActionBar.tools.title": "Công cụ",
+  "bottomActionBar.tools.hand": "Bàn tay",
   "bottomActionBar.tools.pen": "Bút",
   "bottomActionBar.tools.eraser": "Tẩy",
   "bottomActionBar.tools.undo": "Hoàn tác",
