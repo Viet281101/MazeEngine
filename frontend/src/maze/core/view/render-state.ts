@@ -1,5 +1,5 @@
 import type * as THREE from 'three';
-import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { calculateRendererSize, resolveCameraZoomRange } from '../../rendering';
 
 export interface RenderSizeRuntime {

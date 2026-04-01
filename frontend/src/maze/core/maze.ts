@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { ResourceManager } from '../../resources/resource-manager';
 import { DisposalHelper } from '../../resources/disposal-helper';
 import { MeshFactory } from '../../resources/mesh-factory';

@@ -1,8 +1,4 @@
-import {
-  getIconPath,
-  getKeyMouseIconPath,
-  type KeyMouseIconName,
-} from '../../../constants/assets';
+import { getIconPath, getKeyMouseIconPath, type KeyMouseIconName } from '../../../constants/assets';
 import { setI18nText } from '../utils';
 
 type ShortcutDescriptionKey =
@@ -175,10 +171,12 @@ export function createTutorialPopupDom(popupContainer: HTMLElement): TutorialPop
 
       if (pressedSrc) {
         const frame = document.createElement('span');
-        frame.className = 'tutorial-popup__shortcut-key-icon-frame tutorial-popup__shortcut-key-icon-frame--animatable';
+        frame.className =
+          'tutorial-popup__shortcut-key-icon-frame tutorial-popup__shortcut-key-icon-frame--animatable';
 
         const baseIcon = document.createElement('img');
-        baseIcon.className = 'tutorial-popup__shortcut-key-icon tutorial-popup__shortcut-key-icon--base';
+        baseIcon.className =
+          'tutorial-popup__shortcut-key-icon tutorial-popup__shortcut-key-icon--base';
         baseIcon.src = baseSrc;
         baseIcon.alt = visual.alt;
         baseIcon.setAttribute('loading', 'lazy');

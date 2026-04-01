@@ -26,7 +26,7 @@ export function getKeyMouseIconPath(
   frame: KeyMouseFrameName = 'base'
 ): string | null {
   const icon = KEY_MOUSE_ICONS[iconName];
-  const fileName = frame === 'pressed' ? icon.pressed ?? null : icon.base;
+  const fileName = frame === 'pressed' ? (icon.pressed ?? null) : icon.base;
   if (!fileName) {
     return null;
   }
