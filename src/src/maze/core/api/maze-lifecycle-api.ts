@@ -1,4 +1,4 @@
-import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { configureControls } from '../view';
 
 interface MazeLifecycleInitApiContext {

@@ -1,0 +1,67 @@
+{
+  "arrowDown": {
+    "base": "arrow_down.png",
+    "pressed": "arrow_down1.png"
+  },
+  "arrowUp": {
+    "base": "arrow_up.png",
+    "pressed": "arrow_up1.png"
+  },
+  "ctrl": {
+    "base": "ctrl.png",
+    "pressed": "ctrl1.png"
+  },
+  "end": {
+    "base": "end.png",
+    "pressed": "end1.png"
+  },
+  "enter": {
+    "base": "enter.png",
+    "pressed": "enter1.png"
+  },
+  "esc": {
+    "base": "esc.png",
+    "pressed": "esc1.png"
+  },
+  "h": {
+    "base": "h.png",
+    "pressed": "h1.png"
+  },
+  "home": {
+    "base": "home.png",
+    "pressed": "home1.png"
+  },
+  "leftClick": {
+    "base": "left_click.png",
+    "pressed": "left_click1.png"
+  },
+  "p": {
+    "base": "p.png",
+    "pressed": "p1.png"
+  },
+  "pageDown": {
+    "base": "page_down.png",
+    "pressed": "page_down1.png"
+  },
+  "pageUp": {
+    "base": "page_up.png",
+    "pressed": "page_up1.png"
+  },
+  "rightClick": {
+    "base": "right_click.png",
+    "pressed": "right_click1.png"
+  },
+  "scroll": {
+    "base": "scroll.png"
+  },
+  "scrollDown": {
+    "base": "scroll_down.png"
+  },
+  "scrollUp": {
+    "base": "scroll_up.png"
+  },
+  "shift": {
+    "base": "shift.png",
+    "pressed": "shift1.png"
+  }
+}

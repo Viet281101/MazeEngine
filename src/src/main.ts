@@ -1,6 +1,7 @@
 import './style.css';
 import { MainApp } from './app/main-app';
 import { initializeI18n } from './i18n';
+import { loadSharedMazeFromUrl } from './lib/shared-maze-loader';
 
 // ========== Application Entry Point ==========
 
@@ -12,6 +13,7 @@ const handleLoad = async () => {
     app = new MainApp();
     // app.createMultiLayerMaze();
     window.mazeApp = app;
+    await loadSharedMazeFromUrl(app);
   } catch (error) {
     console.error('Failed to initialize application:', error);
   }

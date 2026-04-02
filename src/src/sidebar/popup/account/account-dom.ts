@@ -1,6 +1,12 @@
-import type { TranslationKey } from '../../../i18n';
 import { getIconPath } from '../../../constants/assets';
-import { createI18nButton, removePopupDefaultCanvas, setI18nText } from '../utils';
+import type { TranslationKey } from '../../../i18n';
+import {
+  createI18nButton,
+  removePopupDefaultCanvas,
+  setI18nAriaLabel,
+  setI18nText,
+  setI18nTitle,
+} from '../utils';
 
 export interface AccountPopupDomRefs {
   authSection: HTMLDetailsElement;
@@ -19,6 +25,12 @@ export interface AccountPopupDomRefs {
   saveBtn: HTMLButtonElement;
   refreshBtn: HTMLButtonElement;
   loadBtn: HTMLButtonElement;
+  manageModalBackdrop: HTMLDivElement;
+  manageModalTitle: HTMLHeadingElement;
+  manageVisibilitySelect: HTMLSelectElement;
+  manageCopyBtn: HTMLButtonElement;
+  manageDeleteBtn: HTMLButtonElement;
+  manageCloseBtn: HTMLButtonElement;
 }
 
 function createInputField(
@@ -260,6 +272,86 @@ export function createAccountPopupDom(popupContainer: HTMLElement): AccountPopup
   libraryTable.appendChild(libraryTableBody);
   librarySectionBody.appendChild(libraryTable);
 
+  const manageModalBackdrop = document.createElement('div');
+  manageModalBackdrop.className = 'account-popup__modal-backdrop';
+  manageModalBackdrop.hidden = true;
+
+  const manageModal = document.createElement('div');
+  manageModal.className = 'account-popup__modal';
+  manageModal.setAttribute('role', 'dialog');
+  manageModal.setAttribute('aria-modal', 'true');
+
+  const manageHeader = document.createElement('div');
+  manageHeader.className = 'account-popup__modal-header';
+  const manageModalTitle = document.createElement('h4');
+  manageModalTitle.className = 'account-popup__modal-title';
+  setI18nText(manageModalTitle, 'account.manageMaze');
+  const manageCloseBtn = document.createElement('button');
+  manageCloseBtn.type = 'button';
+  manageCloseBtn.className = 'account-popup__modal-close-icon';
+  setI18nTitle(manageCloseBtn, 'toolbar.close');
+  setI18nAriaLabel(manageCloseBtn, 'toolbar.close');
+  const manageCloseIcon = document.createElement('img');
+  manageCloseIcon.className = 'account-popup__btn-icon';
+  manageCloseIcon.src = getIconPath('close.png');
+  manageCloseIcon.alt = '';
+  manageCloseIcon.setAttribute('aria-hidden', 'true');
+  manageCloseBtn.appendChild(manageCloseIcon);
+  manageHeader.appendChild(manageModalTitle);
+  manageHeader.appendChild(manageCloseBtn);
+  manageModal.appendChild(manageHeader);
+
+  const manageHint = document.createElement('p');
+  manageHint.className = 'account-popup__section-hint';
+  setI18nText(manageHint, 'account.manageHint');
+  manageModal.appendChild(manageHint);
+
+  const visibilityField = document.createElement('label');
+  visibilityField.className = 'account-popup__field';
+  const visibilityLabel = document.createElement('span');
+  visibilityLabel.className = 'account-popup__label';
+  setI18nText(visibilityLabel, 'account.visibility');
+  const manageVisibilitySelect = document.createElement('select');
+  manageVisibilitySelect.className = 'account-popup__select account-popup__modal-visibility';
+  visibilityField.appendChild(visibilityLabel);
+  visibilityField.appendChild(manageVisibilitySelect);
+  manageModal.appendChild(visibilityField);
+
+  const manageActions = document.createElement('div');
+  manageActions.className = 'account-popup__modal-actions';
+
+  const manageCopyBtn = document.createElement('button');
+  manageCopyBtn.type = 'button';
+  manageCopyBtn.className = 'account-popup__btn';
+  const manageCopyIcon = document.createElement('img');
+  manageCopyIcon.className = 'account-popup__btn-icon';
+  manageCopyIcon.src = getIconPath('shared_link.png');
+  manageCopyIcon.alt = '';
+  manageCopyIcon.setAttribute('aria-hidden', 'true');
+  const manageCopyLabel = document.createElement('span');
+  setI18nText(manageCopyLabel, 'account.copyShareLink');
+  manageCopyBtn.appendChild(manageCopyIcon);
+  manageCopyBtn.appendChild(manageCopyLabel);
+
+  const manageDeleteBtn = document.createElement('button');
+  manageDeleteBtn.type = 'button';
+  manageDeleteBtn.className = 'account-popup__btn account-popup__btn--danger';
+  const manageDeleteIcon = document.createElement('img');
+  manageDeleteIcon.className = 'account-popup__btn-icon';
+  manageDeleteIcon.src = getIconPath('trash.png');
+  manageDeleteIcon.alt = '';
+  manageDeleteIcon.setAttribute('aria-hidden', 'true');
+  const manageDeleteLabel = document.createElement('span');
+  setI18nText(manageDeleteLabel, 'account.deleteMaze');
+  manageDeleteBtn.appendChild(manageDeleteIcon);
+  manageDeleteBtn.appendChild(manageDeleteLabel);
+
+  manageActions.appendChild(manageCopyBtn);
+  manageActions.appendChild(manageDeleteBtn);
+  manageModal.appendChild(manageActions);
+  manageModalBackdrop.appendChild(manageModal);
+  popupContainer.appendChild(manageModalBackdrop);
+
   popupContainer.appendChild(content);
 
   return {
@@ -279,5 +371,11 @@ export function createAccountPopupDom(popupContainer: HTMLElement): AccountPopup
     saveBtn,
     refreshBtn,
     loadBtn,
+    manageModalBackdrop,
+    manageModalTitle,
+    manageVisibilitySelect,
+    manageCopyBtn,
+    manageDeleteBtn,
+    manageCloseBtn,
   };
 }
