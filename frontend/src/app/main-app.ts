@@ -3,6 +3,7 @@ import { Toolbar } from '../sidebar/toolbar';
 import { GUIController } from '../gui';
 import { PreviewWindow } from '../preview/preview-window';
 import { PreviewController } from './preview-controller';
+import { ActionBar, type ActionTool } from '../actionbar';
 import type { MazeController } from '../maze';
 import { computeMarkersFromLayer } from '../maze';
 import { subscribeLanguageChange, t } from '../i18n';
@@ -34,6 +35,8 @@ interface CameraSnapshot {
   center: ReturnType<MazeInstance['getMazeCenter']>;
 }
 
+type DrawingTool = Extract<ActionTool, 'hand' | 'pen' | 'eraser'>;
+
 /**
  * MainApp - Application entry point & lifecycle manager
  */
@@ -44,14 +47,21 @@ export class MainApp implements MazeController, MazeAppBridge {
   private readonly guiController: GUIController;
   private readonly previewController: PreviewController;
   private readonly debugOverlay: DebugOverlay;
+  private readonly actionBar: ActionBar;
   private readonly renderListener: () => void;
   private readonly settingsStorage: MeshReductionSettingsStorage;
   private readonly datGuiSettingsStorage: DatGuiSettingsStorage;
   private readonly resizeHandler: () => void;
   private readonly keydownHandler: (event: KeyboardEvent) => void;
+  private readonly canvasPointerDownHandler: (event: PointerEvent) => void;
+  private readonly canvasPointerMoveHandler: (event: PointerEvent) => void;
+  private readonly canvasPointerUpHandler: (event: PointerEvent) => void;
 
   private previewMarkers: MazeMarkers | null = null;
   private solutionPath: SolutionPath = [];
+  private drawingTool: DrawingTool = 'hand';
+  private drawingPointerId: number | null = null;
+  private lastEditedCellKey: string | null = null;
   private edgesVisible: boolean = true;
   private debugOverlayVisible: boolean = true;
   private previewVisibleByViewport: boolean = true;
@@ -131,6 +141,12 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.applyPreviewVisible(this.previewVisibleByViewport);
     this.applyGUISettings();
     this.updatePreview();
+    this.actionBar = new ActionBar();
+    this.actionBar.setActiveTool('hand');
+    this.actionBar.onToolChange(tool => this.setDrawingTool(tool));
+    this.actionBar.onUndo(() => this.undoDrawnPathStep());
+    this.actionBar.onClear(() => this.clearDrawnPath());
+    this.setDrawingTool('hand');
 
     this.resizeHandler = () => this.onWindowResize();
     this.keydownHandler = event => {
@@ -138,6 +154,9 @@ export class MainApp implements MazeController, MazeAppBridge {
         this.setPreviewVisible(!this.previewController.isVisible());
       }
     };
+    this.canvasPointerDownHandler = event => this.handleCanvasPointerDown(event);
+    this.canvasPointerMoveHandler = event => this.handleCanvasPointerMove(event);
+    this.canvasPointerUpHandler = event => this.handleCanvasPointerUp(event);
     this.registerGlobalListeners();
   }
 
@@ -259,15 +278,166 @@ export class MainApp implements MazeController, MazeAppBridge {
   private registerGlobalListeners(): void {
     window.addEventListener('resize', this.resizeHandler);
     window.addEventListener('keydown', this.keydownHandler);
+    this.canvas.addEventListener('pointerdown', this.canvasPointerDownHandler);
+    this.canvas.addEventListener('pointermove', this.canvasPointerMoveHandler);
+    this.canvas.addEventListener('pointerup', this.canvasPointerUpHandler);
+    this.canvas.addEventListener('pointercancel', this.canvasPointerUpHandler);
   }
 
   private unregisterGlobalListeners(): void {
     window.removeEventListener('resize', this.resizeHandler);
     window.removeEventListener('keydown', this.keydownHandler);
+    this.canvas.removeEventListener('pointerdown', this.canvasPointerDownHandler);
+    this.canvas.removeEventListener('pointermove', this.canvasPointerMoveHandler);
+    this.canvas.removeEventListener('pointerup', this.canvasPointerUpHandler);
+    this.canvas.removeEventListener('pointercancel', this.canvasPointerUpHandler);
   }
 
   private createInitialMaze(): MazeInstance {
     return new SingleLayerMaze(this.canvas, createInitialMazeData());
+  }
+
+  private setDrawingTool(tool: ActionTool): void {
+    this.drawingTool = tool;
+    this.actionBar.setActiveTool(tool);
+    this.maze.setCameraOrbitEnabled(tool === 'hand');
+    this.canvas.style.cursor = tool === 'hand' ? 'grab' : 'crosshair';
+    if (this.drawingPointerId !== null && this.canvas.hasPointerCapture(this.drawingPointerId)) {
+      this.canvas.releasePointerCapture(this.drawingPointerId);
+    }
+    this.clearDrawingPointerState();
+  }
+
+  private undoDrawnPathStep(): void {
+    if (this.solutionPath.length === 0) {
+      return;
+    }
+    this.solutionPath = this.solutionPath.slice(0, -1);
+    this.syncRenderedPathWithState();
+  }
+
+  private clearDrawnPath(): void {
+    if (this.solutionPath.length === 0) {
+      return;
+    }
+    this.solutionPath = [];
+    this.syncRenderedPathWithState();
+  }
+
+  private handleCanvasPointerDown(event: PointerEvent): void {
+    if (!this.shouldHandleDrawingPointer(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    this.drawingPointerId = event.pointerId;
+    this.lastEditedCellKey = null;
+    this.canvas.setPointerCapture(event.pointerId);
+    this.applyDrawingAtPointer(event);
+  }
+
+  private handleCanvasPointerMove(event: PointerEvent): void {
+    if (
+      this.drawingPointerId === null ||
+      this.drawingPointerId !== event.pointerId ||
+      this.drawingTool === 'hand'
+    ) {
+      return;
+    }
+    this.applyDrawingAtPointer(event);
+  }
+
+  private handleCanvasPointerUp(event: PointerEvent): void {
+    if (this.drawingPointerId === null || this.drawingPointerId !== event.pointerId) {
+      return;
+    }
+
+    this.clearDrawingPointerState();
+    if (this.canvas.hasPointerCapture(event.pointerId)) {
+      this.canvas.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  private shouldHandleDrawingPointer(event: PointerEvent): boolean {
+    if (this.drawingTool === 'hand') {
+      return false;
+    }
+    return event.button === 0;
+  }
+
+  private clearDrawingPointerState(): void {
+    this.drawingPointerId = null;
+    this.lastEditedCellKey = null;
+  }
+
+  private applyDrawingAtPointer(event: PointerEvent): void {
+    const pickedCell = this.maze.pickCellFromClientPoint(event.clientX, event.clientY, 0);
+    if (!pickedCell) {
+      return;
+    }
+
+    const cellKey = `${pickedCell.layerIndex ?? 0}:${pickedCell.row}:${pickedCell.col}`;
+    if (cellKey === this.lastEditedCellKey) {
+      return;
+    }
+    this.lastEditedCellKey = cellKey;
+
+    if (!this.isWalkableCell(pickedCell.row, pickedCell.col, pickedCell.layerIndex ?? 0)) {
+      return;
+    }
+
+    if (this.drawingTool === 'pen') {
+      this.addCellToDrawnPath(pickedCell);
+      return;
+    }
+
+    this.removeCellFromDrawnPath(pickedCell);
+  }
+
+  private isWalkableCell(row: number, col: number, layerIndex: number): boolean {
+    const layer = this.maze.getMazeDataRef()[layerIndex];
+    const value = layer?.[row]?.[col];
+    return typeof value === 'number' && value !== 1;
+  }
+
+  private addCellToDrawnPath(cell: MarkerPoint): void {
+    const exists = this.solutionPath.some(
+      existing =>
+        existing.row === cell.row &&
+        existing.col === cell.col &&
+        (existing.layerIndex ?? 0) === (cell.layerIndex ?? 0)
+    );
+    if (exists) {
+      return;
+    }
+    this.solutionPath = [...this.solutionPath, cell];
+    this.syncRenderedPathWithState();
+  }
+
+  private removeCellFromDrawnPath(cell: MarkerPoint): void {
+    const nextPath = this.solutionPath.filter(
+      existing =>
+        !(
+          existing.row === cell.row &&
+          existing.col === cell.col &&
+          (existing.layerIndex ?? 0) === (cell.layerIndex ?? 0)
+        )
+    );
+    if (nextPath.length === this.solutionPath.length) {
+      return;
+    }
+    this.solutionPath = nextPath;
+    this.syncRenderedPathWithState();
+  }
+
+  private syncRenderedPathWithState(): void {
+    if (this.solutionPath.length === 0) {
+      this.maze.clearSolutionPath();
+      this.updatePreview();
+      return;
+    }
+    this.maze.setSolutionPath(this.solutionPath);
+    this.updatePreview();
   }
 
   /**
@@ -338,6 +508,7 @@ export class MainApp implements MazeController, MazeAppBridge {
       : new SingleLayerMaze(this.canvas, newMaze);
     this.applyGUISettings();
     this.applyMeshReductionSettingsToMaze();
+    this.maze.setCameraOrbitEnabled(this.drawingTool === 'hand');
     this.maze.addRenderListener(this.renderListener);
   }
 
@@ -616,6 +787,7 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.maze.destroy();
     this.guiController.destroy();
     this.previewController.destroy();
+    this.actionBar.destroy();
     if (this.unsubscribeLanguageChange) {
       this.unsubscribeLanguageChange();
       this.unsubscribeLanguageChange = null;

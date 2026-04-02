@@ -54,10 +54,12 @@
    - Handles sign-up, sign-in, sign-out, and current-user lookup.
 4. Persistence runtime:
    - `frontend/src/lib/maze-storage-service.ts`
-   - Saves maze payloads and lists stored mazes through Supabase.
+   - Saves maze payloads, updates visibility, and lists stored mazes through Supabase.
 5. Database:
    - `backend/supabase/migrations/20260326143000_init_auth_and_mazes.sql`
    - Stores per-user maze payloads in `public.mazes` with RLS enabled.
+   - `backend/supabase/migrations/20260330093000_add_maze_sharing.sql`
+   - Adds sharing visibility (`private`, `unlisted`, `public`) and slug-based links.
 
 ## Key Design Decisions
 

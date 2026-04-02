@@ -1,23 +1,31 @@
 import { t } from '../../../i18n';
-import { getIconPath } from '../../../constants/assets';
 import type { User } from '@supabase/supabase-js';
 import { signInWithEmail, signOutCurrentUser, signUpWithEmail } from '../../../lib/auth-service';
 import {
   createMazePayload,
+  createMazeShareUrl,
   deleteMazeRecord,
   getMazeRecordById,
+  type MazeVisibility,
   saveMazeRecord,
+  updateMazeVisibility,
   type MazeRecord,
 } from '../../../lib/maze-storage-service';
 import { isSupabaseConfigured } from '../../../lib/supabase-client';
 import { getMazeAppBridge, updateMazePreservingCamera } from '../popup-maze-app-bridge';
 import type { AccountPopupDomRefs } from './account-dom';
 import { accountStore } from './account-store';
+import { AccountPopupView, getVisibilityLabel } from './account-view';
 
 export class AccountPopupRuntime {
   private currentUser: User | null = null;
+  private latestMazeRecords: MazeRecord[] = [];
+  private currentManagedMazeId: string | null = null;
+  private readonly view: AccountPopupView;
 
-  constructor(private readonly refs: AccountPopupDomRefs) {}
+  constructor(private readonly refs: AccountPopupDomRefs) {
+    this.view = new AccountPopupView(refs);
+  }
 
   async refreshAll(): Promise<void> {
     if (!isSupabaseConfigured()) {
@@ -27,7 +35,8 @@ export class AccountPopupRuntime {
       this.setSignedInState(false);
       this.setAuthControlsDisabled(true);
       this.setStorageControlsDisabled(true);
-      this.renderMazeLibrary([]);
+      this.closeManageModal();
+      this.view.renderMazeOptions([]);
       return;
     }
 
@@ -39,7 +48,9 @@ export class AccountPopupRuntime {
       this.setSignedInState(false);
       this.setStorageControlsDisabled(true);
       this.setStatus(t('account.notSignedIn'));
-      this.clearMazeOptions();
+      this.closeManageModal();
+      this.latestMazeRecords = [];
+      this.view.clearMazeOptions();
       return;
     }
 
@@ -81,9 +92,7 @@ export class AccountPopupRuntime {
   }
 
   async handleSaveMaze(): Promise<void> {
-    const user = await this.getSignedInUser();
-    if (!user) {
-      this.setStatus(t('account.signInRequired'));
+    if (!(await this.requireSignedInUser())) {
       return;
     }
 
@@ -115,9 +124,7 @@ export class AccountPopupRuntime {
   }
 
   async handleLoadSelectedMaze(): Promise<void> {
-    const user = await this.getSignedInUser();
-    if (!user) {
-      this.setStatus(t('account.signInRequired'));
+    if (!(await this.requireSignedInUser())) {
       return;
     }
 
@@ -154,9 +161,7 @@ export class AccountPopupRuntime {
   }
 
   async handleDeleteMaze(mazeId: string): Promise<void> {
-    const user = await this.getSignedInUser();
-    if (!user) {
-      this.setStatus(t('account.signInRequired'));
+    if (!(await this.requireSignedInUser())) {
       return;
     }
 
@@ -170,20 +175,105 @@ export class AccountPopupRuntime {
     }
   }
 
+  async handleVisibilityChanged(mazeId: string, visibility: MazeVisibility): Promise<void> {
+    if (!(await this.requireSignedInUser())) {
+      return;
+    }
+
+    try {
+      await updateMazeVisibility(mazeId, visibility);
+      accountStore.invalidateMazeList();
+      this.setStatus(`${t('account.visibilityUpdated')}: ${getVisibilityLabel(visibility)}`);
+      await this.refreshMazeList(mazeId, true);
+    } catch (error) {
+      this.setStatus(`${t('account.visibilityUpdateFailed')}: ${this.toErrorMessage(error)}`);
+      await this.refreshMazeList(mazeId, true);
+    }
+  }
+
+  async handleCopyShareLink(mazeId: string): Promise<void> {
+    if (!(await this.requireSignedInUser())) {
+      return;
+    }
+
+    try {
+      const record = await getMazeRecordById(mazeId);
+      if (!record || record.visibility === 'private' || !record.shareSlug) {
+        this.setStatus(t('account.shareUnavailable'));
+        return;
+      }
+
+      const url = createMazeShareUrl(record.shareSlug);
+      await navigator.clipboard.writeText(url);
+      this.setStatus(`${t('account.shareCopied')}: ${url}`);
+    } catch (error) {
+      this.setStatus(`${t('account.shareCopyFailed')}: ${this.toErrorMessage(error)}`);
+    }
+  }
+
   async refreshMazeList(selectedId?: string, forceReload: boolean = true): Promise<void> {
     const user = await this.getSignedInUser();
     if (!user) {
-      this.clearMazeOptions();
+      this.latestMazeRecords = [];
+      this.view.clearMazeOptions();
       return;
     }
 
     try {
       const records = await accountStore.getMazeList(forceReload);
-      this.renderMazeOptions(records, selectedId);
+      this.latestMazeRecords = records;
+      this.view.renderMazeOptions(records, selectedId);
     } catch (error) {
       this.setStatus(`${t('account.listFailed')}: ${this.toErrorMessage(error)}`);
-      this.clearMazeOptions();
+      this.closeManageModal();
+      this.latestMazeRecords = [];
+      this.view.clearMazeOptions();
     }
+  }
+
+  async handleOpenManageModal(mazeId: string): Promise<void> {
+    if (!(await this.requireSignedInUser())) {
+      return;
+    }
+
+    const localRecord = this.latestMazeRecords.find(record => record.id === mazeId);
+    const record = localRecord ?? (await getMazeRecordById(mazeId));
+    if (!record) {
+      this.setStatus(t('account.mazeNotFound'));
+      return;
+    }
+
+    this.currentManagedMazeId = record.id;
+    this.view.openManageModal(record);
+  }
+
+  closeManageModal(): void {
+    this.currentManagedMazeId = null;
+    this.view.closeManageModal();
+  }
+
+  async handleManageVisibilityChanged(visibility: MazeVisibility): Promise<void> {
+    if (!this.currentManagedMazeId) {
+      return;
+    }
+    await this.handleVisibilityChanged(this.currentManagedMazeId, visibility);
+    await this.syncManageModalRecord();
+  }
+
+  async handleManageCopyShareLink(): Promise<void> {
+    if (!this.currentManagedMazeId) {
+      return;
+    }
+    await this.handleCopyShareLink(this.currentManagedMazeId);
+    await this.syncManageModalRecord();
+  }
+
+  async handleManageDeleteMaze(): Promise<void> {
+    if (!this.currentManagedMazeId) {
+      return;
+    }
+    await this.handleDeleteMaze(this.currentManagedMazeId);
+    this.closeManageModal();
   }
 
   private async runAuthAction(
@@ -208,92 +298,18 @@ export class AccountPopupRuntime {
     }
   }
 
-  private renderMazeOptions(records: MazeRecord[], selectedId?: string): void {
-    this.refs.mazeSelect.textContent = '';
-
-    if (records.length === 0) {
-      this.refs.mazeSelect.appendChild(this.createNoSavedMazeOption());
-      this.renderMazeLibrary(records);
+  private async syncManageModalRecord(): Promise<void> {
+    if (!this.currentManagedMazeId) {
       return;
     }
 
-    records.forEach(record => {
-      const option = document.createElement('option');
-      option.value = record.id;
-      option.textContent = record.name;
-      this.refs.mazeSelect.appendChild(option);
-    });
-
-    if (selectedId) {
-      this.refs.mazeSelect.value = selectedId;
-    }
-
-    this.renderMazeLibrary(records);
-  }
-
-  private clearMazeOptions(): void {
-    this.refs.mazeSelect.textContent = '';
-    this.refs.mazeSelect.appendChild(this.createNoSavedMazeOption());
-    this.renderMazeLibrary([]);
-  }
-
-  private createNoSavedMazeOption(): HTMLOptionElement {
-    const option = document.createElement('option');
-    option.value = '';
-    option.textContent = t('account.noSavedMaze');
-    return option;
-  }
-
-  private renderMazeLibrary(records: MazeRecord[]): void {
-    this.refs.libraryTableBody.textContent = '';
-
-    if (records.length === 0) {
-      const row = document.createElement('tr');
-      row.className = 'account-popup__table-empty-row';
-
-      const cell = document.createElement('td');
-      cell.className = 'account-popup__table-empty';
-      cell.colSpan = 3;
-      cell.textContent = t('account.noSavedMaze');
-
-      row.appendChild(cell);
-      this.refs.libraryTableBody.appendChild(row);
+    const record = await getMazeRecordById(this.currentManagedMazeId);
+    if (!record) {
+      this.closeManageModal();
       return;
     }
 
-    records.forEach(record => {
-      const row = document.createElement('tr');
-
-      const nameCell = document.createElement('td');
-      nameCell.textContent = record.name;
-
-      const timeCell = document.createElement('td');
-      timeCell.textContent = new Date(record.updatedAt).toLocaleString();
-
-      const actionsCell = document.createElement('td');
-      actionsCell.className = 'account-popup__table-actions';
-
-      const deleteButton = document.createElement('button');
-      deleteButton.type = 'button';
-      deleteButton.className =
-        'account-popup__btn account-popup__btn--danger account-popup__table-btn';
-      deleteButton.dataset.mazeDeleteId = record.id;
-      deleteButton.title = t('account.deleteMaze');
-      deleteButton.setAttribute('aria-label', t('account.deleteMaze'));
-
-      const deleteIcon = document.createElement('img');
-      deleteIcon.className = 'account-popup__table-btn-icon';
-      deleteIcon.src = getIconPath('trash.png');
-      deleteIcon.alt = '';
-      deleteIcon.setAttribute('aria-hidden', 'true');
-      deleteButton.appendChild(deleteIcon);
-
-      actionsCell.appendChild(deleteButton);
-      row.appendChild(nameCell);
-      row.appendChild(timeCell);
-      row.appendChild(actionsCell);
-      this.refs.libraryTableBody.appendChild(row);
-    });
+    this.view.syncManageModalRecord(record);
   }
 
   private async getSignedInUser(): Promise<User | null> {
@@ -303,6 +319,15 @@ export class AccountPopupRuntime {
 
     const user = await accountStore.getCurrentUser();
     this.currentUser = user;
+    return user;
+  }
+
+  private async requireSignedInUser(): Promise<User | null> {
+    const user = await this.getSignedInUser();
+    if (!user) {
+      this.setStatus(t('account.signInRequired'));
+      return null;
+    }
     return user;
   }
 
@@ -336,6 +361,15 @@ export class AccountPopupRuntime {
   private toErrorMessage(error: unknown): string {
     if (error instanceof Error) {
       return error.message;
+    }
+    if (error && typeof error === 'object') {
+      const candidate = error as { message?: unknown; details?: unknown; hint?: unknown };
+      const parts = [candidate.message, candidate.details, candidate.hint].filter(
+        value => typeof value === 'string' && value.trim().length > 0
+      ) as string[];
+      if (parts.length > 0) {
+        return parts.join(' | ');
+      }
     }
     return String(error);
   }

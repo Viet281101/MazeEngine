@@ -4,6 +4,7 @@ The backend is currently set up with Supabase to support:
 
 - basic sign-up/sign-in
 - per-user maze persistence
+- publish/unpublish maze sharing with visibility (`private`, `unlisted`, `public`) and slug links
 
 ## Structure
 

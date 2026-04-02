@@ -42,6 +42,7 @@ Then:
 ## Current schema
 
 - `public.mazes`: user-owned maze records (`maze_data` stored as `jsonb`)
+- `public.mazes`: sharing fields (`visibility`, `share_slug`, `published_at`) for link-based access
 - RLS enabled, each authenticated user can only access their own rows.
 
 ## Troubleshooting
