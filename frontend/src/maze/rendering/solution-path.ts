@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import { SOLUTION_PATH } from '../../constants/maze';
 import type { SolutionPath } from '../../types/maze';
 
@@ -18,8 +21,11 @@ export function createSolutionPathLine(
   maze: number[][][],
   cellSize: number,
   defaultLayerIndex: number,
-  getLayerBaseY: (layerIndex: number) => number
-): THREE.Line | null {
+  getLayerBaseY: (layerIndex: number) => number,
+  lineWidth: number,
+  viewportWidth: number,
+  viewportHeight: number
+): LineSegments2 | null {
   const cellByKey = new Map<string, ResolvedPathCell>();
 
   path.forEach(cell => {
@@ -51,7 +57,7 @@ export function createSolutionPathLine(
     return null;
   }
 
-  const segmentPoints: THREE.Vector3[] = [];
+  const positions: number[] = [];
   const neighborOffsets = [
     { dLayer: 0, dRow: 0, dCol: 1 },
     { dLayer: 0, dRow: 1, dCol: 0 },
@@ -66,34 +72,57 @@ export function createSolutionPathLine(
       if (!to) {
         return;
       }
-      segmentPoints.push(from.position, to.position);
+      positions.push(
+        from.position.x,
+        from.position.y,
+        from.position.z,
+        to.position.x,
+        to.position.y,
+        to.position.z
+      );
     });
   });
 
-  if (segmentPoints.length < 2) {
+  if (positions.length < 6) {
     return null;
   }
 
-  const geometry = new THREE.BufferGeometry().setFromPoints(segmentPoints);
-  const material = new THREE.LineBasicMaterial({
+  const geometry = new LineSegmentsGeometry();
+  geometry.setPositions(positions);
+
+  const material = new LineMaterial({
     color: SOLUTION_PATH.COLOR,
-    linewidth: SOLUTION_PATH.LINE_WIDTH,
+    linewidth: lineWidth,
     transparent: true,
     opacity: SOLUTION_PATH.OPACITY,
     depthTest: false,
   });
-  const line = new THREE.LineSegments(geometry, material);
+  material.resolution.set(Math.max(1, viewportWidth), Math.max(1, viewportHeight));
+
+  const line = new LineSegments2(geometry, material);
+  line.computeLineDistances();
+  line.frustumCulled = false;
   line.renderOrder = 2;
   return line;
 }
 
-export function disposeSolutionPathLine(scene: THREE.Scene, line: THREE.Line): void {
+export function setSolutionPathLineWidth(line: LineSegments2, width: number): void {
+  (line.material as LineMaterial).linewidth = width;
+}
+
+export function updateSolutionPathLineResolution(
+  line: LineSegments2,
+  viewportWidth: number,
+  viewportHeight: number
+): void {
+  (line.material as LineMaterial).resolution.set(
+    Math.max(1, viewportWidth),
+    Math.max(1, viewportHeight)
+  );
+}
+
+export function disposeSolutionPathLine(scene: THREE.Scene, line: LineSegments2): void {
   scene.remove(line);
-  line.geometry.dispose();
-  const material = line.material;
-  if (Array.isArray(material)) {
-    material.forEach(item => item.dispose());
-  } else {
-    material.dispose();
-  }
+  (line.geometry as LineSegmentsGeometry).dispose();
+  (line.material as LineMaterial).dispose();
 }

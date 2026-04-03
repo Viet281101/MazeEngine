@@ -4,6 +4,7 @@ type TooltipTarget =
   | 'hideEdges'
   | 'adaptive'
   | 'actionBarVisible'
+  | 'solutionPathLineWidth'
   | 'floorGrid'
   | 'showEdges'
   | 'showDebug'
@@ -16,6 +17,7 @@ interface TooltipBindings {
   floorGridHelpIcon: HTMLImageElement;
   adaptiveHelpIcon: HTMLImageElement;
   actionBarVisibleHelpIcon: HTMLImageElement;
+  solutionPathLineWidthHelpIcon: HTMLImageElement;
   showEdgesHelpIcon: HTMLImageElement;
   showDebugHelpIcon: HTMLImageElement;
   showPreviewHelpIcon: HTMLImageElement;
@@ -25,6 +27,7 @@ interface TooltipBindings {
   floorGridTooltip: HTMLDivElement;
   adaptiveTooltip: HTMLDivElement;
   actionBarVisibleTooltip: HTMLDivElement;
+  solutionPathLineWidthTooltip: HTMLDivElement;
   showEdgesTooltip: HTMLDivElement;
   showDebugTooltip: HTMLDivElement;
   showPreviewTooltip: HTMLDivElement;
@@ -43,6 +46,10 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     actionBarVisible: {
       icon: bindings.actionBarVisibleHelpIcon,
       tooltip: bindings.actionBarVisibleTooltip,
+    },
+    solutionPathLineWidth: {
+      icon: bindings.solutionPathLineWidthHelpIcon,
+      tooltip: bindings.solutionPathLineWidthTooltip,
     },
     showEdges: { icon: bindings.showEdgesHelpIcon, tooltip: bindings.showEdgesTooltip },
     showDebug: { icon: bindings.showDebugHelpIcon, tooltip: bindings.showDebugTooltip },

@@ -6,6 +6,7 @@ import {
   applyCameraZoomMaxDistance,
   applyCameraZoomMinDistance,
   applyMeshReductionThreshold,
+  applySolutionPathLineWidth,
   canOpenPreviewWindow,
   getInitialSettingsValues,
   isPreviewVisible,
@@ -42,6 +43,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     initialValues.allowMultipleMazePopupPanels,
     initialValues.toolbarTooltipsEnabled,
     initialValues.actionBarVisible,
+    initialValues.solutionPathLineWidth,
     initialValues.edgesVisible,
     initialValues.debugVisible,
     initialValues.previewVisible,
@@ -61,6 +63,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     allowMultipleMazePopupPanelsToggle,
     toolbarTooltipsToggle,
     actionBarVisibleToggle,
+    solutionPathLineWidthInput,
     showEdgesToggle,
     showDebugToggle,
     showPreviewToggle,
@@ -75,6 +78,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     floorGridHelpIcon,
     adaptiveQualityHelpIcon,
     actionBarVisibleHelpIcon,
+    solutionPathLineWidthHelpIcon,
     showEdgesHelpIcon,
     showDebugHelpIcon,
     showPreviewHelpIcon,
@@ -84,6 +88,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     floorGridTooltip,
     adaptiveQualityTooltip,
     actionBarVisibleTooltip,
+    solutionPathLineWidthTooltip,
     showEdgesTooltip,
     showDebugTooltip,
     showPreviewTooltip,
@@ -101,6 +106,11 @@ export function showSettingsPopup(toolbar: Toolbar): void {
   const applyThreshold = () => {
     const clamped = applyMeshReductionThreshold(Number(thresholdInput.value));
     thresholdInput.value = String(clamped);
+  };
+
+  const applySolutionPathWidth = () => {
+    const clamped = applySolutionPathLineWidth(Number(solutionPathLineWidthInput.value));
+    solutionPathLineWidthInput.value = String(clamped);
   };
 
   const syncCameraZoomRowsVisibility = () => {
@@ -141,6 +151,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     floorGridHelpIcon: floorGridHelpIcon,
     adaptiveHelpIcon: adaptiveQualityHelpIcon,
     actionBarVisibleHelpIcon: actionBarVisibleHelpIcon,
+    solutionPathLineWidthHelpIcon: solutionPathLineWidthHelpIcon,
     showEdgesHelpIcon: showEdgesHelpIcon,
     showDebugHelpIcon: showDebugHelpIcon,
     showPreviewHelpIcon: showPreviewHelpIcon,
@@ -150,6 +161,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     floorGridTooltip: floorGridTooltip,
     adaptiveTooltip: adaptiveQualityTooltip,
     actionBarVisibleTooltip: actionBarVisibleTooltip,
+    solutionPathLineWidthTooltip: solutionPathLineWidthTooltip,
     showEdgesTooltip: showEdgesTooltip,
     showDebugTooltip: showDebugTooltip,
     showPreviewTooltip: showPreviewTooltip,
@@ -179,6 +191,8 @@ export function showSettingsPopup(toolbar: Toolbar): void {
 
   thresholdInput.addEventListener('change', applyThreshold);
   thresholdInput.addEventListener('blur', applyThreshold);
+  solutionPathLineWidthInput.addEventListener('change', applySolutionPathWidth);
+  solutionPathLineWidthInput.addEventListener('blur', applySolutionPathWidth);
   hideEdgesDuringInteractionToggle.addEventListener('change', () => {
     setHideEdgesDuringInteractionEnabled(hideEdgesDuringInteractionToggle.checked);
   });

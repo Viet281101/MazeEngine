@@ -1,8 +1,13 @@
-import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION } from '../../../constants/maze';
+import {
+  CAMERA_ZOOM_LIMIT,
+  MESH_REDUCTION,
+  SOLUTION_PATH_LINE_WIDTH,
+} from '../../../constants/maze';
 import {
   normalizeCameraZoomMaxDistance,
   normalizeCameraZoomMinDistance,
   normalizeMeshReductionThreshold,
+  normalizeSolutionPathLineWidth,
 } from '../../../utils/maze-normalizers';
 import { getMazeAppBridge } from '../popup-maze-app-bridge';
 
@@ -15,6 +20,7 @@ interface InitialSettingsValues {
   allowMultipleMazePopupPanels: boolean;
   toolbarTooltipsEnabled: boolean;
   actionBarVisible: boolean;
+  solutionPathLineWidth: number;
   edgesVisible: boolean;
   debugVisible: boolean;
   previewVisible: boolean;
@@ -52,6 +58,10 @@ export function getInitialSettingsValues(): InitialSettingsValues {
         : true,
     actionBarVisible:
       app && typeof app.isActionBarVisible === 'function' ? app.isActionBarVisible() : true,
+    solutionPathLineWidth:
+      app && typeof app.getSolutionPathLineWidth === 'function'
+        ? app.getSolutionPathLineWidth()
+        : SOLUTION_PATH_LINE_WIDTH.DEFAULT,
     edgesVisible: app && typeof app.isEdgesVisible === 'function' ? app.isEdgesVisible() : true,
     debugVisible:
       app && typeof app.isDebugOverlayVisible === 'function' ? app.isDebugOverlayVisible() : true,
@@ -146,6 +156,15 @@ export function setActionBarVisible(visible: boolean): void {
     element.classList.toggle('is-hidden', !visible);
     element.style.display = visible ? 'inline-flex' : 'none';
   });
+}
+
+export function applySolutionPathLineWidth(rawValue: number): number {
+  const clamped = normalizeSolutionPathLineWidth(rawValue);
+  const app = getMazeAppBridge();
+  if (app && typeof app.setSolutionPathLineWidth === 'function') {
+    app.setSolutionPathLineWidth(clamped);
+  }
+  return clamped;
 }
 
 export function setEdgesVisible(enabled: boolean): void {

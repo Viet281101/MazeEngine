@@ -2,6 +2,7 @@ import {
   normalizeCameraZoomMaxDistance,
   normalizeCameraZoomMinDistance,
   normalizeMeshReductionThreshold,
+  normalizeSolutionPathLineWidth,
 } from '../utils/maze-normalizers';
 
 export interface MeshReductionSettings {
@@ -13,6 +14,7 @@ export interface MeshReductionSettings {
   allowMultipleMazePopupPanels: boolean;
   toolbarTooltipsEnabled: boolean;
   actionBarVisible: boolean;
+  solutionPathLineWidth: number;
   cameraZoomLimitEnabled: boolean;
   cameraZoomMinDistance: number;
   cameraZoomMaxDistance: number;
@@ -29,6 +31,7 @@ export class MeshReductionSettingsStorage {
     'maze_solver_3d_allow_multiple_maze_popup_panels';
   private static readonly TOOLBAR_TOOLTIPS_ENABLED_KEY = 'maze_solver_3d_toolbar_tooltips_enabled';
   private static readonly ACTION_BAR_VISIBLE_KEY = 'maze_solver_3d_action_bar_visible';
+  private static readonly SOLUTION_PATH_LINE_WIDTH_KEY = 'maze_solver_3d_solution_path_line_width';
   private static readonly CAMERA_ZOOM_LIMIT_ENABLED_KEY =
     'maze_solver_3d_camera_zoom_limit_enabled';
   private static readonly CAMERA_ZOOM_MIN_DISTANCE_KEY = 'maze_solver_3d_camera_zoom_min_distance';
@@ -61,6 +64,7 @@ export class MeshReductionSettingsStorage {
       MeshReductionSettingsStorage.ACTION_BAR_VISIBLE_KEY,
       defaults.actionBarVisible
     );
+    const solutionPathLineWidth = this.loadSolutionPathLineWidth(defaults.solutionPathLineWidth);
     const cameraZoomLimitEnabled = this.loadBoolean(
       MeshReductionSettingsStorage.CAMERA_ZOOM_LIMIT_ENABLED_KEY,
       defaults.cameraZoomLimitEnabled
@@ -78,6 +82,7 @@ export class MeshReductionSettingsStorage {
       allowMultipleMazePopupPanels,
       toolbarTooltipsEnabled,
       actionBarVisible,
+      solutionPathLineWidth,
       cameraZoomLimitEnabled,
       cameraZoomMinDistance,
       cameraZoomMaxDistance,
@@ -114,6 +119,11 @@ export class MeshReductionSettingsStorage {
 
   public saveActionBarVisible(visible: boolean): void {
     this.setItem(MeshReductionSettingsStorage.ACTION_BAR_VISIBLE_KEY, String(visible));
+  }
+
+  public saveSolutionPathLineWidth(width: number): void {
+    const normalized = normalizeSolutionPathLineWidth(width);
+    this.setItem(MeshReductionSettingsStorage.SOLUTION_PATH_LINE_WIDTH_KEY, String(normalized));
   }
 
   public saveFloorGridEnabled(enabled: boolean): void {
@@ -164,6 +174,15 @@ export class MeshReductionSettingsStorage {
     }
     const parsed = Number(raw);
     return normalizeCameraZoomMaxDistance(parsed);
+  }
+
+  private loadSolutionPathLineWidth(fallback: number): number {
+    const raw = this.getItem(MeshReductionSettingsStorage.SOLUTION_PATH_LINE_WIDTH_KEY);
+    if (!raw) {
+      return normalizeSolutionPathLineWidth(fallback);
+    }
+    const parsed = Number(raw);
+    return normalizeSolutionPathLineWidth(parsed, fallback);
   }
 
   private loadBoolean(key: string, fallback: boolean): boolean {

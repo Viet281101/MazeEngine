@@ -8,13 +8,14 @@ import type { MazeController } from '../maze';
 import { computeMarkersFromLayer } from '../maze';
 import { subscribeLanguageChange, t } from '../i18n';
 import { DebugOverlay } from '../debug/debug-overlay';
-import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION } from '../constants/maze';
+import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION, SOLUTION_PATH_LINE_WIDTH } from '../constants/maze';
 import { PREVIEW_WINDOW, UI_BREAKPOINTS } from '../constants/ui';
 import { PREVIEW_WINDOW_STATUS_CHANGED_EVENT } from '../constants/events';
 import {
   normalizeCameraZoomMaxDistance,
   normalizeCameraZoomMinDistance,
   normalizeMeshReductionThreshold,
+  normalizeSolutionPathLineWidth,
 } from '../utils/maze-normalizers';
 import type { WebGLRenderer } from 'three';
 import { createInitialMazeData, createSampleMultiLayerMazeData } from './default-mazes';
@@ -78,6 +79,7 @@ export class MainApp implements MazeController, MazeAppBridge {
   private allowMultipleMazePopupPanels: boolean = false;
   private toolbarTooltipsEnabled: boolean = true;
   private actionBarVisible: boolean = true;
+  private solutionPathLineWidth: number = SOLUTION_PATH_LINE_WIDTH.DEFAULT;
   private cameraZoomLimitEnabled: boolean = CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED;
   private cameraZoomMinDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE;
   private cameraZoomMaxDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE;
@@ -182,6 +184,7 @@ export class MainApp implements MazeController, MazeAppBridge {
       allowMultipleMazePopupPanels: false,
       toolbarTooltipsEnabled: true,
       actionBarVisible: true,
+      solutionPathLineWidth: SOLUTION_PATH_LINE_WIDTH.DEFAULT,
       cameraZoomLimitEnabled: CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED,
       cameraZoomMinDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE,
       cameraZoomMaxDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE,
@@ -194,6 +197,7 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.allowMultipleMazePopupPanels = loaded.allowMultipleMazePopupPanels;
     this.toolbarTooltipsEnabled = loaded.toolbarTooltipsEnabled;
     this.actionBarVisible = loaded.actionBarVisible;
+    this.solutionPathLineWidth = loaded.solutionPathLineWidth;
     this.cameraZoomLimitEnabled = loaded.cameraZoomLimitEnabled;
     this.cameraZoomMinDistance = loaded.cameraZoomMinDistance;
     this.cameraZoomMaxDistance = loaded.cameraZoomMaxDistance;
@@ -262,6 +266,7 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.maze.setHideEdgesDuringInteractionEnabled(this.hideEdgesDuringInteractionEnabled);
     this.maze.setFloorGridEnabled(this.floorGridEnabled);
     this.maze.setAdaptiveQualityEnabled(this.adaptiveQualityEnabled);
+    this.maze.setSolutionPathLineWidth(this.solutionPathLineWidth);
     this.maze.setCameraZoomMinDistance(this.cameraZoomMinDistance);
     this.maze.setCameraZoomMaxDistance(this.cameraZoomMaxDistance);
     this.maze.setCameraZoomLimitEnabled(this.cameraZoomLimitEnabled);
@@ -428,7 +433,9 @@ export class MainApp implements MazeController, MazeAppBridge {
       this.pendingPenStrokeBreak = false;
     }
 
-    const nextCell: MarkerPoint = this.pendingPenStrokeBreak ? { ...cell, strokeStart: true } : cell;
+    const nextCell: MarkerPoint = this.pendingPenStrokeBreak
+      ? { ...cell, strokeStart: true }
+      : cell;
     this.pendingPenStrokeBreak = false;
     nextPath.push(nextCell);
     this.solutionPath = nextPath;
@@ -706,6 +713,17 @@ export class MainApp implements MazeController, MazeAppBridge {
 
   public isActionBarVisible(): boolean {
     return this.actionBarVisible;
+  }
+
+  public setSolutionPathLineWidth(width: number): void {
+    const normalized = normalizeSolutionPathLineWidth(width);
+    this.solutionPathLineWidth = normalized;
+    this.maze.setSolutionPathLineWidth(normalized);
+    this.settingsStorage.saveSolutionPathLineWidth(normalized);
+  }
+
+  public getSolutionPathLineWidth(): number {
+    return this.solutionPathLineWidth;
   }
 
   public setCameraZoomLimitEnabled(enabled: boolean): void {

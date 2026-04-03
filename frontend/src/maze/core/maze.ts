@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import type { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import { ResourceManager } from '../../resources/resource-manager';
 import { DisposalHelper } from '../../resources/disposal-helper';
 import { MeshFactory } from '../../resources/mesh-factory';
-import { MAZE_RENDER_TIMING } from '../../constants/maze';
+import { MAZE_RENDER_TIMING, SOLUTION_PATH_LINE_WIDTH } from '../../constants/maze';
 import type { MarkerPoint, SolutionPath } from '../../types/maze';
 import {
   clearInitialQualityUpgradeTimerApi,
@@ -57,7 +58,11 @@ import {
   type EdgeVisibilityRuntime,
   type InteractionRuntime,
 } from './runtime';
-import { createFloorGridOverlay as createFloorGridOverlayMesh } from '../rendering';
+import {
+  createFloorGridOverlay as createFloorGridOverlayMesh,
+  setSolutionPathLineWidth as setSolutionPathLineWidthForRender,
+  updateSolutionPathLineResolution,
+} from '../rendering';
 import { buildMainFloorForLayer, buildWallsForLayer } from '../builders';
 
 /**
@@ -75,7 +80,7 @@ export abstract class Maze {
   // Maze data
   protected maze: number[][][];
   protected mazeLayers: THREE.Object3D[] = [];
-  protected solutionPathLine: THREE.Line | null = null;
+  protected solutionPathLine: LineSegments2 | null = null;
 
   // Configuration
   protected wallHeight: number;
@@ -94,6 +99,7 @@ export abstract class Maze {
   protected cameraZoomLimitEnabled: boolean;
   protected cameraZoomMinDistance: number;
   protected cameraZoomMaxDistance: number;
+  protected solutionPathLineWidth: number = SOLUTION_PATH_LINE_WIDTH.DEFAULT;
 
   // Resource management
   protected resourceManager: ResourceManager;
@@ -346,6 +352,13 @@ export abstract class Maze {
     this.camera.updateProjectionMatrix();
     this.resetAdaptiveQualityMetrics();
     this.applyRendererSizeForMode(this.interactionRuntime.currentInteractionMode);
+    if (this.solutionPathLine) {
+      updateSolutionPathLineResolution(
+        this.solutionPathLine,
+        this.canvas.clientWidth,
+        this.canvas.clientHeight
+      );
+    }
     this.requestRender();
   }
 
@@ -655,8 +668,22 @@ export abstract class Maze {
       maze: this.maze,
       cellSize: this.cellSize,
       getLayerBaseY: index => this.getLayerBaseY(index),
+      lineWidth: this.solutionPathLineWidth,
+      viewportWidth: this.canvas.clientWidth,
+      viewportHeight: this.canvas.clientHeight,
     });
     this.solutionPathLine = next.line;
+    this.requestRender();
+  }
+
+  public setSolutionPathLineWidth(width: number): void {
+    if (!Number.isFinite(width) || width <= 0) {
+      return;
+    }
+    this.solutionPathLineWidth = width;
+    if (this.solutionPathLine) {
+      setSolutionPathLineWidthForRender(this.solutionPathLine, width);
+    }
     this.requestRender();
   }
 
