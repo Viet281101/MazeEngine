@@ -18,6 +18,10 @@
   cursor: grab;
 }
 
+.bottom-action-bar.is-hidden {
+  display: none !important;
+}
+
 .bottom-action-bar__group {
   display: flex;
   align-items: center;

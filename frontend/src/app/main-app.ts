@@ -75,6 +75,7 @@ export class MainApp implements MazeController, MazeAppBridge {
   private adaptiveQualityEnabled: boolean = true;
   private allowMultipleMazePopupPanels: boolean = false;
   private toolbarTooltipsEnabled: boolean = true;
+  private actionBarVisible: boolean = true;
   private cameraZoomLimitEnabled: boolean = CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED;
   private cameraZoomMinDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE;
   private cameraZoomMaxDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE;
@@ -142,6 +143,7 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.applyGUISettings();
     this.updatePreview();
     this.actionBar = new ActionBar();
+    this.actionBar.setVisible(this.actionBarVisible);
     this.actionBar.setActiveTool('hand');
     this.actionBar.onToolChange(tool => this.setDrawingTool(tool));
     this.actionBar.onUndo(() => this.undoDrawnPathStep());
@@ -173,10 +175,11 @@ export class MainApp implements MazeController, MazeAppBridge {
       enabled: MESH_REDUCTION.DEFAULT_ENABLED,
       threshold: MESH_REDUCTION.DEFAULT_THRESHOLD,
       hideEdgesDuringInteractionEnabled: false,
-      floorGridEnabled: true,
-      adaptiveQualityEnabled: true,
+      floorGridEnabled: false,
+      adaptiveQualityEnabled: false,
       allowMultipleMazePopupPanels: false,
       toolbarTooltipsEnabled: true,
+      actionBarVisible: true,
       cameraZoomLimitEnabled: CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED,
       cameraZoomMinDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE,
       cameraZoomMaxDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE,
@@ -188,6 +191,7 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.adaptiveQualityEnabled = loaded.adaptiveQualityEnabled;
     this.allowMultipleMazePopupPanels = loaded.allowMultipleMazePopupPanels;
     this.toolbarTooltipsEnabled = loaded.toolbarTooltipsEnabled;
+    this.actionBarVisible = loaded.actionBarVisible;
     this.cameraZoomLimitEnabled = loaded.cameraZoomLimitEnabled;
     this.cameraZoomMinDistance = loaded.cameraZoomMinDistance;
     this.cameraZoomMaxDistance = loaded.cameraZoomMaxDistance;
@@ -666,6 +670,16 @@ export class MainApp implements MazeController, MazeAppBridge {
 
   public isToolbarTooltipsEnabled(): boolean {
     return this.toolbarTooltipsEnabled;
+  }
+
+  public setActionBarVisible(visible: boolean): void {
+    this.actionBarVisible = visible;
+    this.actionBar.setVisible(visible);
+    this.settingsStorage.saveActionBarVisible(visible);
+  }
+
+  public isActionBarVisible(): boolean {
+    return this.actionBarVisible;
   }
 
   public setCameraZoomLimitEnabled(enabled: boolean): void {

@@ -38,6 +38,8 @@ export interface MazeAppBridge {
   isAllowMultipleMazePopupPanelsEnabled(): boolean;
   setToolbarTooltipsEnabled(enabled: boolean): void;
   isToolbarTooltipsEnabled(): boolean;
+  setActionBarVisible(visible: boolean): void;
+  isActionBarVisible(): boolean;
   setEdgesVisible(enabled: boolean): void;
   isEdgesVisible(): boolean;
   setDebugOverlayVisible(visible: boolean): void;

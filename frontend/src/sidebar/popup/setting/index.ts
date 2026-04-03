@@ -19,6 +19,7 @@ import {
   setHideEdgesDuringInteractionEnabled,
   setMeshReductionEnabled,
   setPreviewVisible,
+  setActionBarVisible,
   setToolbarTooltipsEnabled,
 } from './setting-app-bridge';
 import { createSettingsPopupDom } from './setting-dom';
@@ -40,6 +41,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     initialValues.adaptiveQualityEnabled,
     initialValues.allowMultipleMazePopupPanels,
     initialValues.toolbarTooltipsEnabled,
+    initialValues.actionBarVisible,
     initialValues.edgesVisible,
     initialValues.debugVisible,
     initialValues.previewVisible,
@@ -58,6 +60,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     adaptiveQualityToggle,
     allowMultipleMazePopupPanelsToggle,
     toolbarTooltipsToggle,
+    actionBarVisibleToggle,
     showEdgesToggle,
     showDebugToggle,
     showPreviewToggle,
@@ -71,6 +74,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     hideEdgesDuringInteractionHelpIcon,
     floorGridHelpIcon,
     adaptiveQualityHelpIcon,
+    actionBarVisibleHelpIcon,
     showEdgesHelpIcon,
     showDebugHelpIcon,
     showPreviewHelpIcon,
@@ -79,6 +83,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     hideEdgesDuringInteractionTooltip,
     floorGridTooltip,
     adaptiveQualityTooltip,
+    actionBarVisibleTooltip,
     showEdgesTooltip,
     showDebugTooltip,
     showPreviewTooltip,
@@ -135,6 +140,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     hideEdgesHelpIcon: hideEdgesDuringInteractionHelpIcon,
     floorGridHelpIcon: floorGridHelpIcon,
     adaptiveHelpIcon: adaptiveQualityHelpIcon,
+    actionBarVisibleHelpIcon: actionBarVisibleHelpIcon,
     showEdgesHelpIcon: showEdgesHelpIcon,
     showDebugHelpIcon: showDebugHelpIcon,
     showPreviewHelpIcon: showPreviewHelpIcon,
@@ -143,6 +149,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     hideEdgesTooltip: hideEdgesDuringInteractionTooltip,
     floorGridTooltip: floorGridTooltip,
     adaptiveTooltip: adaptiveQualityTooltip,
+    actionBarVisibleTooltip: actionBarVisibleTooltip,
     showEdgesTooltip: showEdgesTooltip,
     showDebugTooltip: showDebugTooltip,
     showPreviewTooltip: showPreviewTooltip,
@@ -186,6 +193,9 @@ export function showSettingsPopup(toolbar: Toolbar): void {
   });
   toolbarTooltipsToggle.addEventListener('change', () => {
     setToolbarTooltipsEnabled(toolbarTooltipsToggle.checked);
+  });
+  actionBarVisibleToggle.addEventListener('change', () => {
+    setActionBarVisible(actionBarVisibleToggle.checked);
   });
   showEdgesToggle.addEventListener('change', () => {
     setEdgesVisible(showEdgesToggle.checked);

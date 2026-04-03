@@ -11,6 +11,7 @@ export class ActionBar {
   private readonly dragController: ActionBarDragController;
   private unsubscribeLanguageChange: (() => void) | null = null;
   private activeTool: ActionTool = 'hand';
+  private visible: boolean = true;
   private toolChangeHandler: ((tool: ActionTool) => void) | null = null;
   private undoHandler: (() => void) | null = null;
   private clearHandler: (() => void) | null = null;
@@ -49,6 +50,17 @@ export class ActionBar {
   public setActiveTool(tool: ActionTool): void {
     this.activeTool = tool;
     this.syncToolButtons();
+  }
+
+  public setVisible(visible: boolean): void {
+    this.visible = visible;
+    this.refs.root.hidden = !visible;
+    this.refs.root.classList.toggle('is-hidden', !visible);
+    this.refs.root.style.display = visible ? 'inline-flex' : 'none';
+  }
+
+  public isVisible(): boolean {
+    return this.visible;
   }
 
   private bindEvents(): void {

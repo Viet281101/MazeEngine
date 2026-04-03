@@ -14,6 +14,7 @@ interface InitialSettingsValues {
   adaptiveQualityEnabled: boolean;
   allowMultipleMazePopupPanels: boolean;
   toolbarTooltipsEnabled: boolean;
+  actionBarVisible: boolean;
   edgesVisible: boolean;
   debugVisible: boolean;
   previewVisible: boolean;
@@ -49,6 +50,8 @@ export function getInitialSettingsValues(): InitialSettingsValues {
       app && typeof app.isToolbarTooltipsEnabled === 'function'
         ? app.isToolbarTooltipsEnabled()
         : true,
+    actionBarVisible:
+      app && typeof app.isActionBarVisible === 'function' ? app.isActionBarVisible() : true,
     edgesVisible: app && typeof app.isEdgesVisible === 'function' ? app.isEdgesVisible() : true,
     debugVisible:
       app && typeof app.isDebugOverlayVisible === 'function' ? app.isDebugOverlayVisible() : true,
@@ -128,6 +131,21 @@ export function setToolbarTooltipsEnabled(enabled: boolean): void {
   if (app && typeof app.setToolbarTooltipsEnabled === 'function') {
     app.setToolbarTooltipsEnabled(enabled);
   }
+}
+
+export function setActionBarVisible(visible: boolean): void {
+  const app = getMazeAppBridge();
+  if (app && typeof app.setActionBarVisible === 'function') {
+    app.setActionBarVisible(visible);
+    return;
+  }
+
+  // Fallback for stale runtime instances that don't expose the new bridge method yet.
+  document.querySelectorAll<HTMLElement>('.bottom-action-bar').forEach(element => {
+    element.hidden = !visible;
+    element.classList.toggle('is-hidden', !visible);
+    element.style.display = visible ? 'inline-flex' : 'none';
+  });
 }
 
 export function setEdgesVisible(enabled: boolean): void {

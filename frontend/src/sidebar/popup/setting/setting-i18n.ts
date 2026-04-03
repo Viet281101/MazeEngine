@@ -20,6 +20,7 @@ export function applySettingsTranslations(dom: SettingsPopupDom): void {
   dom.adaptiveQualityLabel.textContent = t('settings.adaptiveQuality');
   dom.allowMultipleMazePopupPanelsLabel.textContent = t('settings.allowMultipleMazePopupPanels');
   dom.toolbarTooltipsLabel.textContent = t('settings.toolbarTooltips');
+  dom.actionBarVisibleLabel.textContent = t('settings.actionBarVisible');
   dom.showEdgesLabel.textContent = t('gui.showEdges');
   dom.showDebugLabel.textContent = t('gui.showDebug');
   dom.showPreviewLabel.textContent = t('gui.showPreview');
@@ -35,6 +36,7 @@ export function applySettingsTranslations(dom: SettingsPopupDom): void {
   );
   dom.floorGridTooltipText.textContent = t('settings.floorGridTooltip');
   dom.adaptiveQualityTooltipText.textContent = t('settings.adaptiveQualityTooltip');
+  dom.actionBarVisibleTooltipText.textContent = t('settings.actionBarVisibleTooltip');
   dom.showEdgesTooltipText.textContent = t('settings.showEdgesTooltip');
   dom.showDebugTooltipText.textContent = t('settings.showDebugTooltip');
   dom.showPreviewTooltipText.textContent = t('settings.showPreviewTooltip');

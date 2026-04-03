@@ -3,6 +3,7 @@ type TooltipTarget =
   | 'threshold'
   | 'hideEdges'
   | 'adaptive'
+  | 'actionBarVisible'
   | 'floorGrid'
   | 'showEdges'
   | 'showDebug'
@@ -14,6 +15,7 @@ interface TooltipBindings {
   hideEdgesHelpIcon: HTMLImageElement;
   floorGridHelpIcon: HTMLImageElement;
   adaptiveHelpIcon: HTMLImageElement;
+  actionBarVisibleHelpIcon: HTMLImageElement;
   showEdgesHelpIcon: HTMLImageElement;
   showDebugHelpIcon: HTMLImageElement;
   showPreviewHelpIcon: HTMLImageElement;
@@ -22,6 +24,7 @@ interface TooltipBindings {
   hideEdgesTooltip: HTMLDivElement;
   floorGridTooltip: HTMLDivElement;
   adaptiveTooltip: HTMLDivElement;
+  actionBarVisibleTooltip: HTMLDivElement;
   showEdgesTooltip: HTMLDivElement;
   showDebugTooltip: HTMLDivElement;
   showPreviewTooltip: HTMLDivElement;
@@ -37,6 +40,10 @@ export function setupSettingsTooltips(bindings: TooltipBindings): () => void {
     hideEdges: { icon: bindings.hideEdgesHelpIcon, tooltip: bindings.hideEdgesTooltip },
     floorGrid: { icon: bindings.floorGridHelpIcon, tooltip: bindings.floorGridTooltip },
     adaptive: { icon: bindings.adaptiveHelpIcon, tooltip: bindings.adaptiveTooltip },
+    actionBarVisible: {
+      icon: bindings.actionBarVisibleHelpIcon,
+      tooltip: bindings.actionBarVisibleTooltip,
+    },
     showEdges: { icon: bindings.showEdgesHelpIcon, tooltip: bindings.showEdgesTooltip },
     showDebug: { icon: bindings.showDebugHelpIcon, tooltip: bindings.showDebugTooltip },
     showPreview: { icon: bindings.showPreviewHelpIcon, tooltip: bindings.showPreviewTooltip },

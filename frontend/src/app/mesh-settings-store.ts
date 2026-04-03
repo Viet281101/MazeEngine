@@ -12,6 +12,7 @@ export interface MeshReductionSettings {
   adaptiveQualityEnabled: boolean;
   allowMultipleMazePopupPanels: boolean;
   toolbarTooltipsEnabled: boolean;
+  actionBarVisible: boolean;
   cameraZoomLimitEnabled: boolean;
   cameraZoomMinDistance: number;
   cameraZoomMaxDistance: number;
@@ -27,6 +28,7 @@ export class MeshReductionSettingsStorage {
   private static readonly ALLOW_MULTIPLE_MAZE_POPUP_PANELS_KEY =
     'maze_solver_3d_allow_multiple_maze_popup_panels';
   private static readonly TOOLBAR_TOOLTIPS_ENABLED_KEY = 'maze_solver_3d_toolbar_tooltips_enabled';
+  private static readonly ACTION_BAR_VISIBLE_KEY = 'maze_solver_3d_action_bar_visible';
   private static readonly CAMERA_ZOOM_LIMIT_ENABLED_KEY =
     'maze_solver_3d_camera_zoom_limit_enabled';
   private static readonly CAMERA_ZOOM_MIN_DISTANCE_KEY = 'maze_solver_3d_camera_zoom_min_distance';
@@ -55,6 +57,10 @@ export class MeshReductionSettingsStorage {
       MeshReductionSettingsStorage.TOOLBAR_TOOLTIPS_ENABLED_KEY,
       defaults.toolbarTooltipsEnabled
     );
+    const actionBarVisible = this.loadBoolean(
+      MeshReductionSettingsStorage.ACTION_BAR_VISIBLE_KEY,
+      defaults.actionBarVisible
+    );
     const cameraZoomLimitEnabled = this.loadBoolean(
       MeshReductionSettingsStorage.CAMERA_ZOOM_LIMIT_ENABLED_KEY,
       defaults.cameraZoomLimitEnabled
@@ -71,6 +77,7 @@ export class MeshReductionSettingsStorage {
       adaptiveQualityEnabled,
       allowMultipleMazePopupPanels,
       toolbarTooltipsEnabled,
+      actionBarVisible,
       cameraZoomLimitEnabled,
       cameraZoomMinDistance,
       cameraZoomMaxDistance,
@@ -103,6 +110,10 @@ export class MeshReductionSettingsStorage {
 
   public saveToolbarTooltipsEnabled(enabled: boolean): void {
     this.setItem(MeshReductionSettingsStorage.TOOLBAR_TOOLTIPS_ENABLED_KEY, String(enabled));
+  }
+
+  public saveActionBarVisible(visible: boolean): void {
+    this.setItem(MeshReductionSettingsStorage.ACTION_BAR_VISIBLE_KEY, String(visible));
   }
 
   public saveFloorGridEnabled(enabled: boolean): void {

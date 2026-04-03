@@ -22,6 +22,7 @@ export interface SettingsPopupDom {
   adaptiveQualityLabel: HTMLElement;
   allowMultipleMazePopupPanelsLabel: HTMLElement;
   toolbarTooltipsLabel: HTMLElement;
+  actionBarVisibleLabel: HTMLElement;
   showEdgesLabel: HTMLElement;
   showDebugLabel: HTMLElement;
   showPreviewLabel: HTMLElement;
@@ -39,6 +40,7 @@ export interface SettingsPopupDom {
   adaptiveQualityToggle: HTMLInputElement;
   allowMultipleMazePopupPanelsToggle: HTMLInputElement;
   toolbarTooltipsToggle: HTMLInputElement;
+  actionBarVisibleToggle: HTMLInputElement;
   showEdgesToggle: HTMLInputElement;
   showDebugToggle: HTMLInputElement;
   showPreviewToggle: HTMLInputElement;
@@ -54,6 +56,7 @@ export interface SettingsPopupDom {
   hideEdgesDuringInteractionHelpIcon: HTMLImageElement;
   floorGridHelpIcon: HTMLImageElement;
   adaptiveQualityHelpIcon: HTMLImageElement;
+  actionBarVisibleHelpIcon: HTMLImageElement;
   showEdgesHelpIcon: HTMLImageElement;
   showDebugHelpIcon: HTMLImageElement;
   showPreviewHelpIcon: HTMLImageElement;
@@ -62,6 +65,7 @@ export interface SettingsPopupDom {
   hideEdgesDuringInteractionTooltip: HTMLDivElement;
   floorGridTooltip: HTMLDivElement;
   adaptiveQualityTooltip: HTMLDivElement;
+  actionBarVisibleTooltip: HTMLDivElement;
   showEdgesTooltip: HTMLDivElement;
   showDebugTooltip: HTMLDivElement;
   showPreviewTooltip: HTMLDivElement;
@@ -70,6 +74,7 @@ export interface SettingsPopupDom {
   hideEdgesDuringInteractionTooltipText: HTMLParagraphElement;
   floorGridTooltipText: HTMLParagraphElement;
   adaptiveQualityTooltipText: HTMLParagraphElement;
+  actionBarVisibleTooltipText: HTMLParagraphElement;
   showEdgesTooltipText: HTMLParagraphElement;
   showDebugTooltipText: HTMLParagraphElement;
   showPreviewTooltipText: HTMLParagraphElement;
@@ -147,6 +152,7 @@ export function createSettingsPopupDom(
   initialAdaptiveQualityEnabled: boolean,
   initialAllowMultipleMazePopupPanelsEnabled: boolean,
   initialToolbarTooltipsEnabled: boolean,
+  initialActionBarVisible: boolean,
   initialShowEdgesEnabled: boolean,
   initialShowDebugEnabled: boolean,
   initialShowPreviewEnabled: boolean,
@@ -264,6 +270,16 @@ export function createSettingsPopupDom(
   );
 
   const {
+    toggle: actionBarVisibleToggle,
+    label: actionBarVisibleLabel,
+    helpIcon: actionBarVisibleHelpIcon,
+  } = appendToggleSettingRow(content, {
+    labelKey: 'settings.actionBarVisible',
+    initialState: initialActionBarVisible,
+    withHelp: true,
+  });
+
+  const {
     toggle: showDebugToggle,
     label: showDebugLabel,
     helpIcon: showDebugHelpIcon,
@@ -375,6 +391,10 @@ export function createSettingsPopupDom(
     content,
     'settings-popup__tooltip settings-popup__tooltip--adaptive'
   );
+  const actionBarVisibleTooltipBlock = createTooltipBlock(
+    content,
+    'settings-popup__tooltip settings-popup__tooltip--action-bar-visible'
+  );
   const floorGridTooltipBlock = createTooltipBlock(
     content,
     'settings-popup__tooltip settings-popup__tooltip--floor-grid'
@@ -405,6 +425,7 @@ export function createSettingsPopupDom(
     adaptiveQualityLabel,
     allowMultipleMazePopupPanelsLabel,
     toolbarTooltipsLabel,
+    actionBarVisibleLabel,
     showEdgesLabel,
     showDebugLabel,
     showPreviewLabel,
@@ -420,6 +441,7 @@ export function createSettingsPopupDom(
     adaptiveQualityToggle,
     allowMultipleMazePopupPanelsToggle,
     toolbarTooltipsToggle,
+    actionBarVisibleToggle,
     showEdgesToggle,
     showDebugToggle,
     showPreviewToggle,
@@ -437,6 +459,7 @@ export function createSettingsPopupDom(
     hideEdgesDuringInteractionHelpIcon: hideEdgesDuringInteractionHelpIcon as HTMLImageElement,
     floorGridHelpIcon: floorGridHelpIcon as HTMLImageElement,
     adaptiveQualityHelpIcon: adaptiveQualityHelpIcon as HTMLImageElement,
+    actionBarVisibleHelpIcon: actionBarVisibleHelpIcon as HTMLImageElement,
     showEdgesHelpIcon: showEdgesHelpIcon as HTMLImageElement,
     showDebugHelpIcon: showDebugHelpIcon as HTMLImageElement,
     showPreviewHelpIcon: showPreviewHelpIcon as HTMLImageElement,
@@ -445,6 +468,7 @@ export function createSettingsPopupDom(
     hideEdgesDuringInteractionTooltip: hideEdgesTooltipBlock.tooltip,
     floorGridTooltip: floorGridTooltipBlock.tooltip,
     adaptiveQualityTooltip: adaptiveTooltipBlock.tooltip,
+    actionBarVisibleTooltip: actionBarVisibleTooltipBlock.tooltip,
     showEdgesTooltip: showEdgesTooltipBlock.tooltip,
     showDebugTooltip: showDebugTooltipBlock.tooltip,
     showPreviewTooltip: showPreviewTooltipBlock.tooltip,
@@ -453,6 +477,7 @@ export function createSettingsPopupDom(
     hideEdgesDuringInteractionTooltipText: hideEdgesTooltipBlock.text,
     floorGridTooltipText: floorGridTooltipBlock.text,
     adaptiveQualityTooltipText: adaptiveTooltipBlock.text,
+    actionBarVisibleTooltipText: actionBarVisibleTooltipBlock.text,
     showEdgesTooltipText: showEdgesTooltipBlock.text,
     showDebugTooltipText: showDebugTooltipBlock.text,
     showPreviewTooltipText: showPreviewTooltipBlock.text,
