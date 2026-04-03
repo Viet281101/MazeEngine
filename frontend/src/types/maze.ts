@@ -47,6 +47,8 @@ export interface MazeAppBridge {
   isToolbarTooltipsEnabled(): boolean;
   setActionBarVisible(visible: boolean): void;
   isActionBarVisible(): boolean;
+  setActionBarStatePersistenceEnabled(enabled: boolean): void;
+  isActionBarStatePersistenceEnabled(): boolean;
   setSolutionPathLineWidth(width: number): void;
   getSolutionPathLineWidth(): number;
   setEdgesVisible(enabled: boolean): void;

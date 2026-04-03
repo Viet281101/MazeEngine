@@ -1,5 +1,10 @@
+interface ActionBarDragControllerOptions {
+  onPositionChange?: (position: { x: number; y: number } | null) => void;
+}
+
 export class ActionBarDragController {
   private readonly root: HTMLDivElement;
+  private readonly onPositionChange: (position: { x: number; y: number } | null) => void;
   private isDragging: boolean = false;
   private draggingPointerId: number | null = null;
   private dragStartX: number = 0;
@@ -13,8 +18,9 @@ export class ActionBarDragController {
   private readonly onSelectStartHandler: (event: Event) => void;
   private readonly onResizeHandler: () => void;
 
-  constructor(root: HTMLDivElement) {
+  constructor(root: HTMLDivElement, options: ActionBarDragControllerOptions = {}) {
     this.root = root;
+    this.onPositionChange = options.onPositionChange ?? (() => {});
     this.onPointerMoveHandler = event => this.onPointerMove(event);
     this.onPointerUpHandler = event => this.onPointerUp(event);
     this.onPointerDownHandler = event => this.onPointerDown(event);
@@ -28,6 +34,69 @@ export class ActionBarDragController {
     this.root.removeEventListener('selectstart', this.onSelectStartHandler);
     this.detachDragListeners();
     window.removeEventListener('resize', this.onResizeHandler);
+  }
+
+  public constrainToViewport(): void {
+    if (!this.isCustomPositioned) {
+      return;
+    }
+    this.clampPositionToViewport();
+  }
+
+  public setCustomPosition(position: { x: number; y: number } | null): void {
+    if (!position) {
+      this.isCustomPositioned = false;
+      this.root.style.left = '';
+      this.root.style.top = '';
+      this.root.style.bottom = '';
+      this.root.style.transform = '';
+      this.emitPositionChange();
+      return;
+    }
+
+    this.isCustomPositioned = true;
+    this.windowX = position.x;
+    this.windowY = position.y;
+    this.root.style.bottom = 'auto';
+    this.root.style.transform = 'none';
+    this.clampPositionToViewport();
+    this.emitPositionChange();
+  }
+
+  public getCustomPosition(): { x: number; y: number } | null {
+    if (!this.isCustomPositioned) {
+      return null;
+    }
+    return {
+      x: this.windowX,
+      y: this.windowY,
+    };
+  }
+
+  public repositionAfterLayoutChange(previousRect: DOMRect): void {
+    if (!this.isCustomPositioned) {
+      return;
+    }
+
+    const currentRect = this.root.getBoundingClientRect();
+    const nextX = this.computeAnchoredPosition(
+      previousRect.left,
+      previousRect.right,
+      previousRect.width,
+      currentRect.width,
+      window.innerWidth
+    );
+    const nextY = this.computeAnchoredPosition(
+      previousRect.top,
+      previousRect.bottom,
+      previousRect.height,
+      currentRect.height,
+      window.innerHeight
+    );
+
+    this.windowX = nextX;
+    this.windowY = nextY;
+    this.clampPositionToViewport();
   }
 
   private bindEvents(): void {
@@ -86,6 +155,7 @@ export class ActionBarDragController {
     this.draggingPointerId = null;
     this.root.classList.remove('is-dragging');
     this.detachDragListeners();
+    this.emitPositionChange();
   }
 
   private attachDragListeners(): void {
@@ -118,6 +188,10 @@ export class ActionBarDragController {
     if (!this.isCustomPositioned) {
       return;
     }
+    this.clampPositionToViewport();
+  }
+
+  private clampPositionToViewport(): void {
     const rect = this.root.getBoundingClientRect();
     const maxX = Math.max(0, window.innerWidth - rect.width);
     const maxY = Math.max(0, window.innerHeight - rect.height);
@@ -126,8 +200,33 @@ export class ActionBarDragController {
     this.applyPosition();
   }
 
+  private computeAnchoredPosition(
+    start: number,
+    end: number,
+    previousSize: number,
+    currentSize: number,
+    viewportSize: number
+  ): number {
+    const EDGE_THRESHOLD = 24;
+    const startGap = start;
+    const endGap = Math.max(0, viewportSize - end);
+    const previousCenter = start + previousSize / 2;
+
+    if (endGap <= EDGE_THRESHOLD) {
+      return viewportSize - endGap - currentSize;
+    }
+    if (startGap <= EDGE_THRESHOLD) {
+      return startGap;
+    }
+    return previousCenter - currentSize / 2;
+  }
+
   private applyPosition(): void {
     this.root.style.left = `${this.windowX}px`;
     this.root.style.top = `${this.windowY}px`;
+  }
+
+  private emitPositionChange(): void {
+    this.onPositionChange(this.getCustomPosition());
   }
 }

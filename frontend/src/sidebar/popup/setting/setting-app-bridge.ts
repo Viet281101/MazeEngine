@@ -9,6 +9,7 @@ import {
   normalizeMeshReductionThreshold,
   normalizeSolutionPathLineWidth,
 } from '../../../utils/maze-normalizers';
+import { ACTION_BAR_STATE_PERSISTENCE_DEFAULT_ENABLED } from '../../../utils/actionbar-state';
 import { getMazeAppBridge } from '../popup-maze-app-bridge';
 
 interface InitialSettingsValues {
@@ -20,6 +21,7 @@ interface InitialSettingsValues {
   allowMultipleMazePopupPanels: boolean;
   toolbarTooltipsEnabled: boolean;
   actionBarVisible: boolean;
+  actionBarStatePersistenceEnabled: boolean;
   solutionPathLineWidth: number;
   edgesVisible: boolean;
   debugVisible: boolean;
@@ -58,6 +60,10 @@ export function getInitialSettingsValues(): InitialSettingsValues {
         : true,
     actionBarVisible:
       app && typeof app.isActionBarVisible === 'function' ? app.isActionBarVisible() : true,
+    actionBarStatePersistenceEnabled:
+      app && typeof app.isActionBarStatePersistenceEnabled === 'function'
+        ? app.isActionBarStatePersistenceEnabled()
+        : ACTION_BAR_STATE_PERSISTENCE_DEFAULT_ENABLED,
     solutionPathLineWidth:
       app && typeof app.getSolutionPathLineWidth === 'function'
         ? app.getSolutionPathLineWidth()
@@ -156,6 +162,13 @@ export function setActionBarVisible(visible: boolean): void {
     element.classList.toggle('is-hidden', !visible);
     element.style.display = visible ? 'inline-flex' : 'none';
   });
+}
+
+export function setActionBarStatePersistenceEnabled(enabled: boolean): void {
+  const app = getMazeAppBridge();
+  if (app && typeof app.setActionBarStatePersistenceEnabled === 'function') {
+    app.setActionBarStatePersistenceEnabled(enabled);
+  }
 }
 
 export function applySolutionPathLineWidth(rawValue: number): number {

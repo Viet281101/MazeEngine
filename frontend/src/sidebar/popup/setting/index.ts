@@ -21,6 +21,7 @@ import {
   setMeshReductionEnabled,
   setPreviewVisible,
   setActionBarVisible,
+  setActionBarStatePersistenceEnabled,
   setToolbarTooltipsEnabled,
 } from './setting-app-bridge';
 import { createSettingsPopupDom } from './setting-dom';
@@ -43,6 +44,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     initialValues.allowMultipleMazePopupPanels,
     initialValues.toolbarTooltipsEnabled,
     initialValues.actionBarVisible,
+    initialValues.actionBarStatePersistenceEnabled,
     initialValues.solutionPathLineWidth,
     initialValues.edgesVisible,
     initialValues.debugVisible,
@@ -63,6 +65,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     allowMultipleMazePopupPanelsToggle,
     toolbarTooltipsToggle,
     actionBarVisibleToggle,
+    actionBarStatePersistenceToggle,
     solutionPathLineWidthInput,
     showEdgesToggle,
     showDebugToggle,
@@ -78,6 +81,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     floorGridHelpIcon,
     adaptiveQualityHelpIcon,
     actionBarVisibleHelpIcon,
+    actionBarStatePersistenceHelpIcon,
     solutionPathLineWidthHelpIcon,
     showEdgesHelpIcon,
     showDebugHelpIcon,
@@ -88,6 +92,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     floorGridTooltip,
     adaptiveQualityTooltip,
     actionBarVisibleTooltip,
+    actionBarStatePersistenceTooltip,
     solutionPathLineWidthTooltip,
     showEdgesTooltip,
     showDebugTooltip,
@@ -151,6 +156,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     floorGridHelpIcon: floorGridHelpIcon,
     adaptiveHelpIcon: adaptiveQualityHelpIcon,
     actionBarVisibleHelpIcon: actionBarVisibleHelpIcon,
+    actionBarStatePersistenceHelpIcon: actionBarStatePersistenceHelpIcon,
     solutionPathLineWidthHelpIcon: solutionPathLineWidthHelpIcon,
     showEdgesHelpIcon: showEdgesHelpIcon,
     showDebugHelpIcon: showDebugHelpIcon,
@@ -161,6 +167,7 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     floorGridTooltip: floorGridTooltip,
     adaptiveTooltip: adaptiveQualityTooltip,
     actionBarVisibleTooltip: actionBarVisibleTooltip,
+    actionBarStatePersistenceTooltip: actionBarStatePersistenceTooltip,
     solutionPathLineWidthTooltip: solutionPathLineWidthTooltip,
     showEdgesTooltip: showEdgesTooltip,
     showDebugTooltip: showDebugTooltip,
@@ -210,6 +217,9 @@ export function showSettingsPopup(toolbar: Toolbar): void {
   });
   actionBarVisibleToggle.addEventListener('change', () => {
     setActionBarVisible(actionBarVisibleToggle.checked);
+  });
+  actionBarStatePersistenceToggle.addEventListener('change', () => {
+    setActionBarStatePersistenceEnabled(actionBarStatePersistenceToggle.checked);
   });
   showEdgesToggle.addEventListener('change', () => {
     setEdgesVisible(showEdgesToggle.checked);
