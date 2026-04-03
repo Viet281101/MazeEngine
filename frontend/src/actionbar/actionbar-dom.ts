@@ -55,6 +55,15 @@ export function createActionBarDom(): ActionBarRefs {
   const viewGroup = document.createElement('section');
   viewGroup.className = 'bottom-action-bar__group';
 
+  const viewModeControl = document.createElement('div');
+  viewModeControl.className = 'bottom-action-bar__view-mode-control';
+  const viewModeIcon = document.createElement('img');
+  viewModeIcon.className = 'bottom-action-bar__icon';
+  viewModeIcon.src = getIconPath('ophthalmology.png');
+  viewModeIcon.alt = '';
+  viewModeIcon.setAttribute('aria-hidden', 'true');
+  viewModeControl.appendChild(viewModeIcon);
+
   const viewModeSelect = document.createElement('select');
   viewModeSelect.className = 'bottom-action-bar__select';
   const viewModeAllOption = document.createElement('option');
@@ -68,7 +77,8 @@ export function createActionBarDom(): ActionBarRefs {
   viewModeSelect.appendChild(viewModeFocusOnlyOption);
   viewModeSelect.value = viewModeAllOption.value;
   viewModeSelect.setAttribute('aria-label', t('bottomActionBar.view.title'));
-  viewGroup.appendChild(viewModeSelect);
+  viewModeControl.appendChild(viewModeSelect);
+  viewGroup.appendChild(viewModeControl);
 
   root.appendChild(toolsGroup);
   root.appendChild(divider);

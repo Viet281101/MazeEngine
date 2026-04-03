@@ -62,6 +62,8 @@ export class MainApp implements MazeController, MazeAppBridge {
   private drawingTool: DrawingTool = 'hand';
   private drawingPointerId: number | null = null;
   private lastEditedCellKey: string | null = null;
+  private pendingPenStrokeBreak: boolean = false;
+  private currentPenStrokeAnchor: MarkerPoint | null = null;
   private edgesVisible: boolean = true;
   private debugOverlayVisible: boolean = true;
   private previewVisibleByViewport: boolean = true;
@@ -336,6 +338,8 @@ export class MainApp implements MazeController, MazeAppBridge {
     event.preventDefault();
     this.drawingPointerId = event.pointerId;
     this.lastEditedCellKey = null;
+    this.pendingPenStrokeBreak = this.drawingTool === 'pen';
+    this.currentPenStrokeAnchor = null;
     this.canvas.setPointerCapture(event.pointerId);
     this.applyDrawingAtPointer(event);
   }
@@ -372,6 +376,8 @@ export class MainApp implements MazeController, MazeAppBridge {
   private clearDrawingPointerState(): void {
     this.drawingPointerId = null;
     this.lastEditedCellKey = null;
+    this.pendingPenStrokeBreak = false;
+    this.currentPenStrokeAnchor = null;
   }
 
   private applyDrawingAtPointer(event: PointerEvent): void {
@@ -391,6 +397,11 @@ export class MainApp implements MazeController, MazeAppBridge {
     }
 
     if (this.drawingTool === 'pen') {
+      if (this.isCellInDrawnPath(pickedCell)) {
+        this.currentPenStrokeAnchor = { ...pickedCell };
+        this.pendingPenStrokeBreak = false;
+        return;
+      }
       this.addCellToDrawnPath(pickedCell);
       return;
     }
@@ -405,17 +416,32 @@ export class MainApp implements MazeController, MazeAppBridge {
   }
 
   private addCellToDrawnPath(cell: MarkerPoint): void {
-    const exists = this.solutionPath.some(
+    const exists = this.isCellInDrawnPath(cell);
+    if (exists) {
+      return;
+    }
+
+    const nextPath: SolutionPath = [...this.solutionPath];
+    if (this.currentPenStrokeAnchor) {
+      nextPath.push({ ...this.currentPenStrokeAnchor, strokeStart: true });
+      this.currentPenStrokeAnchor = null;
+      this.pendingPenStrokeBreak = false;
+    }
+
+    const nextCell: MarkerPoint = this.pendingPenStrokeBreak ? { ...cell, strokeStart: true } : cell;
+    this.pendingPenStrokeBreak = false;
+    nextPath.push(nextCell);
+    this.solutionPath = nextPath;
+    this.syncRenderedPathWithState();
+  }
+
+  private isCellInDrawnPath(cell: MarkerPoint): boolean {
+    return this.solutionPath.some(
       existing =>
         existing.row === cell.row &&
         existing.col === cell.col &&
         (existing.layerIndex ?? 0) === (cell.layerIndex ?? 0)
     );
-    if (exists) {
-      return;
-    }
-    this.solutionPath = [...this.solutionPath, cell];
-    this.syncRenderedPathWithState();
   }
 
   private removeCellFromDrawnPath(cell: MarkerPoint): void {

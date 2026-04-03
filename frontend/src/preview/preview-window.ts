@@ -748,6 +748,7 @@ export class PreviewWindow {
       if (
         prev.row !== next.row ||
         prev.col !== next.col ||
+        (prev.strokeStart === true) !== (next.strokeStart === true) ||
         this.resolvePointLayerIndex(prev) !== this.resolvePointLayerIndex(next)
       ) {
         return true;

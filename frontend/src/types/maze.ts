@@ -1,6 +1,13 @@
 export type MazeData = number[][][];
 
-export type MarkerPoint = { row: number; col: number; layerIndex?: number };
+export type MarkerPoint = {
+  row: number;
+  col: number;
+  layerIndex?: number;
+  // Marks the first point of a manually drawn stroke so renderers can avoid
+  // connecting it to the previous stroke.
+  strokeStart?: boolean;
+};
 export type SolutionPath = MarkerPoint[];
 
 export type MazeMarkers = { start: MarkerPoint | null; end: MarkerPoint | null };

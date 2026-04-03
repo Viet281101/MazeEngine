@@ -2,6 +2,17 @@ import * as THREE from 'three';
 import { SOLUTION_PATH } from '../../constants/maze';
 import type { SolutionPath } from '../../types/maze';
 
+interface ResolvedPathCell {
+  row: number;
+  col: number;
+  layerIndex: number;
+  position: THREE.Vector3;
+}
+
+function cellKey(layerIndex: number, row: number, col: number): string {
+  return `${layerIndex}:${row}:${col}`;
+}
+
 export function createSolutionPathLine(
   path: SolutionPath,
   maze: number[][][],
@@ -9,7 +20,7 @@ export function createSolutionPathLine(
   defaultLayerIndex: number,
   getLayerBaseY: (layerIndex: number) => number
 ): THREE.Line | null {
-  const points: THREE.Vector3[] = [];
+  const cellByKey = new Map<string, ResolvedPathCell>();
 
   path.forEach(cell => {
     const layerIndex =
@@ -28,14 +39,42 @@ export function createSolutionPathLine(
     const x = cell.col * cellSize;
     const y = SOLUTION_PATH.Y_OFFSET + getLayerBaseY(layerIndex);
     const z = -cell.row * cellSize;
-    points.push(new THREE.Vector3(x, y, z));
+    cellByKey.set(cellKey(layerIndex, cell.row, cell.col), {
+      row: cell.row,
+      col: cell.col,
+      layerIndex,
+      position: new THREE.Vector3(x, y, z),
+    });
   });
 
-  if (points.length < 2) {
+  if (cellByKey.size < 2) {
     return null;
   }
 
-  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const segmentPoints: THREE.Vector3[] = [];
+  const neighborOffsets = [
+    { dLayer: 0, dRow: 0, dCol: 1 },
+    { dLayer: 0, dRow: 1, dCol: 0 },
+    { dLayer: 1, dRow: 0, dCol: 0 },
+  ] as const;
+
+  cellByKey.forEach(from => {
+    neighborOffsets.forEach(offset => {
+      const to = cellByKey.get(
+        cellKey(from.layerIndex + offset.dLayer, from.row + offset.dRow, from.col + offset.dCol)
+      );
+      if (!to) {
+        return;
+      }
+      segmentPoints.push(from.position, to.position);
+    });
+  });
+
+  if (segmentPoints.length < 2) {
+    return null;
+  }
+
+  const geometry = new THREE.BufferGeometry().setFromPoints(segmentPoints);
   const material = new THREE.LineBasicMaterial({
     color: SOLUTION_PATH.COLOR,
     linewidth: SOLUTION_PATH.LINE_WIDTH,
@@ -43,7 +82,7 @@ export function createSolutionPathLine(
     opacity: SOLUTION_PATH.OPACITY,
     depthTest: false,
   });
-  const line = new THREE.Line(geometry, material);
+  const line = new THREE.LineSegments(geometry, material);
   line.renderOrder = 2;
   return line;
 }
