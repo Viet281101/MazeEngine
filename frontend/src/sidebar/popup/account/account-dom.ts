@@ -60,9 +60,11 @@ function createInputField(
   return input;
 }
 
-function createPasswordField(
-  parent: HTMLElement
-): { input: HTMLInputElement; toggleBtn: HTMLButtonElement; toggleIcon: HTMLImageElement } {
+function createPasswordField(parent: HTMLElement): {
+  input: HTMLInputElement;
+  toggleBtn: HTMLButtonElement;
+  toggleIcon: HTMLImageElement;
+} {
   const field = document.createElement('label');
   field.className = 'account-popup__field';
 
