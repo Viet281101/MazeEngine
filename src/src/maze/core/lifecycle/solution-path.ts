@@ -1,25 +1,29 @@
 import * as THREE from 'three';
+import type { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import type { SolutionPath } from '../../../types/maze';
 import { createSolutionPathLine, disposeSolutionPathLine } from '../../rendering';
 
 interface UpsertSolutionPathLineParams {
   scene: THREE.Scene;
-  currentLine: THREE.Line | null;
+  currentLine: LineSegments2 | null;
   path: SolutionPath;
   layerIndex: number;
   maze: number[][][];
   cellSize: number;
   getLayerBaseY: (layerIndex: number) => number;
+  lineWidth: number;
+  viewportWidth: number;
+  viewportHeight: number;
 }
 
 interface UpsertSolutionPathLineResult {
-  line: THREE.Line | null;
+  line: LineSegments2 | null;
 }
 
 export function clearSolutionPathLine(
   scene: THREE.Scene,
-  line: THREE.Line | null
-): THREE.Line | null {
+  line: LineSegments2 | null
+): LineSegments2 | null {
   if (!line) {
     return null;
   }
@@ -44,7 +48,10 @@ export function upsertSolutionPathLine(
     params.maze,
     params.cellSize,
     params.layerIndex,
-    params.getLayerBaseY
+    params.getLayerBaseY,
+    params.lineWidth,
+    params.viewportWidth,
+    params.viewportHeight
   );
   if (!nextLine) {
     return { line: clearedLine };

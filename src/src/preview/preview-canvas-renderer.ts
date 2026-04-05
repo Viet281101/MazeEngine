@@ -180,23 +180,47 @@ function drawSolutionPath(
     return;
   }
 
+  const cellSet = new Set<string>();
+  solutionPath.forEach(cell => {
+    cellSet.add(`${cell.row}:${cell.col}`);
+  });
+
   ctx.save();
-  ctx.beginPath();
   ctx.strokeStyle = PREVIEW_COLORS.solutionPath;
   ctx.lineWidth = Math.max(2, cellSize * 0.35);
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  solutionPath.forEach((cell, index) => {
-    const centerX = offsetX + cell.col * cellSize + cellSize / 2;
-    const centerY = offsetY + (rows - 1 - cell.row) * cellSize + cellSize / 2;
-    if (index === 0) {
-      ctx.moveTo(centerX, centerY);
-    } else {
-      ctx.lineTo(centerX, centerY);
+  cellSet.forEach(key => {
+    const [rowRaw, colRaw] = key.split(':');
+    const row = Number(rowRaw);
+    const col = Number(colRaw);
+    if (!Number.isInteger(row) || !Number.isInteger(col)) {
+      return;
+    }
+
+    const fromX = offsetX + col * cellSize + cellSize / 2;
+    const fromY = offsetY + (rows - 1 - row) * cellSize + cellSize / 2;
+
+    const rightKey = `${row}:${col + 1}`;
+    if (cellSet.has(rightKey)) {
+      const toX = offsetX + (col + 1) * cellSize + cellSize / 2;
+      const toY = fromY;
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
+    }
+
+    const downKey = `${row + 1}:${col}`;
+    if (cellSet.has(downKey)) {
+      const toX = fromX;
+      const toY = offsetY + (rows - 1 - (row + 1)) * cellSize + cellSize / 2;
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.stroke();
     }
   });
-
-  ctx.stroke();
   ctx.restore();
 }

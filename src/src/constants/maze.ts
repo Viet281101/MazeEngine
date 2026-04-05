@@ -44,6 +44,12 @@ export const SOLUTION_PATH = {
   Y_OFFSET: 0.04,
 } as const;
 
+export const SOLUTION_PATH_LINE_WIDTH = {
+  MIN: 1,
+  MAX: 12,
+  DEFAULT: 6,
+} as const;
+
 export const FLOOR_GRID_Y_OFFSET = 0.001;
 
 export const MAZE_RENDER_TIMING = {

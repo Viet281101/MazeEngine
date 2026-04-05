@@ -22,6 +22,9 @@ export interface SettingsPopupDom {
   adaptiveQualityLabel: HTMLElement;
   allowMultipleMazePopupPanelsLabel: HTMLElement;
   toolbarTooltipsLabel: HTMLElement;
+  actionBarVisibleLabel: HTMLElement;
+  actionBarStatePersistenceLabel: HTMLElement;
+  solutionPathLineWidthLabel: HTMLElement;
   showEdgesLabel: HTMLElement;
   showDebugLabel: HTMLElement;
   showPreviewLabel: HTMLElement;
@@ -39,6 +42,9 @@ export interface SettingsPopupDom {
   adaptiveQualityToggle: HTMLInputElement;
   allowMultipleMazePopupPanelsToggle: HTMLInputElement;
   toolbarTooltipsToggle: HTMLInputElement;
+  actionBarVisibleToggle: HTMLInputElement;
+  actionBarStatePersistenceToggle: HTMLInputElement;
+  solutionPathLineWidthInput: HTMLInputElement;
   showEdgesToggle: HTMLInputElement;
   showDebugToggle: HTMLInputElement;
   showPreviewToggle: HTMLInputElement;
@@ -49,11 +55,16 @@ export interface SettingsPopupDom {
   cameraZoomMinDecreaseButton: HTMLButtonElement;
   cameraZoomMaxIncreaseButton: HTMLButtonElement;
   cameraZoomMaxDecreaseButton: HTMLButtonElement;
+  solutionPathLineWidthIncreaseButton: HTMLButtonElement;
+  solutionPathLineWidthDecreaseButton: HTMLButtonElement;
   meshReductionHelpIcon: HTMLImageElement;
   thresholdHelpIcon: HTMLImageElement;
   hideEdgesDuringInteractionHelpIcon: HTMLImageElement;
   floorGridHelpIcon: HTMLImageElement;
   adaptiveQualityHelpIcon: HTMLImageElement;
+  actionBarVisibleHelpIcon: HTMLImageElement;
+  actionBarStatePersistenceHelpIcon: HTMLImageElement;
+  solutionPathLineWidthHelpIcon: HTMLImageElement;
   showEdgesHelpIcon: HTMLImageElement;
   showDebugHelpIcon: HTMLImageElement;
   showPreviewHelpIcon: HTMLImageElement;
@@ -62,6 +73,9 @@ export interface SettingsPopupDom {
   hideEdgesDuringInteractionTooltip: HTMLDivElement;
   floorGridTooltip: HTMLDivElement;
   adaptiveQualityTooltip: HTMLDivElement;
+  actionBarVisibleTooltip: HTMLDivElement;
+  actionBarStatePersistenceTooltip: HTMLDivElement;
+  solutionPathLineWidthTooltip: HTMLDivElement;
   showEdgesTooltip: HTMLDivElement;
   showDebugTooltip: HTMLDivElement;
   showPreviewTooltip: HTMLDivElement;
@@ -70,6 +84,9 @@ export interface SettingsPopupDom {
   hideEdgesDuringInteractionTooltipText: HTMLParagraphElement;
   floorGridTooltipText: HTMLParagraphElement;
   adaptiveQualityTooltipText: HTMLParagraphElement;
+  actionBarVisibleTooltipText: HTMLParagraphElement;
+  actionBarStatePersistenceTooltipText: HTMLParagraphElement;
+  solutionPathLineWidthTooltipText: HTMLParagraphElement;
   showEdgesTooltipText: HTMLParagraphElement;
   showDebugTooltipText: HTMLParagraphElement;
   showPreviewTooltipText: HTMLParagraphElement;
@@ -147,6 +164,9 @@ export function createSettingsPopupDom(
   initialAdaptiveQualityEnabled: boolean,
   initialAllowMultipleMazePopupPanelsEnabled: boolean,
   initialToolbarTooltipsEnabled: boolean,
+  initialActionBarVisible: boolean,
+  initialActionBarStatePersistenceEnabled: boolean,
+  initialSolutionPathLineWidth: number,
   initialShowEdgesEnabled: boolean,
   initialShowDebugEnabled: boolean,
   initialShowPreviewEnabled: boolean,
@@ -239,6 +259,39 @@ export function createSettingsPopupDom(
     withHelp: true,
   });
 
+  const solutionPathLineWidthInput = document.createElement('input');
+  solutionPathLineWidthInput.type = 'number';
+  solutionPathLineWidthInput.className = 'settings-popup__input';
+  solutionPathLineWidthInput.min = '1';
+  solutionPathLineWidthInput.max = '12';
+  solutionPathLineWidthInput.step = '0.5';
+  solutionPathLineWidthInput.value = String(initialSolutionPathLineWidth);
+  const solutionPathLineWidthField = createNumberStepperField(solutionPathLineWidthInput, {
+    increaseLabel: 'Increase stroke line width',
+    decreaseLabel: 'Decrease stroke line width',
+  });
+  const solutionPathLineWidthIncreaseButton = getStepperButtonOrThrow(
+    solutionPathLineWidthField,
+    '.popup-number-step-btn--up',
+    'solution path line width'
+  );
+  const solutionPathLineWidthDecreaseButton = getStepperButtonOrThrow(
+    solutionPathLineWidthField,
+    '.popup-number-step-btn--down',
+    'solution path line width'
+  );
+  solutionPathLineWidthField.classList.add('settings-popup__number-field');
+  const {
+    labelWrap: solutionPathLineWidthLabelWrap,
+    labelText: solutionPathLineWidthLabel,
+    helpIcon: solutionPathLineWidthHelpIcon,
+  } = createLabelWithHelp('settings.solutionPathLineWidth');
+  const { row: solutionPathLineWidthRow } = createRow({
+    label: solutionPathLineWidthLabelWrap,
+    control: solutionPathLineWidthField,
+  });
+  graphicsGroup.appendChild(solutionPathLineWidthRow);
+
   const {
     toggle: showEdgesToggle,
     label: showEdgesLabel,
@@ -262,6 +315,26 @@ export function createSettingsPopupDom(
       initialState: initialToolbarTooltipsEnabled,
     }
   );
+
+  const {
+    toggle: actionBarVisibleToggle,
+    label: actionBarVisibleLabel,
+    helpIcon: actionBarVisibleHelpIcon,
+  } = appendToggleSettingRow(content, {
+    labelKey: 'settings.actionBarVisible',
+    initialState: initialActionBarVisible,
+    withHelp: true,
+  });
+
+  const {
+    toggle: actionBarStatePersistenceToggle,
+    label: actionBarStatePersistenceLabel,
+    helpIcon: actionBarStatePersistenceHelpIcon,
+  } = appendToggleSettingRow(content, {
+    labelKey: 'settings.actionBarStatePersistence',
+    initialState: initialActionBarStatePersistenceEnabled,
+    withHelp: true,
+  });
 
   const {
     toggle: showDebugToggle,
@@ -375,6 +448,18 @@ export function createSettingsPopupDom(
     content,
     'settings-popup__tooltip settings-popup__tooltip--adaptive'
   );
+  const actionBarVisibleTooltipBlock = createTooltipBlock(
+    content,
+    'settings-popup__tooltip settings-popup__tooltip--action-bar-visible'
+  );
+  const actionBarStatePersistenceTooltipBlock = createTooltipBlock(
+    content,
+    'settings-popup__tooltip settings-popup__tooltip--action-bar-state-persistence'
+  );
+  const solutionPathLineWidthTooltipBlock = createTooltipBlock(
+    content,
+    'settings-popup__tooltip settings-popup__tooltip--solution-path-line-width'
+  );
   const floorGridTooltipBlock = createTooltipBlock(
     content,
     'settings-popup__tooltip settings-popup__tooltip--floor-grid'
@@ -405,6 +490,9 @@ export function createSettingsPopupDom(
     adaptiveQualityLabel,
     allowMultipleMazePopupPanelsLabel,
     toolbarTooltipsLabel,
+    actionBarVisibleLabel,
+    actionBarStatePersistenceLabel,
+    solutionPathLineWidthLabel,
     showEdgesLabel,
     showDebugLabel,
     showPreviewLabel,
@@ -420,6 +508,9 @@ export function createSettingsPopupDom(
     adaptiveQualityToggle,
     allowMultipleMazePopupPanelsToggle,
     toolbarTooltipsToggle,
+    actionBarVisibleToggle,
+    actionBarStatePersistenceToggle,
+    solutionPathLineWidthInput,
     showEdgesToggle,
     showDebugToggle,
     showPreviewToggle,
@@ -430,6 +521,8 @@ export function createSettingsPopupDom(
     cameraZoomMinDecreaseButton,
     cameraZoomMaxIncreaseButton,
     cameraZoomMaxDecreaseButton,
+    solutionPathLineWidthIncreaseButton,
+    solutionPathLineWidthDecreaseButton,
     cameraZoomMinRow,
     cameraZoomMaxRow,
     meshReductionHelpIcon: meshReductionHelpIcon as HTMLImageElement,
@@ -437,6 +530,9 @@ export function createSettingsPopupDom(
     hideEdgesDuringInteractionHelpIcon: hideEdgesDuringInteractionHelpIcon as HTMLImageElement,
     floorGridHelpIcon: floorGridHelpIcon as HTMLImageElement,
     adaptiveQualityHelpIcon: adaptiveQualityHelpIcon as HTMLImageElement,
+    actionBarVisibleHelpIcon: actionBarVisibleHelpIcon as HTMLImageElement,
+    actionBarStatePersistenceHelpIcon: actionBarStatePersistenceHelpIcon as HTMLImageElement,
+    solutionPathLineWidthHelpIcon: solutionPathLineWidthHelpIcon as HTMLImageElement,
     showEdgesHelpIcon: showEdgesHelpIcon as HTMLImageElement,
     showDebugHelpIcon: showDebugHelpIcon as HTMLImageElement,
     showPreviewHelpIcon: showPreviewHelpIcon as HTMLImageElement,
@@ -445,6 +541,9 @@ export function createSettingsPopupDom(
     hideEdgesDuringInteractionTooltip: hideEdgesTooltipBlock.tooltip,
     floorGridTooltip: floorGridTooltipBlock.tooltip,
     adaptiveQualityTooltip: adaptiveTooltipBlock.tooltip,
+    actionBarVisibleTooltip: actionBarVisibleTooltipBlock.tooltip,
+    actionBarStatePersistenceTooltip: actionBarStatePersistenceTooltipBlock.tooltip,
+    solutionPathLineWidthTooltip: solutionPathLineWidthTooltipBlock.tooltip,
     showEdgesTooltip: showEdgesTooltipBlock.tooltip,
     showDebugTooltip: showDebugTooltipBlock.tooltip,
     showPreviewTooltip: showPreviewTooltipBlock.tooltip,
@@ -453,6 +552,9 @@ export function createSettingsPopupDom(
     hideEdgesDuringInteractionTooltipText: hideEdgesTooltipBlock.text,
     floorGridTooltipText: floorGridTooltipBlock.text,
     adaptiveQualityTooltipText: adaptiveTooltipBlock.text,
+    actionBarVisibleTooltipText: actionBarVisibleTooltipBlock.text,
+    actionBarStatePersistenceTooltipText: actionBarStatePersistenceTooltipBlock.text,
+    solutionPathLineWidthTooltipText: solutionPathLineWidthTooltipBlock.text,
     showEdgesTooltipText: showEdgesTooltipBlock.text,
     showDebugTooltipText: showDebugTooltipBlock.text,
     showPreviewTooltipText: showPreviewTooltipBlock.text,

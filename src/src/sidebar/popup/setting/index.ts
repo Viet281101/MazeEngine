@@ -6,6 +6,7 @@ import {
   applyCameraZoomMaxDistance,
   applyCameraZoomMinDistance,
   applyMeshReductionThreshold,
+  applySolutionPathLineWidth,
   canOpenPreviewWindow,
   getInitialSettingsValues,
   isPreviewVisible,
@@ -19,6 +20,8 @@ import {
   setHideEdgesDuringInteractionEnabled,
   setMeshReductionEnabled,
   setPreviewVisible,
+  setActionBarVisible,
+  setActionBarStatePersistenceEnabled,
   setToolbarTooltipsEnabled,
 } from './setting-app-bridge';
 import { createSettingsPopupDom } from './setting-dom';
@@ -40,6 +43,9 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     initialValues.adaptiveQualityEnabled,
     initialValues.allowMultipleMazePopupPanels,
     initialValues.toolbarTooltipsEnabled,
+    initialValues.actionBarVisible,
+    initialValues.actionBarStatePersistenceEnabled,
+    initialValues.solutionPathLineWidth,
     initialValues.edgesVisible,
     initialValues.debugVisible,
     initialValues.previewVisible,
@@ -58,6 +64,9 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     adaptiveQualityToggle,
     allowMultipleMazePopupPanelsToggle,
     toolbarTooltipsToggle,
+    actionBarVisibleToggle,
+    actionBarStatePersistenceToggle,
+    solutionPathLineWidthInput,
     showEdgesToggle,
     showDebugToggle,
     showPreviewToggle,
@@ -71,6 +80,9 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     hideEdgesDuringInteractionHelpIcon,
     floorGridHelpIcon,
     adaptiveQualityHelpIcon,
+    actionBarVisibleHelpIcon,
+    actionBarStatePersistenceHelpIcon,
+    solutionPathLineWidthHelpIcon,
     showEdgesHelpIcon,
     showDebugHelpIcon,
     showPreviewHelpIcon,
@@ -79,6 +91,9 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     hideEdgesDuringInteractionTooltip,
     floorGridTooltip,
     adaptiveQualityTooltip,
+    actionBarVisibleTooltip,
+    actionBarStatePersistenceTooltip,
+    solutionPathLineWidthTooltip,
     showEdgesTooltip,
     showDebugTooltip,
     showPreviewTooltip,
@@ -96,6 +111,11 @@ export function showSettingsPopup(toolbar: Toolbar): void {
   const applyThreshold = () => {
     const clamped = applyMeshReductionThreshold(Number(thresholdInput.value));
     thresholdInput.value = String(clamped);
+  };
+
+  const applySolutionPathWidth = () => {
+    const clamped = applySolutionPathLineWidth(Number(solutionPathLineWidthInput.value));
+    solutionPathLineWidthInput.value = String(clamped);
   };
 
   const syncCameraZoomRowsVisibility = () => {
@@ -135,6 +155,9 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     hideEdgesHelpIcon: hideEdgesDuringInteractionHelpIcon,
     floorGridHelpIcon: floorGridHelpIcon,
     adaptiveHelpIcon: adaptiveQualityHelpIcon,
+    actionBarVisibleHelpIcon: actionBarVisibleHelpIcon,
+    actionBarStatePersistenceHelpIcon: actionBarStatePersistenceHelpIcon,
+    solutionPathLineWidthHelpIcon: solutionPathLineWidthHelpIcon,
     showEdgesHelpIcon: showEdgesHelpIcon,
     showDebugHelpIcon: showDebugHelpIcon,
     showPreviewHelpIcon: showPreviewHelpIcon,
@@ -143,6 +166,9 @@ export function showSettingsPopup(toolbar: Toolbar): void {
     hideEdgesTooltip: hideEdgesDuringInteractionTooltip,
     floorGridTooltip: floorGridTooltip,
     adaptiveTooltip: adaptiveQualityTooltip,
+    actionBarVisibleTooltip: actionBarVisibleTooltip,
+    actionBarStatePersistenceTooltip: actionBarStatePersistenceTooltip,
+    solutionPathLineWidthTooltip: solutionPathLineWidthTooltip,
     showEdgesTooltip: showEdgesTooltip,
     showDebugTooltip: showDebugTooltip,
     showPreviewTooltip: showPreviewTooltip,
@@ -172,6 +198,8 @@ export function showSettingsPopup(toolbar: Toolbar): void {
 
   thresholdInput.addEventListener('change', applyThreshold);
   thresholdInput.addEventListener('blur', applyThreshold);
+  solutionPathLineWidthInput.addEventListener('change', applySolutionPathWidth);
+  solutionPathLineWidthInput.addEventListener('blur', applySolutionPathWidth);
   hideEdgesDuringInteractionToggle.addEventListener('change', () => {
     setHideEdgesDuringInteractionEnabled(hideEdgesDuringInteractionToggle.checked);
   });
@@ -186,6 +214,12 @@ export function showSettingsPopup(toolbar: Toolbar): void {
   });
   toolbarTooltipsToggle.addEventListener('change', () => {
     setToolbarTooltipsEnabled(toolbarTooltipsToggle.checked);
+  });
+  actionBarVisibleToggle.addEventListener('change', () => {
+    setActionBarVisible(actionBarVisibleToggle.checked);
+  });
+  actionBarStatePersistenceToggle.addEventListener('change', () => {
+    setActionBarStatePersistenceEnabled(actionBarStatePersistenceToggle.checked);
   });
   showEdgesToggle.addEventListener('change', () => {
     setEdgesVisible(showEdgesToggle.checked);
