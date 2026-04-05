@@ -43,6 +43,8 @@
   "maze.singleLayerOnlyAlert": "Chỉ mê cung 1 tầng mới có thể tải vào trình chỉnh sửa.",
   "account.email": "Email",
   "account.password": "Mật khẩu",
+  "account.showPassword": "Hiện mật khẩu",
+  "account.hidePassword": "Ẩn mật khẩu",
   "account.mazeName": "Tên mê cung",
   "account.authSection": "Tài khoản",
   "account.authHint": "Đăng nhập để đồng bộ các mê cung đã lưu giữa các lần sử dụng.",

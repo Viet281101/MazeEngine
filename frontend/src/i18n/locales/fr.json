@@ -43,6 +43,8 @@
   "maze.singleLayerOnlyAlert": "Seuls les labyrinthes monocouches peuvent être charges dans l’éditeur.",
   "account.email": "E-mail",
   "account.password": "Mot de passe",
+  "account.showPassword": "Afficher le mot de passe",
+  "account.hidePassword": "Masquer le mot de passe",
   "account.mazeName": "Nom du labyrinthe",
   "account.authSection": "Compte",
   "account.authHint": "Connectez-vous pour synchroniser vos labyrinthes sauvegardés entre les sessions.",

@@ -45,6 +45,8 @@
   "maze.singleLayerOnlyAlert": "Only single-layer mazes can be loaded into the editor.",
   "account.email": "Email",
   "account.password": "Password",
+  "account.showPassword": "Show password",
+  "account.hidePassword": "Hide password",
   "account.mazeName": "Maze Name",
   "account.authSection": "Account Access",
   "account.authHint": "Sign in to sync your saved mazes across sessions.",

@@ -15,6 +15,8 @@ export interface AccountPopupDomRefs {
   librarySection: HTMLDetailsElement;
   emailInput: HTMLInputElement;
   passwordInput: HTMLInputElement;
+  passwordToggleBtn: HTMLButtonElement;
+  passwordToggleIcon: HTMLImageElement;
   mazeNameInput: HTMLInputElement;
   mazeSelect: HTMLSelectElement;
   libraryTableBody: HTMLTableSectionElement;
@@ -56,6 +58,46 @@ function createInputField(
   parent.appendChild(field);
 
   return input;
+}
+
+function createPasswordField(
+  parent: HTMLElement
+): { input: HTMLInputElement; toggleBtn: HTMLButtonElement; toggleIcon: HTMLImageElement } {
+  const field = document.createElement('label');
+  field.className = 'account-popup__field';
+
+  const label = document.createElement('span');
+  label.className = 'account-popup__label';
+  setI18nText(label, 'account.password');
+
+  const inputWrap = document.createElement('div');
+  inputWrap.className = 'account-popup__password-wrap';
+
+  const input = document.createElement('input');
+  input.className = 'account-popup__input account-popup__password-input';
+  input.type = 'password';
+  input.placeholder = 'Your password';
+
+  const toggleBtn = document.createElement('button');
+  toggleBtn.type = 'button';
+  toggleBtn.className = 'account-popup__password-toggle';
+  setI18nTitle(toggleBtn, 'account.showPassword');
+  setI18nAriaLabel(toggleBtn, 'account.showPassword');
+
+  const toggleIcon = document.createElement('img');
+  toggleIcon.className = 'account-popup__password-toggle-icon';
+  toggleIcon.src = getIconPath('invisible.png');
+  toggleIcon.alt = '';
+  toggleIcon.setAttribute('aria-hidden', 'true');
+
+  toggleBtn.appendChild(toggleIcon);
+  inputWrap.appendChild(input);
+  inputWrap.appendChild(toggleBtn);
+  field.appendChild(label);
+  field.appendChild(inputWrap);
+  parent.appendChild(field);
+
+  return { input, toggleBtn, toggleIcon };
 }
 
 function createAccordionSection(
@@ -167,12 +209,8 @@ export function createAccountPopupDom(popupContainer: HTMLElement): AccountPopup
   const authSection = createAccordionSection(content, 'account.authSection', 'account.authHint');
   const authSectionBody = authSection.body;
   const emailInput = createInputField(authSectionBody, 'account.email', 'email', 'you@example.com');
-  const passwordInput = createInputField(
-    authSectionBody,
-    'account.password',
-    'password',
-    'Your password'
-  );
+  const passwordField = createPasswordField(authSectionBody);
+  const passwordInput = passwordField.input;
   const authActions = document.createElement('div');
   authActions.className = 'account-popup__actions';
   const signUpBtn = createI18nButton({
@@ -361,6 +399,8 @@ export function createAccountPopupDom(popupContainer: HTMLElement): AccountPopup
     librarySection: librarySection.section,
     emailInput,
     passwordInput,
+    passwordToggleBtn: passwordField.toggleBtn,
+    passwordToggleIcon: passwordField.toggleIcon,
     mazeNameInput,
     mazeSelect,
     libraryTableBody,
