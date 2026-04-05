@@ -71,9 +71,13 @@ Then copy the local Supabase URL and anon key into `frontend/.env`.
 - `npm run supabase:reset`: rebuild the local database from migrations/seed
 - `npm run build`: type-check and build the frontend
 - `npm run preview`: preview the built frontend from `frontend/dist`
+- `npm run deploy`: publish frontend `dist` via `gh-pages`
 - `npm run lint`: run filename and ESLint checks
+- `npm run lint:file-names`: run filename convention checks
+- `npm run lint:eslint`: run ESLint only
 - `npm run test`: run lint and build
 - `npm run format`: format the frontend project with Prettier
+- `npm run check:multilayer`: run the multi-layer solvability check script
 
 ## Browser Compatibility Policy
 
