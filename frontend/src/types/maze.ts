@@ -1,6 +1,13 @@
 export type MazeData = number[][][];
 
-export type MarkerPoint = { row: number; col: number; layerIndex?: number };
+export type MarkerPoint = {
+  row: number;
+  col: number;
+  layerIndex?: number;
+  // Marks the first point of a manually drawn stroke so renderers can avoid
+  // connecting it to the previous stroke.
+  strokeStart?: boolean;
+};
 export type SolutionPath = MarkerPoint[];
 
 export type MazeMarkers = { start: MarkerPoint | null; end: MarkerPoint | null };
@@ -38,6 +45,12 @@ export interface MazeAppBridge {
   isAllowMultipleMazePopupPanelsEnabled(): boolean;
   setToolbarTooltipsEnabled(enabled: boolean): void;
   isToolbarTooltipsEnabled(): boolean;
+  setActionBarVisible(visible: boolean): void;
+  isActionBarVisible(): boolean;
+  setActionBarStatePersistenceEnabled(enabled: boolean): void;
+  isActionBarStatePersistenceEnabled(): boolean;
+  setSolutionPathLineWidth(width: number): void;
+  getSolutionPathLineWidth(): number;
   setEdgesVisible(enabled: boolean): void;
   isEdgesVisible(): boolean;
   setDebugOverlayVisible(visible: boolean): void;

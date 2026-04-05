@@ -1,4 +1,4 @@
-import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION } from '../constants/maze';
+import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION, SOLUTION_PATH_LINE_WIDTH } from '../constants/maze';
 
 export function normalizeMeshReductionThreshold(
   value: number,
@@ -23,4 +23,12 @@ export function normalizeCameraZoomMinDistance(value: number): number {
 
 export function normalizeCameraZoomMaxDistance(value: number): number {
   return normalizeCameraZoomDistance(value, CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE);
+}
+
+export function normalizeSolutionPathLineWidth(
+  value: number,
+  fallback: number = SOLUTION_PATH_LINE_WIDTH.DEFAULT
+): number {
+  const source = Number.isFinite(value) ? value : fallback;
+  return Math.max(SOLUTION_PATH_LINE_WIDTH.MIN, Math.min(SOLUTION_PATH_LINE_WIDTH.MAX, source));
 }

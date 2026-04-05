@@ -1,0 +1,10 @@
+# robots.txt for MazeEngine
+# Allow search engines to crawl public pages
+User-agent: *
+Allow: /
+
+# Prevent indexing of internal/backend routes
+Disallow: /api/
+Disallow: /auth/
+Disallow: /backend/
+Disallow: /supabase/

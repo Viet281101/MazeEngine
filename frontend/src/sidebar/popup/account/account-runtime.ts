@@ -1,5 +1,6 @@
 import { t } from '../../../i18n';
 import type { User } from '@supabase/supabase-js';
+import { getIconPath } from '../../../constants/assets';
 import { signInWithEmail, signOutCurrentUser, signUpWithEmail } from '../../../lib/auth-service';
 import {
   createMazePayload,
@@ -21,10 +22,12 @@ export class AccountPopupRuntime {
   private currentUser: User | null = null;
   private latestMazeRecords: MazeRecord[] = [];
   private currentManagedMazeId: string | null = null;
+  private isPasswordVisible = false;
   private readonly view: AccountPopupView;
 
   constructor(private readonly refs: AccountPopupDomRefs) {
     this.view = new AccountPopupView(refs);
+    this.updatePasswordVisibility(false);
   }
 
   async refreshAll(): Promise<void> {
@@ -77,6 +80,10 @@ export class AccountPopupRuntime {
 
   async handleSignIn(): Promise<void> {
     await this.runAuthAction(signInWithEmail, 'account.signInSuccess', 'account.signInFailed');
+  }
+
+  handleTogglePasswordVisibility(): void {
+    this.updatePasswordVisibility(!this.isPasswordVisible);
   }
 
   async handleSignOut(): Promise<void> {
@@ -343,6 +350,7 @@ export class AccountPopupRuntime {
     this.refs.signInBtn.disabled = disabled;
     this.refs.emailInput.disabled = disabled;
     this.refs.passwordInput.disabled = disabled;
+    this.refs.passwordToggleBtn.disabled = disabled;
   }
 
   private setStorageControlsDisabled(disabled: boolean): void {
@@ -372,5 +380,16 @@ export class AccountPopupRuntime {
       }
     }
     return String(error);
+  }
+
+  private updatePasswordVisibility(isVisible: boolean): void {
+    this.isPasswordVisible = isVisible;
+    this.refs.passwordInput.type = isVisible ? 'text' : 'password';
+    this.refs.passwordToggleIcon.src = getIconPath(isVisible ? 'visible.png' : 'invisible.png');
+    const labelKey = isVisible ? 'account.hidePassword' : 'account.showPassword';
+    this.refs.passwordToggleBtn.setAttribute('data-i18n-title-key', labelKey);
+    this.refs.passwordToggleBtn.setAttribute('data-i18n-aria-label-key', labelKey);
+    this.refs.passwordToggleBtn.title = t(labelKey);
+    this.refs.passwordToggleBtn.setAttribute('aria-label', t(labelKey));
   }
 }

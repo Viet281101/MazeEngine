@@ -1,9 +1,15 @@
-import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION } from '../../../constants/maze';
+import {
+  CAMERA_ZOOM_LIMIT,
+  MESH_REDUCTION,
+  SOLUTION_PATH_LINE_WIDTH,
+} from '../../../constants/maze';
 import {
   normalizeCameraZoomMaxDistance,
   normalizeCameraZoomMinDistance,
   normalizeMeshReductionThreshold,
+  normalizeSolutionPathLineWidth,
 } from '../../../utils/maze-normalizers';
+import { ACTION_BAR_STATE_PERSISTENCE_DEFAULT_ENABLED } from '../../../utils/actionbar-state';
 import { getMazeAppBridge } from '../popup-maze-app-bridge';
 
 interface InitialSettingsValues {
@@ -14,6 +20,9 @@ interface InitialSettingsValues {
   adaptiveQualityEnabled: boolean;
   allowMultipleMazePopupPanels: boolean;
   toolbarTooltipsEnabled: boolean;
+  actionBarVisible: boolean;
+  actionBarStatePersistenceEnabled: boolean;
+  solutionPathLineWidth: number;
   edgesVisible: boolean;
   debugVisible: boolean;
   previewVisible: boolean;
@@ -49,6 +58,16 @@ export function getInitialSettingsValues(): InitialSettingsValues {
       app && typeof app.isToolbarTooltipsEnabled === 'function'
         ? app.isToolbarTooltipsEnabled()
         : true,
+    actionBarVisible:
+      app && typeof app.isActionBarVisible === 'function' ? app.isActionBarVisible() : true,
+    actionBarStatePersistenceEnabled:
+      app && typeof app.isActionBarStatePersistenceEnabled === 'function'
+        ? app.isActionBarStatePersistenceEnabled()
+        : ACTION_BAR_STATE_PERSISTENCE_DEFAULT_ENABLED,
+    solutionPathLineWidth:
+      app && typeof app.getSolutionPathLineWidth === 'function'
+        ? app.getSolutionPathLineWidth()
+        : SOLUTION_PATH_LINE_WIDTH.DEFAULT,
     edgesVisible: app && typeof app.isEdgesVisible === 'function' ? app.isEdgesVisible() : true,
     debugVisible:
       app && typeof app.isDebugOverlayVisible === 'function' ? app.isDebugOverlayVisible() : true,
@@ -128,6 +147,37 @@ export function setToolbarTooltipsEnabled(enabled: boolean): void {
   if (app && typeof app.setToolbarTooltipsEnabled === 'function') {
     app.setToolbarTooltipsEnabled(enabled);
   }
+}
+
+export function setActionBarVisible(visible: boolean): void {
+  const app = getMazeAppBridge();
+  if (app && typeof app.setActionBarVisible === 'function') {
+    app.setActionBarVisible(visible);
+    return;
+  }
+
+  // Fallback for stale runtime instances that don't expose the new bridge method yet.
+  document.querySelectorAll<HTMLElement>('.bottom-action-bar').forEach(element => {
+    element.hidden = !visible;
+    element.classList.toggle('is-hidden', !visible);
+    element.style.display = visible ? 'inline-flex' : 'none';
+  });
+}
+
+export function setActionBarStatePersistenceEnabled(enabled: boolean): void {
+  const app = getMazeAppBridge();
+  if (app && typeof app.setActionBarStatePersistenceEnabled === 'function') {
+    app.setActionBarStatePersistenceEnabled(enabled);
+  }
+}
+
+export function applySolutionPathLineWidth(rawValue: number): number {
+  const clamped = normalizeSolutionPathLineWidth(rawValue);
+  const app = getMazeAppBridge();
+  if (app && typeof app.setSolutionPathLineWidth === 'function') {
+    app.setSolutionPathLineWidth(clamped);
+  }
+  return clamped;
 }
 
 export function setEdgesVisible(enabled: boolean): void {

@@ -20,6 +20,18 @@ function createIconButton(iconFileName: string): HTMLButtonElement {
   return button;
 }
 
+function createMenuButton(): HTMLButtonElement {
+  const button = createActionButton('bottom-action-bar__menu-button');
+  button.setAttribute('aria-haspopup', 'menu');
+  button.setAttribute('aria-expanded', 'false');
+  for (let i = 0; i < 3; i += 1) {
+    const dot = document.createElement('span');
+    dot.className = 'bottom-action-bar__menu-dot';
+    button.appendChild(dot);
+  }
+  return button;
+}
+
 function createRootContainer(): HTMLDivElement {
   const root = document.createElement('div');
   root.className = 'bottom-action-bar';
@@ -55,6 +67,15 @@ export function createActionBarDom(): ActionBarRefs {
   const viewGroup = document.createElement('section');
   viewGroup.className = 'bottom-action-bar__group';
 
+  const viewModeControl = document.createElement('div');
+  viewModeControl.className = 'bottom-action-bar__view-mode-control';
+  const viewModeIcon = document.createElement('img');
+  viewModeIcon.className = 'bottom-action-bar__icon';
+  viewModeIcon.src = getIconPath('ophthalmology.png');
+  viewModeIcon.alt = '';
+  viewModeIcon.setAttribute('aria-hidden', 'true');
+  viewModeControl.appendChild(viewModeIcon);
+
   const viewModeSelect = document.createElement('select');
   viewModeSelect.className = 'bottom-action-bar__select';
   const viewModeAllOption = document.createElement('option');
@@ -68,11 +89,42 @@ export function createActionBarDom(): ActionBarRefs {
   viewModeSelect.appendChild(viewModeFocusOnlyOption);
   viewModeSelect.value = viewModeAllOption.value;
   viewModeSelect.setAttribute('aria-label', t('bottomActionBar.view.title'));
-  viewGroup.appendChild(viewModeSelect);
+  viewModeControl.appendChild(viewModeSelect);
+  viewGroup.appendChild(viewModeControl);
+
+  const menuDivider = document.createElement('div');
+  menuDivider.className = 'bottom-action-bar__divider';
+  menuDivider.setAttribute('aria-hidden', 'true');
+
+  const menuGroup = document.createElement('section');
+  menuGroup.className = 'bottom-action-bar__group';
+
+  const menuButton = createMenuButton();
+  menuGroup.appendChild(menuButton);
+
+  const menuPanel = document.createElement('div');
+  menuPanel.className = 'bottom-action-bar__menu-panel';
+  menuPanel.setAttribute('role', 'menu');
+  menuPanel.hidden = true;
+
+  const closeActionBarButton = createIconButton('close.png');
+  const rotateOrientationButton = createIconButton('rotate.png');
+  const sizeControl = document.createElement('div');
+  sizeControl.className = 'bottom-action-bar__size-control';
+  const decreaseSizeButton = createIconButton('minus.png');
+  const increaseSizeButton = createIconButton('plus.png');
+  menuPanel.appendChild(closeActionBarButton);
+  menuPanel.appendChild(rotateOrientationButton);
+  sizeControl.appendChild(decreaseSizeButton);
+  sizeControl.appendChild(increaseSizeButton);
+  menuPanel.appendChild(sizeControl);
+  menuGroup.appendChild(menuPanel);
 
   root.appendChild(toolsGroup);
   root.appendChild(divider);
   root.appendChild(viewGroup);
+  root.appendChild(menuDivider);
+  root.appendChild(menuGroup);
 
   return {
     root,
@@ -85,5 +137,11 @@ export function createActionBarDom(): ActionBarRefs {
     viewModeAllOption,
     viewModeFocusUpperOption,
     viewModeFocusOnlyOption,
+    menuButton,
+    menuPanel,
+    closeActionBarButton,
+    rotateOrientationButton,
+    decreaseSizeButton,
+    increaseSizeButton,
   };
 }

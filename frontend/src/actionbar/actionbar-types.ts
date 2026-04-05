@@ -11,4 +11,10 @@ export interface ActionBarRefs {
   viewModeAllOption: HTMLOptionElement;
   viewModeFocusUpperOption: HTMLOptionElement;
   viewModeFocusOnlyOption: HTMLOptionElement;
+  menuButton: HTMLButtonElement;
+  menuPanel: HTMLDivElement;
+  closeActionBarButton: HTMLButtonElement;
+  rotateOrientationButton: HTMLButtonElement;
+  decreaseSizeButton: HTMLButtonElement;
+  increaseSizeButton: HTMLButtonElement;
 }

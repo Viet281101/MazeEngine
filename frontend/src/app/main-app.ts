@@ -3,19 +3,30 @@ import { Toolbar } from '../sidebar/toolbar';
 import { GUIController } from '../gui';
 import { PreviewWindow } from '../preview/preview-window';
 import { PreviewController } from './preview-controller';
-import { ActionBar, type ActionTool } from '../actionbar';
+import {
+  ActionBar,
+  type ActionBarOrientation,
+  type ActionBarState,
+  type ActionTool,
+} from '../actionbar';
 import type { MazeController } from '../maze';
 import { computeMarkersFromLayer } from '../maze';
 import { subscribeLanguageChange, t } from '../i18n';
 import { DebugOverlay } from '../debug/debug-overlay';
-import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION } from '../constants/maze';
+import { CAMERA_ZOOM_LIMIT, MESH_REDUCTION, SOLUTION_PATH_LINE_WIDTH } from '../constants/maze';
 import { PREVIEW_WINDOW, UI_BREAKPOINTS } from '../constants/ui';
 import { PREVIEW_WINDOW_STATUS_CHANGED_EVENT } from '../constants/events';
 import {
   normalizeCameraZoomMaxDistance,
   normalizeCameraZoomMinDistance,
   normalizeMeshReductionThreshold,
+  normalizeSolutionPathLineWidth,
 } from '../utils/maze-normalizers';
+import {
+  ACTION_BAR_DEFAULT_ORIENTATION,
+  ACTION_BAR_SCALE,
+  ACTION_BAR_STATE_PERSISTENCE_DEFAULT_ENABLED,
+} from '../utils/actionbar-state';
 import type { WebGLRenderer } from 'three';
 import { createInitialMazeData, createSampleMultiLayerMazeData } from './default-mazes';
 import { MeshReductionSettingsStorage } from './mesh-settings-store';
@@ -62,6 +73,8 @@ export class MainApp implements MazeController, MazeAppBridge {
   private drawingTool: DrawingTool = 'hand';
   private drawingPointerId: number | null = null;
   private lastEditedCellKey: string | null = null;
+  private pendingPenStrokeBreak: boolean = false;
+  private currentPenStrokeAnchor: MarkerPoint | null = null;
   private edgesVisible: boolean = true;
   private debugOverlayVisible: boolean = true;
   private previewVisibleByViewport: boolean = true;
@@ -75,6 +88,12 @@ export class MainApp implements MazeController, MazeAppBridge {
   private adaptiveQualityEnabled: boolean = true;
   private allowMultipleMazePopupPanels: boolean = false;
   private toolbarTooltipsEnabled: boolean = true;
+  private actionBarVisible: boolean = true;
+  private actionBarStatePersistenceEnabled: boolean = ACTION_BAR_STATE_PERSISTENCE_DEFAULT_ENABLED;
+  private actionBarOrientation: ActionBarOrientation = ACTION_BAR_DEFAULT_ORIENTATION;
+  private actionBarScale: number = ACTION_BAR_SCALE.DEFAULT;
+  private actionBarPosition: { x: number; y: number } | null = null;
+  private solutionPathLineWidth: number = SOLUTION_PATH_LINE_WIDTH.DEFAULT;
   private cameraZoomLimitEnabled: boolean = CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED;
   private cameraZoomMinDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE;
   private cameraZoomMaxDistance: number = CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE;
@@ -141,11 +160,18 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.applyPreviewVisible(this.previewVisibleByViewport);
     this.applyGUISettings();
     this.updatePreview();
-    this.actionBar = new ActionBar();
+    this.actionBar = new ActionBar({
+      initialOrientation: this.actionBarOrientation,
+      initialScale: this.actionBarScale,
+      initialPosition: this.actionBarPosition,
+    });
+    this.actionBar.setVisible(this.actionBarVisible);
     this.actionBar.setActiveTool('hand');
+    this.actionBar.onStateChange(state => this.handleActionBarStateChange(state));
     this.actionBar.onToolChange(tool => this.setDrawingTool(tool));
     this.actionBar.onUndo(() => this.undoDrawnPathStep());
     this.actionBar.onClear(() => this.clearDrawnPath());
+    this.actionBar.onRequestHide(() => this.setActionBarVisible(false));
     this.setDrawingTool('hand');
 
     this.resizeHandler = () => this.onWindowResize();
@@ -173,10 +199,16 @@ export class MainApp implements MazeController, MazeAppBridge {
       enabled: MESH_REDUCTION.DEFAULT_ENABLED,
       threshold: MESH_REDUCTION.DEFAULT_THRESHOLD,
       hideEdgesDuringInteractionEnabled: false,
-      floorGridEnabled: true,
-      adaptiveQualityEnabled: true,
+      floorGridEnabled: false,
+      adaptiveQualityEnabled: false,
       allowMultipleMazePopupPanels: false,
       toolbarTooltipsEnabled: true,
+      actionBarVisible: true,
+      actionBarStatePersistenceEnabled: ACTION_BAR_STATE_PERSISTENCE_DEFAULT_ENABLED,
+      actionBarOrientation: ACTION_BAR_DEFAULT_ORIENTATION,
+      actionBarScale: ACTION_BAR_SCALE.DEFAULT,
+      actionBarPosition: null,
+      solutionPathLineWidth: SOLUTION_PATH_LINE_WIDTH.DEFAULT,
       cameraZoomLimitEnabled: CAMERA_ZOOM_LIMIT.DEFAULT_ENABLED,
       cameraZoomMinDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MIN_DISTANCE,
       cameraZoomMaxDistance: CAMERA_ZOOM_LIMIT.DEFAULT_MAX_DISTANCE,
@@ -188,6 +220,12 @@ export class MainApp implements MazeController, MazeAppBridge {
     this.adaptiveQualityEnabled = loaded.adaptiveQualityEnabled;
     this.allowMultipleMazePopupPanels = loaded.allowMultipleMazePopupPanels;
     this.toolbarTooltipsEnabled = loaded.toolbarTooltipsEnabled;
+    this.actionBarVisible = loaded.actionBarVisible;
+    this.actionBarStatePersistenceEnabled = loaded.actionBarStatePersistenceEnabled;
+    this.actionBarOrientation = loaded.actionBarOrientation;
+    this.actionBarScale = loaded.actionBarScale;
+    this.actionBarPosition = loaded.actionBarPosition;
+    this.solutionPathLineWidth = loaded.solutionPathLineWidth;
     this.cameraZoomLimitEnabled = loaded.cameraZoomLimitEnabled;
     this.cameraZoomMinDistance = loaded.cameraZoomMinDistance;
     this.cameraZoomMaxDistance = loaded.cameraZoomMaxDistance;
@@ -250,12 +288,29 @@ export class MainApp implements MazeController, MazeAppBridge {
     });
   }
 
+  private handleActionBarStateChange(state: ActionBarState): void {
+    this.actionBarOrientation = state.orientation;
+    this.actionBarScale = state.scale;
+    this.actionBarPosition = state.position;
+    if (!this.actionBarStatePersistenceEnabled) {
+      return;
+    }
+    this.persistActionBarState();
+  }
+
+  private persistActionBarState(): void {
+    this.settingsStorage.saveActionBarOrientation(this.actionBarOrientation);
+    this.settingsStorage.saveActionBarScale(this.actionBarScale);
+    this.settingsStorage.saveActionBarPosition(this.actionBarPosition);
+  }
+
   private applyMeshReductionSettingsToMaze(): void {
     this.maze.setMeshMergeThreshold(this.meshReductionThreshold);
     this.maze.setMeshReductionEnabled(this.meshReductionEnabled);
     this.maze.setHideEdgesDuringInteractionEnabled(this.hideEdgesDuringInteractionEnabled);
     this.maze.setFloorGridEnabled(this.floorGridEnabled);
     this.maze.setAdaptiveQualityEnabled(this.adaptiveQualityEnabled);
+    this.maze.setSolutionPathLineWidth(this.solutionPathLineWidth);
     this.maze.setCameraZoomMinDistance(this.cameraZoomMinDistance);
     this.maze.setCameraZoomMaxDistance(this.cameraZoomMaxDistance);
     this.maze.setCameraZoomLimitEnabled(this.cameraZoomLimitEnabled);
@@ -332,6 +387,8 @@ export class MainApp implements MazeController, MazeAppBridge {
     event.preventDefault();
     this.drawingPointerId = event.pointerId;
     this.lastEditedCellKey = null;
+    this.pendingPenStrokeBreak = this.drawingTool === 'pen';
+    this.currentPenStrokeAnchor = null;
     this.canvas.setPointerCapture(event.pointerId);
     this.applyDrawingAtPointer(event);
   }
@@ -368,6 +425,8 @@ export class MainApp implements MazeController, MazeAppBridge {
   private clearDrawingPointerState(): void {
     this.drawingPointerId = null;
     this.lastEditedCellKey = null;
+    this.pendingPenStrokeBreak = false;
+    this.currentPenStrokeAnchor = null;
   }
 
   private applyDrawingAtPointer(event: PointerEvent): void {
@@ -387,6 +446,11 @@ export class MainApp implements MazeController, MazeAppBridge {
     }
 
     if (this.drawingTool === 'pen') {
+      if (this.isCellInDrawnPath(pickedCell)) {
+        this.currentPenStrokeAnchor = { ...pickedCell };
+        this.pendingPenStrokeBreak = false;
+        return;
+      }
       this.addCellToDrawnPath(pickedCell);
       return;
     }
@@ -401,17 +465,34 @@ export class MainApp implements MazeController, MazeAppBridge {
   }
 
   private addCellToDrawnPath(cell: MarkerPoint): void {
-    const exists = this.solutionPath.some(
+    const exists = this.isCellInDrawnPath(cell);
+    if (exists) {
+      return;
+    }
+
+    const nextPath: SolutionPath = [...this.solutionPath];
+    if (this.currentPenStrokeAnchor) {
+      nextPath.push({ ...this.currentPenStrokeAnchor, strokeStart: true });
+      this.currentPenStrokeAnchor = null;
+      this.pendingPenStrokeBreak = false;
+    }
+
+    const nextCell: MarkerPoint = this.pendingPenStrokeBreak
+      ? { ...cell, strokeStart: true }
+      : cell;
+    this.pendingPenStrokeBreak = false;
+    nextPath.push(nextCell);
+    this.solutionPath = nextPath;
+    this.syncRenderedPathWithState();
+  }
+
+  private isCellInDrawnPath(cell: MarkerPoint): boolean {
+    return this.solutionPath.some(
       existing =>
         existing.row === cell.row &&
         existing.col === cell.col &&
         (existing.layerIndex ?? 0) === (cell.layerIndex ?? 0)
     );
-    if (exists) {
-      return;
-    }
-    this.solutionPath = [...this.solutionPath, cell];
-    this.syncRenderedPathWithState();
   }
 
   private removeCellFromDrawnPath(cell: MarkerPoint): void {
@@ -666,6 +747,39 @@ export class MainApp implements MazeController, MazeAppBridge {
 
   public isToolbarTooltipsEnabled(): boolean {
     return this.toolbarTooltipsEnabled;
+  }
+
+  public setActionBarVisible(visible: boolean): void {
+    this.actionBarVisible = visible;
+    this.actionBar.setVisible(visible);
+    this.settingsStorage.saveActionBarVisible(visible);
+  }
+
+  public isActionBarVisible(): boolean {
+    return this.actionBarVisible;
+  }
+
+  public setActionBarStatePersistenceEnabled(enabled: boolean): void {
+    this.actionBarStatePersistenceEnabled = enabled;
+    this.settingsStorage.saveActionBarStatePersistenceEnabled(enabled);
+    if (enabled) {
+      this.persistActionBarState();
+    }
+  }
+
+  public isActionBarStatePersistenceEnabled(): boolean {
+    return this.actionBarStatePersistenceEnabled;
+  }
+
+  public setSolutionPathLineWidth(width: number): void {
+    const normalized = normalizeSolutionPathLineWidth(width);
+    this.solutionPathLineWidth = normalized;
+    this.maze.setSolutionPathLineWidth(normalized);
+    this.settingsStorage.saveSolutionPathLineWidth(normalized);
+  }
+
+  public getSolutionPathLineWidth(): number {
+    return this.solutionPathLineWidth;
   }
 
   public setCameraZoomLimitEnabled(enabled: boolean): void {

@@ -11,6 +11,9 @@ export function bindAccountPopupEvents(
   const onSignIn = () => {
     void runtime.handleSignIn();
   };
+  const onTogglePasswordVisibility = () => {
+    runtime.handleTogglePasswordVisibility();
+  };
   const onSignOut = () => {
     void runtime.handleSignOut();
   };
@@ -68,6 +71,7 @@ export function bindAccountPopupEvents(
 
   refs.signUpBtn.addEventListener('click', onSignUp);
   refs.signInBtn.addEventListener('click', onSignIn);
+  refs.passwordToggleBtn.addEventListener('click', onTogglePasswordVisibility);
   refs.signOutBtn.addEventListener('click', onSignOut);
   refs.saveBtn.addEventListener('click', onSave);
   refs.refreshBtn.addEventListener('click', onRefresh);
@@ -83,6 +87,7 @@ export function bindAccountPopupEvents(
   return () => {
     refs.signUpBtn.removeEventListener('click', onSignUp);
     refs.signInBtn.removeEventListener('click', onSignIn);
+    refs.passwordToggleBtn.removeEventListener('click', onTogglePasswordVisibility);
     refs.signOutBtn.removeEventListener('click', onSignOut);
     refs.saveBtn.removeEventListener('click', onSave);
     refs.refreshBtn.removeEventListener('click', onRefresh);

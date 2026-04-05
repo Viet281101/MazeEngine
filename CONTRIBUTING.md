@@ -23,6 +23,7 @@ Run the quality gate locally:
 
 ```bash
 npm run lint
+npm run check:multilayer
 npm run build
 npm run test
 ```

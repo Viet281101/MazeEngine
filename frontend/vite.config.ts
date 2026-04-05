@@ -5,11 +5,19 @@ export default defineConfig({
   base: '/MazeEngine/',
   build: {
     outDir: 'dist',
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        manualChunks: {
-          three: ['three'],
-          datgui: ['dat.gui'],
+        manualChunks(id) {
+          if (id.includes('node_modules/three')) {
+            return 'three';
+          }
+
+          if (id.includes('node_modules/dat.gui')) {
+            return 'datgui';
+          }
+
+          return undefined;
         },
       },
     },

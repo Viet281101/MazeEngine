@@ -25,7 +25,7 @@ sudo apt install fontforge python3-fontforge
 
 ## How to Run
 
-Run commands from the `assets/fonts` folder.
+Run commands from the `frontend/public/font` folder.
 
 ### 1) Check missing glyphs before generating
 

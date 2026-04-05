@@ -20,6 +20,9 @@ export function applySettingsTranslations(dom: SettingsPopupDom): void {
   dom.adaptiveQualityLabel.textContent = t('settings.adaptiveQuality');
   dom.allowMultipleMazePopupPanelsLabel.textContent = t('settings.allowMultipleMazePopupPanels');
   dom.toolbarTooltipsLabel.textContent = t('settings.toolbarTooltips');
+  dom.actionBarVisibleLabel.textContent = t('settings.actionBarVisible');
+  dom.actionBarStatePersistenceLabel.textContent = t('settings.actionBarStatePersistence');
+  dom.solutionPathLineWidthLabel.textContent = t('settings.solutionPathLineWidth');
   dom.showEdgesLabel.textContent = t('gui.showEdges');
   dom.showDebugLabel.textContent = t('gui.showDebug');
   dom.showPreviewLabel.textContent = t('gui.showPreview');
@@ -35,6 +38,11 @@ export function applySettingsTranslations(dom: SettingsPopupDom): void {
   );
   dom.floorGridTooltipText.textContent = t('settings.floorGridTooltip');
   dom.adaptiveQualityTooltipText.textContent = t('settings.adaptiveQualityTooltip');
+  dom.actionBarVisibleTooltipText.textContent = t('settings.actionBarVisibleTooltip');
+  dom.actionBarStatePersistenceTooltipText.textContent = t(
+    'settings.actionBarStatePersistenceTooltip'
+  );
+  dom.solutionPathLineWidthTooltipText.textContent = t('settings.solutionPathLineWidthTooltip');
   dom.showEdgesTooltipText.textContent = t('settings.showEdgesTooltip');
   dom.showDebugTooltipText.textContent = t('settings.showDebugTooltip');
   dom.showPreviewTooltipText.textContent = t('settings.showPreviewTooltip');
@@ -43,6 +51,14 @@ export function applySettingsTranslations(dom: SettingsPopupDom): void {
   dom.cameraZoomMinDecreaseButton.setAttribute('aria-label', t('settings.cameraZoomMinDecrease'));
   dom.cameraZoomMaxIncreaseButton.setAttribute('aria-label', t('settings.cameraZoomMaxIncrease'));
   dom.cameraZoomMaxDecreaseButton.setAttribute('aria-label', t('settings.cameraZoomMaxDecrease'));
+  dom.solutionPathLineWidthIncreaseButton.setAttribute(
+    'aria-label',
+    t('settings.solutionPathLineWidthIncrease')
+  );
+  dom.solutionPathLineWidthDecreaseButton.setAttribute(
+    'aria-label',
+    t('settings.solutionPathLineWidthDecrease')
+  );
 
   SUPPORTED_LANGUAGES.forEach(language => {
     dom.languageOptions[language].textContent = t(
